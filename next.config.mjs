@@ -3,25 +3,28 @@ const nextConfig = {
   async headers() {
     return [
       {
-        // Aplicar a todas las rutas de la aplicación
+        // Aplicar estas cabeceras a todas las rutas de la aplicación
         source: '/(.*)',
         headers: [
           {
-            // Paso 3: Anti-Clickjacking
             key: 'X-Frame-Options',
-            value: 'DENY',
+            value: 'DENY', // Protege contra Clickjacking
           },
           {
-            // Paso 4: Evitar MIME-sniffing
             key: 'X-Content-Type-Options',
-            value: 'nosniff',
+            value: 'nosniff', // Evita MIME-sniffing
           },
           {
             key: 'Referrer-Policy',
             value: 'strict-origin-when-cross-origin',
           },
           {
-            // Paso 1 y Paso 3: Content Security Policy (CSP) + frame-ancestors
+            // SOLUCIÓN A LA VULNERABILIDAD: Desactiva permisos de hardware sensibles no usados
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()',
+          },
+          {
+            // Content Security Policy (CSP) + frame-ancestors
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self';",
@@ -36,7 +39,7 @@ const nextConfig = {
         ],
       },
       {
-        // Paso 2: Corrección de CORS restringido para recursos estáticos / fuentes
+        // Corrección de CORS para recursos estáticos / fuentes
         source: '/_next/static/media/(.*)',
         headers: [
           {
