@@ -15,7 +15,7 @@ export const metadata = {
   title: "Chamba Fija | Pasco",
   description: "Encuentra tu próxima chamba en Cerro de Pasco",
   icons: {
-    icon: "/icon.png", // Busca un archivo llamado icon.png dentro de la carpeta public
+    icon: "/public/icon.png",
   },
 };
 
