@@ -45,6 +45,29 @@ export default function Home() {
     return matchesSearch;
   });
 
+  // Función universal para compartir
+  const handleShare = (job, e) => {
+    e.stopPropagation(); // Evita que se abra el modal al hacer clic en compartir
+    
+    // Obtiene el dominio actual de la web (funciona en localhost y en Vercel)
+    const baseUrl = window.location.origin;
+    const shareUrl = `${baseUrl}/oferta/${job._id}`;
+    const shareText = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo || 'A tratar'}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${shareUrl}`;
+
+    // Si el navegador es un celular compatible con Web Share API
+    if (navigator.share) {
+      navigator.share({
+        title: job.titulo,
+        text: shareText,
+        url: shareUrl,
+      }).catch((error) => console.log('Error al compartir:', error));
+    } else {
+      // Si es PC o no soporta Web Share, abre WhatsApp directamente con el texto formateado
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+      window.open(whatsappUrl, '_blank');
+    }
+  };
+
   return (
     <div className="bg-[#F8FAFC] text-slate-900 min-h-screen flex flex-col justify-between font-sans selection:bg-emerald-600 selection:text-white">
       

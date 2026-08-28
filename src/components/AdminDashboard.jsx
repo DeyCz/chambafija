@@ -358,20 +358,21 @@ export default function AdminDashboard() {
                 <div style={styles.itemFooterRow}>
                   <span style={styles.itemSalary}>{job.sueldo || 'A tratar'}</span>
                   <div style={styles.itemButtons}>
-                    {/* BOTÓN DE COMPARTIR INCORPORADO CORRECTAMENTE */}
+                    {/* BOTÓN DE COMPARTIR CORREGIDO Y FUNCIONAL EN LÍNEA */}
                     <button 
-                        onClick={() => {
-                            // Detecta automáticamente si estás en local o en producción
-                            const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://chambafija.vercel.app';
-                            const url = `${baseUrl}/oferta/${job._id}`;
-                            
-                            const text = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
-                            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                        }} 
-                        style={{...styles.btnEdit, backgroundColor: '#06D6A0', color: '#0B132B', borderColor: '#059669', fontWeight: '900'}}
-                        >
-                        Compartir 📲
-                        </button>
+                    onClick={() => {
+                        // Detecta el dominio actual de forma dinámica o usa por defecto tu web en Vercel
+                        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://chambafija.vercel.app';
+                        const url = `${baseUrl}/oferta/${job._id}`;
+                        
+                        const text = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo || 'A tratar'}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
+                        
+                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                    }} 
+                    style={{...styles.btnEdit, backgroundColor: '#06D6A0', color: '#0B132B', borderColor: '#059669', fontWeight: '900'}}
+                    >
+                    Compartir 📲
+                    </button>
                     <button onClick={() => handleEdit(job)} style={styles.btnEdit}>Editar</button>
                     <button onClick={() => handleDelete(job._id)} style={styles.btnDelete}>Eliminar</button>
                   </div>
