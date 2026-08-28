@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 
-const API_URL = 'http://localhost:4000/api/jobs';
+const API_URL = 'https://chambafija-backend.onrender.com/api/jobs';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('estado');
