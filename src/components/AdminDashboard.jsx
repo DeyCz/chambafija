@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 
+// Conexión corregida hacia tu backend en la nube
 const API_URL = 'https://chambafija-backend.onrender.com/api/jobs';
 
 export default function AdminDashboard() {
@@ -164,53 +165,51 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 p-6 font-sans">
-      
-      {/* PESTAÑAS DE NAVEGACIÓN SUPERIOR */}
-      <div className="max-w-6xl mx-auto flex gap-4 mb-6">
+    <div style={styles.wrapper}>
+      <div style={styles.tabNav}>
         <button 
           onClick={() => setActiveTab('estado')}
-          className={`flex-1 py-3.5 px-6 rounded-2xl font-black text-sm transition-all shadow-sm ${
-            activeTab === 'estado' 
-              ? 'bg-[#0B132B] text-white shadow-md' 
-              : 'bg-white text-[#0B132B] border border-slate-300 hover:bg-slate-100'
-          }`}
+          style={{
+            ...styles.tabBtn,
+            backgroundColor: activeTab === 'estado' ? '#0B132B' : '#FFFFFF',
+            color: activeTab === 'estado' ? '#FFFFFF' : '#0B132B',
+            borderColor: activeTab === 'estado' ? '#0B132B' : '#CBD5E1',
+          }}
         >
           🏛️ Convocatorias del Estado (Públicas)
         </button>
         <button 
           onClick={() => setActiveTab('privado')}
-          className={`flex-1 py-3.5 px-6 rounded-2xl font-black text-sm transition-all shadow-sm ${
-            activeTab === 'privado' 
-              ? 'bg-[#06D6A0] text-slate-950 shadow-md' 
-              : 'bg-white text-[#0B132B] border border-slate-300 hover:bg-slate-100'
-          }`}
+          style={{
+            ...styles.tabBtn,
+            backgroundColor: activeTab === 'privado' ? '#06D6A0' : '#FFFFFF',
+            color: activeTab === 'privado' ? '#0B132B' : '#0B132B',
+            borderColor: activeTab === 'privado' ? '#06D6A0' : '#CBD5E1',
+          }}
         >
           🏪 Negocios Locales (Privados)
         </button>
       </div>
 
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* FORMULARIO DE REGISTRO */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-300 shadow-sm">
-          <div className="mb-4 pb-3 border-b border-slate-200">
-            <h2 className="text-base font-black text-[#0B132B]">
+      <div style={styles.mainGrid}>
+        <div style={styles.card}>
+          <div style={styles.cardHeader}>
+            <h2 style={styles.cardTitle}>
               {editingId ? '✏️ Modificar Registro' : (activeTab === 'estado' ? '🏛️ Nueva Convocatoria Estatal' : '🏪 Nuevo Anuncio Local')}
             </h2>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <form onSubmit={handleSubmit} style={styles.form}>
             {activeTab === 'estado' ? (
               <>
-                <div className="flex gap-3">
-                  <div className="flex flex-col gap-1 flex-1">
-                    <label className="text-xs font-black text-slate-900">Entidad Pública</label>
-                    <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. Gobierno Regional de Pasco" className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-slate-50 font-medium text-sm focus:bg-white focus:ring-2 focus:ring-[#06D6A0] outline-none" required />
+                <div style={styles.row}>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Entidad Pública</label>
+                    <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. Gobierno Regional de Pasco" style={styles.input} required />
                   </div>
-                  <div className="flex flex-col gap-1 flex-1">
-                    <label className="text-xs font-black text-slate-900">Modalidad</label>
-                    <select name="modalidad" value={formData.modalidad} onChange={handleChange} className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-slate-50 font-medium text-sm focus:bg-white focus:ring-2 focus:ring-[#06D6A0] outline-none">
+                  <div style={styles.field}>
+                    <label style={styles.label}>Modalidad</label>
+                    <select name="modalidad" value={formData.modalidad} onChange={handleChange} style={styles.input}>
                       <option value="CAS">CAS</option>
                       <option value="728">D.L. 728</option>
                       <option value="276">D.L. 276</option>
@@ -220,167 +219,201 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-black text-slate-900">Título del Puesto / Perfil</label>
-                  <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Asistente Administrativo I" className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-slate-50 font-medium text-sm focus:bg-white focus:ring-2 focus:ring-[#06D6A0] outline-none" required />
+                <div style={styles.field}>
+                  <label style={styles.label}>Título del Puesto / Perfil</label>
+                  <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Asistente Administrativo I" style={styles.input} required />
                 </div>
 
-                <div className="flex gap-3">
-                  <div className="flex flex-col gap-1 flex-1">
-                    <label className="text-xs font-black text-slate-900">Ubicación / Distrito</label>
-                    <input type="text" name="ubicacion" value={formData.ubicacion} onChange={handleChange} placeholder="Ej. Chaupimarca, Pasco" className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-slate-50 font-medium text-sm focus:bg-white focus:ring-2 focus:ring-[#06D6A0] outline-none" required />
+                <div style={styles.row}>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Ubicación / Distrito</label>
+                    <input type="text" name="ubicacion" value={formData.ubicacion} onChange={handleChange} placeholder="Ej. Chaupimarca, Pasco" style={styles.input} required />
                   </div>
-                  <div className="flex flex-col gap-1 flex-1">
-                    <label className="text-xs font-black text-slate-900">Vacantes</label>
-                    <input type="number" name="vacantes" value={formData.vacantes} onChange={handleChange} className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-slate-50 font-medium text-sm focus:bg-white focus:ring-2 focus:ring-[#06D6A0] outline-none" />
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <div className="flex flex-col gap-1 flex-1">
-                    <label className="text-xs font-black text-slate-900">Remuneración (S/)</label>
-                    <input type="number" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 2500" className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-slate-50 font-medium text-sm focus:bg-white focus:ring-2 focus:ring-[#06D6A0] outline-none" />
-                  </div>
-                  <div className="flex flex-col gap-1 flex-1">
-                    <label className="text-xs font-black text-slate-900">Fecha Límite (Cierre)</label>
-                    <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-slate-50 font-medium text-sm focus:bg-white focus:ring-2 focus:ring-[#06D6A0] outline-none" />
+                  <div style={styles.field}>
+                    <label style={styles.label}>Vacantes</label>
+                    <input type="number" name="vacantes" value={formData.vacantes} onChange={handleChange} style={styles.input} />
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-black text-slate-900">Formación Académica</label>
-                  <input type="text" name="formacion" value={formData.formacion} onChange={handleChange} placeholder="Ej. TÍTULO EN DERECHO..." className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-slate-50 font-medium text-sm focus:bg-white focus:ring-2 focus:ring-[#06D6A0] outline-none" />
+                <div style={styles.row}>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Remuneración (S/)</label>
+                    <input type="number" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 2500" style={styles.input} />
+                  </div>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Fecha Límite (Cierre)</label>
+                    <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={styles.input} />
+                  </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-black text-slate-900">Experiencia Requerida</label>
-                  <textarea name="experiencia" value={formData.experiencia} onChange={handleChange} placeholder="Ej. Experiencia general de 2 años..." className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-slate-50 font-medium text-sm h-14 focus:bg-white focus:ring-2 focus:ring-[#06D6A0] outline-none" />
+                <div style={styles.field}>
+                  <label style={styles.label}>Formación Académica</label>
+                  <input type="text" name="formacion" value={formData.formacion} onChange={handleChange} placeholder="Ej. TÍTULO EN DERECHO..." style={styles.input} />
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-black text-slate-900">¿Cómo postular?</label>
-                  <textarea name="comoPostular" value={formData.comoPostular} onChange={handleChange} placeholder="Instrucciones..." className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-slate-50 font-medium text-sm h-14 focus:bg-white focus:ring-2 focus:ring-[#06D6A0] outline-none" />
+                <div style={styles.field}>
+                  <label style={styles.label}>Experiencia Requerida</label>
+                  <textarea name="experiencia" value={formData.experiencia} onChange={handleChange} placeholder="Ej. Experiencia general de 2 años..." style={{ ...styles.input, height: '50px' }} />
                 </div>
 
-                {/* BLOQUE DE ENLACES MÚLTIPLES */}
-                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-300 flex flex-col gap-2">
-                  <label className="text-xs font-black text-[#0B132B]">🔗 Enlaces Oficiales (Bases, Comunicados, Resultados)</label>
-                  <input type="url" name="enlaceBases" value={formData.enlaceBases} onChange={handleChange} placeholder="Enlace principal de Bases (PDF)" className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-white font-medium text-sm outline-none" />
+                <div style={styles.field}>
+                  <label style={styles.label}>¿Cómo postular?</label>
+                  <textarea name="comoPostular" value={formData.comoPostular} onChange={handleChange} placeholder="Instrucciones..." style={{ ...styles.input, height: '50px' }} />
+                </div>
+
+                <div style={{ ...styles.field, backgroundColor: '#F8FAFC', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                  <label style={{ ...styles.label, marginBottom: '6px', color: '#0B132B' }}>🔗 Enlaces Oficiales (Bases, Comunicados, Resultados)</label>
+                  <div style={{ marginBottom: '8px' }}>
+                    <input type="url" name="enlaceBases" value={formData.enlaceBases} onChange={handleChange} placeholder="Enlace principal de Bases (PDF)" style={{ ...styles.input, marginBottom: '6px' }} />
+                  </div>
 
                   {formData.enlacesExtras.map((item, index) => (
-                    <div key={index} className="flex gap-2 items-center">
+                    <div key={index} style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
                       <input 
                         type="text" 
                         placeholder="Título (Ej. Comunicado N° 01)" 
                         value={item.titulo} 
                         onChange={(e) => handleExtraLinkChange(index, 'titulo', e.target.value)} 
-                        className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-white font-medium text-sm flex-1 outline-none" 
+                        style={{ ...styles.input, flex: 1 }} 
                       />
                       <input 
                         type="url" 
                         placeholder="URL https://..." 
                         value={item.url} 
                         onChange={(e) => handleExtraLinkChange(index, 'url', e.target.value)} 
-                        className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-white font-medium text-sm flex-2 outline-none" 
+                        style={{ ...styles.input, flex: 2 }} 
                       />
-                      <button type="button" onClick={() => eliminarFilaEnlace(index)} className="text-red-600 font-bold px-2 py-1 hover:bg-red-50 rounded-lg">✕</button>
+                      <button type="button" onClick={() => eliminarFilaEnlace(index)} style={styles.btnDeleteRow}>✕</button>
                     </div>
                   ))}
-                  <button type="button" onClick={agregarFilaEnlace} className="text-emerald-700 font-black text-xs text-left mt-1 hover:underline">+ Agregar otro enlace institucional</button>
+                  <button type="button" onClick={agregarFilaEnlace} style={styles.btnAddRow}>+ Agregar otro enlace institucional</button>
                 </div>
               </>
             ) : (
               <>
-                <div className="flex gap-3">
-                  <div className="flex flex-col gap-1 flex-1">
-                    <label className="text-xs font-black text-slate-900">Nombre del Negocio</label>
-                    <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. Pollería Kimbos" className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-slate-50 font-medium text-sm outline-none" required />
+                <div style={styles.row}>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Nombre del Negocio</label>
+                    <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. Pollería Kimbos" style={styles.input} required />
                   </div>
-                  <div className="flex flex-col gap-1 flex-1">
-                    <label className="text-xs font-black text-slate-900">Ubicación</label>
-                    <input type="text" name="ubicacion" value={formData.ubicacion} onChange={handleChange} placeholder="Ej. Yanacancha, Pasco" className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-slate-50 font-medium text-sm outline-none" required />
+                  <div style={styles.field}>
+                    <label style={styles.label}>Ubicación</label>
+                    <input type="text" name="ubicacion" value={formData.ubicacion} onChange={handleChange} placeholder="Ej. Yanacancha, Pasco" style={styles.input} required />
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-black text-slate-900">Puesto Requerido</label>
-                  <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Mozo / Ayudante" className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-slate-50 font-medium text-sm outline-none" required />
+                <div style={styles.field}>
+                  <label style={styles.label}>Puesto Requerido</label>
+                  <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Mozo / Ayudante" style={styles.input} required />
                 </div>
 
-                <div className="flex gap-3">
-                  <div className="flex flex-col gap-1 flex-1">
-                    <label className="text-xs font-black text-slate-900">Sueldo (S/)</label>
-                    <input type="number" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 1200" className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-slate-50 font-medium text-sm outline-none" />
+                <div style={styles.row}>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Sueldo (S/)</label>
+                    <input type="number" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 1200" style={styles.input} />
                   </div>
-                  <div className="flex flex-col gap-1 flex-1">
-                    <label className="text-xs font-black text-slate-900">WhatsApp de Contacto</label>
-                    <input type="text" name="contacto" value={formData.contacto} onChange={handleChange} placeholder="Ej. 987654321" className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-slate-50 font-medium text-sm outline-none" required />
+                  <div style={styles.field}>
+                    <label style={styles.label}>WhatsApp de Contacto</label>
+                    <input type="text" name="contacto" value={formData.contacto} onChange={handleChange} placeholder="Ej. 987654321" style={styles.input} required />
                   </div>
                 </div>
               </>
             )}
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-black text-slate-900">Descripción / Notas</label>
-              <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} className="p-2.5 rounded-xl border border-slate-400 text-slate-900 bg-slate-50 font-medium text-sm h-16 outline-none" />
+            <div style={styles.field}>
+              <label style={styles.label}>Descripción / Notas</label>
+              <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} style={{ ...styles.input, height: '60px' }} />
             </div>
 
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-300">
-              <input type="checkbox" id="esVip" name="esVip" checked={formData.esVip} onChange={handleChange} className="w-4 h-4 accent-emerald-600" />
-              <label htmlFor="esVip" className="text-xs font-black text-emerald-900 cursor-pointer">⭐ Destacar Anuncio (VIP)</label>
+            <div style={styles.vipContainer}>
+              <input type="checkbox" id="esVip" name="esVip" checked={formData.esVip} onChange={handleChange} />
+              <label htmlFor="esVip" style={styles.vipLabel}>⭐ Destacar Anuncio (VIP)</label>
             </div>
 
-            <div className="flex gap-2 mt-2">
-              <button type="submit" className="flex-1 py-3 bg-[#0B132B] hover:bg-slate-900 text-white rounded-xl font-black text-sm shadow-md transition-all">
+            <div style={styles.btnGroup}>
+              <button type="submit" style={styles.btnPrimary}>
                 {editingId ? 'Guardar Cambios' : 'Publicar Anuncio'}
               </button>
               {editingId && (
-                <button type="button" onClick={resetForm} className="py-3 px-5 bg-slate-500 hover:bg-slate-600 text-white rounded-xl font-black text-sm transition-all">
-                  Cancelar
-                </button>
+                <button type="button" onClick={resetForm} style={styles.btnSecondary}>Cancelar</button>
               )}
             </div>
           </form>
         </div>
 
-        {/* LISTADO DE REGISTROS ACTIVOS */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-300 shadow-sm flex flex-col h-fit">
-          <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-200">
-            <h2 className="text-base font-black text-[#0B132B]">📋 Registros Activos</h2>
-            <span className="text-xs font-black bg-slate-100 text-slate-800 px-3 py-1 rounded-full border border-slate-300">{jobs.length} ofertas</span>
+        <div style={styles.card}>
+          <div style={styles.listHeader}>
+            <h2 style={styles.cardTitle}>📋 Registros Activos</h2>
+            <span style={styles.counterBadge}>{jobs.length} ofertas</span>
           </div>
 
-          <div className="flex flex-col gap-3 max-h-[700px] overflow-y-auto pr-1">
+          <div style={styles.scrollList}>
             {jobs.map((job) => (
-              <div key={job._id} className="p-4 rounded-2xl bg-white border border-slate-300 shadow-2xs hover:border-slate-400 transition-all flex flex-col gap-2">
+              <div key={job._id} style={styles.itemCard}>
                 <div>
-                  <span className="text-[10px] font-black uppercase bg-[#0B132B] text-white px-2.5 py-1 rounded-md">{job.modalidad || job.tipo}</span>
-                  <h3 className="text-sm font-black text-slate-900 mt-2">{job.titulo}</h3>
-                  <p className="text-xs text-slate-600 font-bold mt-0.5"><strong>{job.empresa}</strong> • 📍 {job.ubicacion}</p>
+                  <span style={styles.tagModality}>{job.modalidad || job.tipo}</span>
+                  <h3 style={styles.itemTitle}>{job.titulo}</h3>
+                  <p style={styles.itemMeta}><strong>{job.empresa}</strong> • 📍 {job.ubicacion}</p>
                 </div>
-                <div className="flex justify-between items-center pt-2.5 border-t border-slate-100">
-                  <span className="text-sm font-black text-emerald-700">{job.sueldo || 'A tratar'}</span>
-                  <div className="flex gap-2">
+                <div style={styles.itemFooterRow}>
+                  <span style={styles.itemSalary}>{job.sueldo || 'A tratar'}</span>
+                  <div style={styles.itemButtons}>
+                    {/* BOTÓN DE COMPARTIR INCORPORADO CORRECTAMENTE */}
                     <button 
-                        onClick={() => {
-                          const url = `https://chambafija.vercel.app/oferta/${job._id}`;
-                          const text = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
-                          window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                        }} 
-                        style={{...styles.btnEdit, backgroundColor: '#10B981', color: 'white', borderColor: '#059669'}}
-                      >
-                        Compartir
-                      </button>
-                    <button onClick={() => handleEdit(job)} className="px-3 py-1.5 text-xs font-black bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg border border-slate-300 transition-all">Editar</button>
-                    <button onClick={() => handleDelete(job._id)} className="px-3 py-1.5 text-xs font-black bg-red-50 hover:bg-red-100 text-red-700 rounded-lg border border-red-200 transition-all">Eliminar</button>
+                      onClick={() => {
+                        const url = `https://chambafija.vercel.app/oferta/${job._id}`;
+                        const text = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
+                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                      }} 
+                      style={{...styles.btnEdit, backgroundColor: '#10B981', color: 'white', borderColor: '#059669'}}
+                    >
+                      Compartir
+                    </button>
+                    <button onClick={() => handleEdit(job)} style={styles.btnEdit}>Editar</button>
+                    <button onClick={() => handleDelete(job._id)} style={styles.btnDelete}>Eliminar</button>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
-
       </div>
     </div>
   );
 }
+
+// ESTOS ESTILOS SON OBLIGATORIOS PARA QUE EL PANEL SE VEA BIEN
+const styles = {
+  wrapper: { padding: '24px', backgroundColor: '#F1F5F9', minHeight: '100vh', fontFamily: 'system-ui, sans-serif' },
+  tabNav: { display: 'flex', gap: '12px', marginBottom: '24px', maxWidth: '1200px', margin: '0 auto 24px auto' },
+  tabBtn: { flex: 1, padding: '14px', borderRadius: '12px', borderWidth: '1px', borderStyle: 'solid', fontWeight: '900', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s' },
+  mainGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px', maxWidth: '1200px', margin: '0 auto' },
+  card: { backgroundColor: '#FFFFFF', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #CBD5E1' },
+  cardHeader: { marginBottom: '16px', borderBottom: '1px solid #E2E8F0', paddingBottom: '10px' },
+  cardTitle: { fontSize: '16px', fontWeight: '900', color: '#0B132B', margin: 0 },
+  form: { display: 'flex', flexDirection: 'column', gap: '12px' },
+  row: { display: 'flex', gap: '10px' },
+  field: { display: 'flex', flexDirection: 'column', gap: '5px', flex: 1 },
+  label: { fontSize: '12px', fontWeight: '900', color: '#0B132B' },
+  input: { padding: '10px 12px', borderRadius: '8px', border: '1px solid #94A3B8', fontSize: '14px', fontWeight: '600', color: '#0B132B', outline: 'none', backgroundColor: '#FFFFFF' },
+  linkBlock: { backgroundColor: '#F8FAFC', padding: '12px', borderRadius: '10px', border: '1px solid #CBD5E1', display: 'flex', flexDirection: 'column', gap: '6px' },
+  vipContainer: { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', backgroundColor: '#F0FDF4', borderRadius: '8px', border: '1px solid #86EFAC' },
+  vipLabel: { fontSize: '13px', fontWeight: '900', color: '#166534', cursor: 'pointer' },
+  btnGroup: { display: 'flex', gap: '8px', marginTop: '6px' },
+  btnPrimary: { flex: 1, padding: '12px', backgroundColor: '#0B132B', color: '#FFFFFF', border: 'none', borderRadius: '8px', fontWeight: '900', fontSize: '14px', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
+  btnSecondary: { padding: '12px 18px', backgroundColor: '#64748B', color: '#FFFFFF', border: 'none', borderRadius: '8px', fontWeight: '900', fontSize: '13px', cursor: 'pointer' },
+  listHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid #E2E8F0', paddingBottom: '8px' },
+  counterBadge: { fontSize: '12px', backgroundColor: '#E2E8F0', color: '#0B132B', padding: '3px 10px', borderRadius: '12px', fontWeight: '900' },
+  scrollList: { display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '700px', overflowY: 'auto', paddingRight: '4px' },
+  itemCard: { padding: '14px', borderRadius: '12px', backgroundColor: '#FFFFFF', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
+  tagModality: { fontSize: '10px', fontWeight: '900', backgroundColor: '#0B132B', color: '#FFFFFF', padding: '3px 8px', borderRadius: '6px' },
+  itemTitle: { fontSize: '15px', fontWeight: '900', color: '#0B132B', margin: '6px 0 4px 0' },
+  itemMeta: { fontSize: '13px', color: '#334155', margin: 0, fontWeight: '700' },
+  itemFooterRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid #F1F5F9' },
+  itemSalary: { fontSize: '14px', fontWeight: '900', color: '#059669' },
+  itemButtons: { display: 'flex', gap: '6px' },
+  btnEdit: { padding: '6px 12px', fontSize: '12px', fontWeight: '900', backgroundColor: '#F1F5F9', color: '#0B132B', border: '1px solid #94A3B8', borderRadius: '6px', cursor: 'pointer' },
+  btnDelete: { padding: '6px 12px', fontSize: '12px', fontWeight: '900', backgroundColor: '#FEF2F2', color: '#991B1B', border: '1px solid #FCA5A5', borderRadius: '6px', cursor: 'pointer' },
+  btnAddRow: { background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: '900', cursor: 'pointer', padding: '4px 0', textAlign: 'left' },
+  btnDeleteRow: { background: 'none', border: 'none', color: '#EF4444', fontWeight: '900', fontSize: '16px', cursor: 'pointer', padding: '0 8px' }
+};
