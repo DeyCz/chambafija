@@ -111,7 +111,7 @@ export default function Home() {
             Encuentra tu próxima chamba en <span className="text-[#06D6A0]">Cerro de Pasco</span>
           </h2>
           <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto font-medium">
-            Conectando negocios locales y procesos del Estado de forma directa y sin intermediarios[cite: 1, 2].
+            Conectando negocios locales y procesos del Estado de forma directa y sin intermediarios.
           </p>
         </div>
       </section>
@@ -408,7 +408,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto space-y-4">
           <p className="font-black text-white text-sm">ChambaFija - Cerro de Pasco</p>
           <p className="leading-relaxed text-slate-400 max-w-2xl mx-auto font-medium opacity-90">
-            “ChambaFija es un espacio de difusión informativo independiente (tablón de anuncios clasificados). No participamos en los procesos de selección ni manejamos bases de datos de postulantes”[cite: 1, 2].
+            ChambaFija es un espacio de difusión informativo independiente (tablón de anuncios clasificados). No participamos en los procesos de selección ni manejamos bases de datos de postulantes.
           </p>
           <div>
             <button 
