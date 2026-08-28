@@ -55,7 +55,7 @@ export default function Home() {
           {/* LOGO */}
           <div className="flex items-center justify-between w-full sm:w-auto">
             <h1 
-              className="text-2xl font-black tracking-tight flex items-center gap-2 group cursor-pointer select-none" 
+              className="text-xl text-2xl font-black tracking-tight flex items-center gap-2 group cursor-pointer select-none" 
               onDoubleClick={() => window.location.href = '/admin'}
               title="Panel de Administración"
             >
@@ -68,7 +68,7 @@ export default function Home() {
                   />
                 </a>
               </div>
-              <span className="text-[10px] bg-slate-800 text-emerald-400 px-2.5 py-1 rounded-full ml-1 border border-emerald-500/30 font-extrabold shadow-xs">
+              <span className="text-[10px] bg-slate-800/90 text-orange-400 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full ml-1 border border-orange-500/30 animate-pulse font-semibold whitespace-nowrap">
                 Pasco 🏔️
               </span>
             </h1>
