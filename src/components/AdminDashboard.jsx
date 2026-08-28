@@ -71,6 +71,25 @@ export default function AdminDashboard() {
     });
   };
 
+    const handleShare = (job) => {
+    const baseUrl = window.location.origin;
+    const shareUrl = `${baseUrl}/oferta/${job._id || job.id}`;
+    const shareText = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo || 'A tratar'}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${shareUrl}`;
+
+    // 1. Si es un dispositivo móvil compatible, usa el menú nativo del celular
+    if (typeof navigator !== 'undefined' && navigator.share) {
+        navigator.share({
+        title: job.titulo,
+        text: shareText,
+        url: shareUrl,
+        }).catch((error) => console.log('Error al compartir:', error));
+    } else {
+        // 2. Si es una PC o el navegador no soporta share(), abre WhatsApp Web directamente
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+        window.open(whatsappUrl, '_blank');
+    }
+    };
+
   const eliminarFilaEnlace = (index) => {
     const nuevosEnlaces = formData.enlacesExtras.filter((_, i) => i !== index);
     setFormData({ ...formData, enlacesExtras: nuevosEnlaces });
