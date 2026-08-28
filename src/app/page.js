@@ -59,8 +59,15 @@ export default function Home() {
               onDoubleClick={() => window.location.href = '/admin'}
               title="Panel de Administración"
             >
-              <span className="text-white tracking-wide">Chamba</span>
-              <span className="text-[#06D6A0] group-hover:scale-105 transition-transform duration-300">Fija</span>
+              <div className="flex items-center justify-between w-full sm:w-auto">
+                <a href="/" className="flex items-center gap-2 group cursor-pointer">
+                  <img 
+                    src="/logo.png" 
+                    alt="Chamba Fija Pasco" 
+                    className="h-9 sm:h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-300" 
+                  />
+                </a>
+              </div>
               <span className="text-[10px] bg-slate-800 text-emerald-400 px-2.5 py-1 rounded-full ml-1 border border-emerald-500/30 font-extrabold shadow-xs">
                 Pasco 🏔️
               </span>
@@ -408,10 +415,10 @@ export default function Home() {
               onClick={() => setShowTerms(true)}
               className="text-[#06D6A0] hover:underline font-extrabold text-xs bg-transparent border-none cursor-pointer transition-all"
             >
-              Ver Términos, Condiciones y Descargo de Responsabilidad completo
+              Ver Términos y Condiciones
             </button>
           </div>
-          <p className="text-[11px] text-slate-500 pt-2 opacity-75">© 2026 ChambaFija. Todos los derechos reservados.</p>
+          <p className="text-[11px] text-slate-500 pt-2 opacity-75">© 2026 ChambaFija. Todos los derechos reservados. <a href="/Panel08" className="text-[10px] text-slate-700 hover:text-slate-500 transition-colors">·</a></p>
         </div>
       </footer>
 
