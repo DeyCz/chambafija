@@ -104,7 +104,7 @@ export default function Home() {
       <section className="relative overflow-hidden bg-gradient-to-br from-[#0B132B] via-[#1C2541] to-[#0B132B] text-white py-14 px-4 text-center shadow-xl">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(6,214,160,0.1)_0,transparent_50%)] pointer-events-none"></div>
         <div className="max-w-3xl mx-auto relative z-10 space-y-4">
-          <span className="bg-emerald-500/10 text-[#06D6A0] text-xs font-extrabold px-4 py-1.5 rounded-full border border-emerald-500/30 inline-flex items-center gap-1.5 shadow-sm backdrop-blur-sm">
+          <span className="bg-slate-800/90 text-orange-400 text-xs font-bold px-4 py-1.5 rounded-full border border-orange-500/30 inline-flex items-center gap-1.5 shadow-sm backdrop-blur-md animate-pulse">
             ⚡ Empleos formales y convocatorias actualizadas al instante
           </span>
           <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
