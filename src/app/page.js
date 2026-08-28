@@ -413,11 +413,15 @@ export default function Home() {
             <p className="text-slate-400 text-xs mb-4">Únete a nuestros canales oficiales y sé el primero en postular a las convocatorias del Estado y negocios locales de Cerro de Pasco.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <a href="https://whatsapp.com/channel/0029Vb8NSHbDJ6H4RX6Zqj25" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl transition-all">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M... (icono whatsapp)"/></svg>
+                <svg className="w-5 h-5 text-emerald-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12.031 6.172c-3.183 0-5.767 2.584-5.767 5.767 0 1.01.265 1.959.728 2.782l-.764 2.788 2.859-.751c.789.434 1.708.683 2.684.683 3.183 0 5.767-2.584 5.767-5.767 0-3.183-2.584-5.767-5.767-5.767zm3.322 8.167c-.139.39-.811.722-1.116.768-.291.045-.658.082-1.066-.051-.247-.079-.564-.183-.969-.356-1.712-.738-2.831-2.482-2.918-2.599-.087-.117-.696-.927-.696-1.769 0-.842.439-1.256.595-1.427.156-.171.341-.214.455-.214.114 0 .228.003.328.012.105.01.246-.039.384.292.139.332.476 1.157.518 1.242.043.085.072.185.014.299-.058.114-.087.185-.173.285-.086.1-.182.224-.26.3-.087.087-.179.182-.077.356.101.174.45 0.744.966 1.206.666.595 1.228.779 1.402.868.174.089.277.074.38-.043.103-.117.442-.514.56-.69.117-.176.234-.148.39-.09 0.156.058 1.001.472 1.173.558.172.086.287.129.329.2.043.071.043.413-.096.803z"/>
+                </svg>
                 Canal de WhatsApp
               </a>
               <a href="https://t.me/chambafija" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-400 text-white font-bold py-2.5 px-5 rounded-xl transition-all">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M... (icono telegram)"/></svg>
+                <svg className="w-5 h-5 text-sky-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.03-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.02-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.25.38-.51 1.05-.78 4.1-1.78 6.84-2.95 8.22-3.51 3.91-1.63 4.72-1.92 5.25-1.93.12 0 .39.03.57.18.15.12.19.28.21.4-.01.07.01.35-.06.7z"/>
+                </svg>
                 Grupo de Telegram
               </a>
             </div>
