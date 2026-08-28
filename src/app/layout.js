@@ -38,7 +38,7 @@ export const metadata = {
     siteName: 'Chamba Fija Pasco',
     images: [
       {
-        url: '/og-image.png', // Apunta a public/og-image.png
+        url: 'https://chambafija.vercel.app/og-image.png',
         width: 1200,
         height: 630,
         alt: 'Chamba Fija Pasco - Empleos y Convocatorias',
