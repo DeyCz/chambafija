@@ -361,6 +361,16 @@ export default function AdminDashboard() {
                 <div className="flex justify-between items-center pt-2.5 border-t border-slate-100">
                   <span className="text-sm font-black text-emerald-700">{job.sueldo || 'A tratar'}</span>
                   <div className="flex gap-2">
+                    <button 
+                        onClick={() => {
+                          const url = `https://chambafija.vercel.app/oferta/${job._id}`;
+                          const text = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
+                          window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                        }} 
+                        style={{...styles.btnEdit, backgroundColor: '#10B981', color: 'white', borderColor: '#059669'}}
+                      >
+                        Compartir
+                      </button>
                     <button onClick={() => handleEdit(job)} className="px-3 py-1.5 text-xs font-black bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg border border-slate-300 transition-all">Editar</button>
                     <button onClick={() => handleDelete(job._id)} className="px-3 py-1.5 text-xs font-black bg-red-50 hover:bg-red-100 text-red-700 rounded-lg border border-red-200 transition-all">Eliminar</button>
                   </div>

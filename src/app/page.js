@@ -403,25 +403,45 @@ export default function Home() {
         </div>
       )}
 
-      {/* FOOTER */}
-      <footer className="bg-[#0B132B] text-slate-300 text-xs px-4 py-12 text-center border-t border-slate-800 mt-auto">
-        <div className="max-w-4xl mx-auto space-y-4">
-          <p className="font-black text-white text-sm">ChambaFija - Cerro de Pasco</p>
-          <p className="leading-relaxed text-slate-400 max-w-2xl mx-auto font-medium opacity-90">
-            ChambaFija es un espacio de difusión informativo independiente (tablón de anuncios clasificados). No participamos en los procesos de selección ni manejamos bases de datos de postulantes.
-          </p>
-          <div>
-            <button 
-              onClick={() => setShowTerms(true)}
-              className="text-[#06D6A0] hover:underline font-extrabold text-xs bg-transparent border-none cursor-pointer transition-all"
-            >
-              Ver Términos y Condiciones
-            </button>
+      {/* FOOTER Y CANALES DE NOTIFICACIÓN */}
+      <footer className="bg-[#0F172A] text-slate-400 text-xs px-4 py-8 text-center border-t border-slate-800 mt-auto">
+        <div className="max-w-4xl mx-auto space-y-6">
+          
+          {/* NUEVO: Bloque de Canales Oficiales */}
+          <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700 max-w-lg mx-auto">
+            <h4 className="text-white text-base font-extrabold mb-2">🔔 Recibe alertas de empleo diarias en tu celular</h4>
+            <p className="text-slate-400 text-xs mb-4">Únete a nuestros canales oficiales y sé el primero en postular a las convocatorias del Estado y negocios locales de Cerro de Pasco.</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <a href="https://whatsapp.com/channel/0029Vb8NSHbDJ6H4RX6Zqj25" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl transition-all">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M... (icono whatsapp)"/></svg>
+                Canal de WhatsApp
+              </a>
+              <a href="https://t.me/chambafija" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-400 text-white font-bold py-2.5 px-5 rounded-xl transition-all">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M... (icono telegram)"/></svg>
+                Grupo de Telegram
+              </a>
+            </div>
           </div>
-          <p className="text-[11px] text-slate-500 pt-2 opacity-75">© 2026 ChambaFija. Todos los derechos reservados. <a href="/Panel08" className="text-[10px] text-slate-700 hover:text-slate-500 transition-colors">·</a></p>
+
+          <div className="space-y-3">
+            <p className="font-black text-white text-sm">ChambaFija - Cerro de Pasco</p>
+            <p className="leading-relaxed text-slate-400 max-w-2xl mx-auto font-medium opacity-90">
+              ChambaFija es un espacio de difusión informativo independiente (tablón de anuncios clasificados). No participamos en los procesos de selección ni manejamos bases de datos de postulantes.
+            </p>
+            <div>
+              <button 
+                onClick={() => setShowTerms(true)}
+                className="text-[#06D6A0] hover:underline font-extrabold text-xs bg-transparent border-none cursor-pointer transition-all"
+              >
+                Ver Términos y Condiciones
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-500 pt-2 opacity-75">© 2026 ChambaFija. Todos los derechos reservados. <a href="/Panel08" className="text-[10px] text-slate-700 hover:text-slate-500 transition-colors">·</a></p>
+          </div>
         </div>
       </footer>
 
+    
     </div>
   );
 }
