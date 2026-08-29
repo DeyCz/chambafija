@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 
-// Conexión corregida hacia tu backend en la nube
 const API_URL = 'https://chambafija-backend.onrender.com/api/jobs';
 
 export default function AdminDashboard() {
@@ -71,25 +70,6 @@ export default function AdminDashboard() {
     });
   };
 
-    const handleShare = (job) => {
-    const baseUrl = window.location.origin;
-    const shareUrl = `${baseUrl}/oferta/${job._id || job.id}`;
-    const shareText = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo || 'A tratar'}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${shareUrl}`;
-
-    // 1. Si es un dispositivo móvil compatible, usa el menú nativo del celular
-    if (typeof navigator !== 'undefined' && navigator.share) {
-        navigator.share({
-        title: job.titulo,
-        text: shareText,
-        url: shareUrl,
-        }).catch((error) => console.log('Error al compartir:', error));
-    } else {
-        // 2. Si es una PC o el navegador no soporta share(), abre WhatsApp Web directamente
-        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-        window.open(whatsappUrl, '_blank');
-    }
-    };
-
   const eliminarFilaEnlace = (index) => {
     const nuevosEnlaces = formData.enlacesExtras.filter((_, i) => i !== index);
     setFormData({ ...formData, enlacesExtras: nuevosEnlaces });
@@ -142,7 +122,7 @@ export default function AdminDashboard() {
       lugarPrestacion: job.lugarPrestacion || '',
       comoPostular: job.comoPostular || '',
       enlaceBases: job.enlaceBases || '',
-      enlacesExtras: job.enlacesExtras || [{ titulo: '', url: '' }],
+      enlacesExtras: job.enlacesExtras && job.enlacesExtras.length > 0 ? job.enlacesExtras : [{ titulo: '', url: '' }],
       contacto: job.contacto || '',
       fechaVencimiento: job.fechaVencimiento ? job.fechaVencimiento.split('T')[0] : '',
       esVip: job.esVip || false
@@ -257,7 +237,7 @@ export default function AdminDashboard() {
                 <div style={styles.row}>
                   <div style={styles.field}>
                     <label style={styles.label}>Remuneración (S/)</label>
-                    <input type="number" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 2500" style={styles.input} />
+                    <input type="text" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 2500" style={styles.input} />
                   </div>
                   <div style={styles.field}>
                     <label style={styles.label}>Fecha Límite (Cierre)</label>
@@ -326,15 +306,28 @@ export default function AdminDashboard() {
                   <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Mozo / Ayudante" style={styles.input} required />
                 </div>
 
+                {/* MODULO DE MODALIDAD RESTAURADO PARA NEGOCIOS LOCALES */}
                 <div style={styles.row}>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Modalidad de Trabajo</label>
+                    <select name="modalidad" value={formData.modalidad} onChange={handleChange} style={styles.input}>
+                      <option value="Tiempo Completo">Tiempo Completo</option>
+                      <option value="Tiempo Parcial">Tiempo Parcial / Mediodía</option>
+                      <option value="CAS">CAS</option>
+                      <option value="Por Turnos / Horas">Por Turnos / Horas</option>
+                      <option value="Fines de Semana">Fines de Semana</option>
+                      <option value="Prácticas">Prácticas</option>
+                    </select>
+                  </div>
                   <div style={styles.field}>
                     <label style={styles.label}>Sueldo (S/)</label>
                     <input type="number" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 1200" style={styles.input} />
                   </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>WhatsApp de Contacto</label>
-                    <input type="text" name="contacto" value={formData.contacto} onChange={handleChange} placeholder="Ej. 987654321" style={styles.input} required />
-                  </div>
+                </div>
+
+                <div style={styles.field}>
+                  <label style={styles.label}>WhatsApp de Contacto</label>
+                  <input type="text" name="contacto" value={formData.contacto} onChange={handleChange} placeholder="Ej. 987654321" style={styles.input} required />
                 </div>
               </>
             )}
@@ -377,23 +370,15 @@ export default function AdminDashboard() {
                 <div style={styles.itemFooterRow}>
                   <span style={styles.itemSalary}>{job.sueldo || 'A tratar'}</span>
                   <div style={styles.itemButtons}>
-                    {/* BOTÓN DE COMPARTIR CORREGIDO Y FUNCIONAL EN LÍNEA */}
                     <button 
-                    onClick={() => {
-                        // 1. Detecta automáticamente si estás probando local o en Vercel
-                        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://chambafija.vercel.app';
-                        const url = `${baseUrl}/oferta/${job._id}`;
-                        
-                        // 2. Arma el mensaje corporativo exacto para la difusión
-                        const text = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo || 'A tratar'}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
-                        
-                        // 3. Método infalible para PC y Celular: Abre WhatsApp Web o la App directamente
-                        const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-                        window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-                    }} 
-                    style={{...styles.btnEdit, backgroundColor: '#06D6A0', color: '#0B132B', borderColor: '#059669', fontWeight: '900'}}
+                      onClick={() => {
+                        const url = `https://chambafija.vercel.app/oferta/${job._id}`;
+                        const text = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
+                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                      }} 
+                      style={{...styles.btnEdit, backgroundColor: '#10B981', color: 'white', borderColor: '#059669'}}
                     >
-                    Compartir 📲
+                      Compartir
                     </button>
                     <button onClick={() => handleEdit(job)} style={styles.btnEdit}>Editar</button>
                     <button onClick={() => handleDelete(job._id)} style={styles.btnDelete}>Eliminar</button>
@@ -408,7 +393,6 @@ export default function AdminDashboard() {
   );
 }
 
-// ESTOS ESTILOS SON OBLIGATORIOS PARA QUE EL PANEL SE VEA BIEN
 const styles = {
   wrapper: { padding: '24px', backgroundColor: '#F1F5F9', minHeight: '100vh', fontFamily: 'system-ui, sans-serif' },
   tabNav: { display: 'flex', gap: '12px', marginBottom: '24px', maxWidth: '1200px', margin: '0 auto 24px auto' },
@@ -422,7 +406,6 @@ const styles = {
   field: { display: 'flex', flexDirection: 'column', gap: '5px', flex: 1 },
   label: { fontSize: '12px', fontWeight: '900', color: '#0B132B' },
   input: { padding: '10px 12px', borderRadius: '8px', border: '1px solid #94A3B8', fontSize: '14px', fontWeight: '600', color: '#0B132B', outline: 'none', backgroundColor: '#FFFFFF' },
-  linkBlock: { backgroundColor: '#F8FAFC', padding: '12px', borderRadius: '10px', border: '1px solid #CBD5E1', display: 'flex', flexDirection: 'column', gap: '6px' },
   vipContainer: { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', backgroundColor: '#F0FDF4', borderRadius: '8px', border: '1px solid #86EFAC' },
   vipLabel: { fontSize: '13px', fontWeight: '900', color: '#166534', cursor: 'pointer' },
   btnGroup: { display: 'flex', gap: '8px', marginTop: '6px' },

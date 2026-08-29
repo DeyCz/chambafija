@@ -1,9 +1,8 @@
 import './globals.css';
 import WhatsAppButton from '@/components/WhatsAppButton';
 
-// Configuración completa de Metadatos SEO, Open Graph y Twitter Cards
 export const metadata = {
-  metadataBase: new URL('https://chambafija.vercel.app'), // Reemplaza por tu dominio oficial si cambia
+  metadataBase: new URL('https://chambafija.vercel.app'),
   title: {
     default: 'Chamba Fija Pasco | Empleos y Convocatorias en Cerro de Pasco',
     template: '%s | Chamba Fija Pasco',
@@ -22,15 +21,11 @@ export const metadata = {
   authors: [{ name: 'Chamba Fija Pasco' }],
   creator: 'Chamba Fija',
   publisher: 'Chamba Fija',
-
-  // Configuración de Favicon e iconos de app
   icons: {
     icon: '/icon.png',
     shortcut: '/icon.png',
     apple: '/icon.png',
   },
-
-  // Open Graph (WhatsApp, Facebook, LinkedIn)
   openGraph: {
     title: 'Chamba Fija Pasco | Bolsa de Trabajo y Convocatorias',
     description: 'Encuentra las mejores oportunidades laborales del sector privado y procesos oficiales del Estado en Cerro de Pasco.',
@@ -47,8 +42,6 @@ export const metadata = {
     locale: 'es_PE',
     type: 'website',
   },
-
-  // Twitter Cards (X / Twitter)
   twitter: {
     card: 'summary_large_image',
     title: 'Chamba Fija Pasco | Empleos en Cerro de Pasco',
