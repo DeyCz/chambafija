@@ -380,14 +380,16 @@ export default function AdminDashboard() {
                     {/* BOTÓN DE COMPARTIR CORREGIDO Y FUNCIONAL EN LÍNEA */}
                     <button 
                     onClick={() => {
-                        // 1. Forzamos siempre la URL absoluta oficial de tu web en producción
-                        const url = `https://chambafija.vercel.app/oferta/${job._id}`;
+                        // 1. Detecta automáticamente si estás probando local o en Vercel
+                        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://chambafija.vercel.app';
+                        const url = `${baseUrl}/oferta/${job._id}`;
                         
-                        // 2. Armamos el mensaje corporativo optimizado para WhatsApp
+                        // 2. Arma el mensaje corporativo exacto para la difusión
                         const text = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo || 'A tratar'}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
                         
-                        // 3. Abrimos de manera directa WhatsApp Web con el mensaje listo para enviar
-                        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+                        // 3. Método infalible para PC y Celular: Abre WhatsApp Web o la App directamente
+                        const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+                        window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
                     }} 
                     style={{...styles.btnEdit, backgroundColor: '#06D6A0', color: '#0B132B', borderColor: '#059669', fontWeight: '900'}}
                     >
