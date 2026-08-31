@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 
 // URL de tu backend en producción
-const API_URL = 'https://chambafija-backend.onrender.com/api/jobs';
+const API_URL = 'https://chambafija.com/api/jobs';
 
 // =========================================================
 // 1. GENERADOR DE METADATOS DINÁMICOS (SEO Y WHATSAPP)

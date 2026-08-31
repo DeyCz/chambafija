@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 // Conexión hacia tu backend en la nube
-const API_URL = 'https://chambafija-backend.onrender.com/api/jobs';
+const API_URL = 'https://chambafija.com/api/jobs';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('estado');
