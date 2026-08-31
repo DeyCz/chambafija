@@ -12,7 +12,7 @@ export default async function sitemap() {
 
     // 2. Mapeamos cada empleo a su URL individual (Ruta dinámica)
     const jobUrls = jobs.map((job) => ({
-      url: `https://chambafija.vercel.app/oferta/${job._id}`,
+      url: `https://chambafija.com/oferta/${job._id}`,
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.8,
@@ -21,7 +21,7 @@ export default async function sitemap() {
     // 3. Retornamos la página principal + todas las ofertas
     return [
       {
-        url: 'https://chambafija.vercel.app',
+        url: 'https://chambafija.com',
         lastModified: new Date(),
         changeFrequency: 'always',
         priority: 1.0,
@@ -34,7 +34,7 @@ export default async function sitemap() {
     // Si la API falla temporalmente, aseguramos que Google indexe al menos el inicio
     return [
       {
-        url: 'https://chambafija.vercel.app',
+        url: 'https://chambafija.com',
         lastModified: new Date(),
       },
     ];
