@@ -324,7 +324,7 @@ export default function Home() {
                       ¿Cómo postular?
                     </div>
                     <div className="p-4 space-y-2.5 font-medium">
-                      <p><strong>Plazo límite:</strong> {selectedJob.fechaVencimiento ? new Date(selectedJob.fechaVencimiento).toLocaleDateString() : 'Ver cronograma'}</p>
+                      <p><strong>Plazo límite:</strong> {selectedJob.fechaVencimiento ? selectedJob.fechaVencimiento.split('T')[0].split('-').reverse().join('/') : 'Ver cronograma'}</p>
                       <p><strong>Procedimiento:</strong> {selectedJob.comoPostular || 'Presentación de expediente según bases oficiales.'}</p>
                     </div>
                   </div>
