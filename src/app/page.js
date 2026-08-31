@@ -184,83 +184,71 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredJobs.length > 0 ? (
-              filteredJobs.map((job) => {
-                const isEstado = job.tipo === 'Estado';
-                return (
-                  <div 
-                    key={job._id} 
-                    className={`bg-white rounded-3xl p-6 border transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 flex flex-col justify-between relative group ${
-                      job.esVip 
-                        ? 'border-emerald-400 bg-gradient-to-b from-white via-white to-emerald-50/40 shadow-lg shadow-emerald-500/10 ring-2 ring-emerald-400/40' 
-                        : isEstado 
-                          ? 'border-slate-300 hover:border-emerald-500 shadow-sm' 
-                          : 'border-slate-200/80 hover:border-slate-300 shadow-sm'
-                    }`}
-                  >
-                    <div>
-                      {/* ETIQUETAS SUPERIORES */}
-                      <div className="flex justify-between items-center mb-4">
-                        <span className={`text-[10px] font-black px-3.5 py-1.5 rounded-xl uppercase tracking-wider flex items-center gap-1.5 ${
-                          isEstado 
-                            ? 'bg-slate-100 text-slate-800 border border-slate-300' 
-                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        }`}>
-                          {isEstado ? '🏛️ Convocatoria Pública' : '🏪 Negocio Local'}
-                        </span>
-                        {job.esVip && (
-                          <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1">
-                            ⭐ VIP
-                          </span>
-                        )}
-                      </div>
+              {filteredJobs.map((job) => (
+  <div key={job._id} className={`bg-white rounded-2xl p-4 sm:p-5 border shadow-sm flex flex-col justify-between ${job.esVip ? 'border-amber-400 bg-amber-50/20' : 'border-slate-200'}`}>
+    <div>
+      {/* CABECERA DE LA TARJETA CON LOGO Y ETIQUETA */}
+      <div className="flex justify-between items-start mb-3 gap-2">
+        <div className="flex items-center gap-2.5">
+          {job.logo ? (
+            <img src={job.logo} alt={job.empresa} className="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-sm flex-shrink-0" />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 text-sm font-bold flex-shrink-0">
+              {job.tipo === 'Estado' ? '🏛️' : '🏪'}
+            </div>
+          )}
+          <div>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${job.tipo === 'Estado' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-[#FF6B00]'}`}>
+              {job.tipo === 'Estado' ? '🏛️ Público' : '🏪 Privado'}
+            </span>
+            <p className="text-xs text-slate-500 font-bold mt-0.5">{job.empresa}</p>
+          </div>
+        </div>
+        {job.esVip && <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">⭐ VIP</span>}
+      </div>
 
-                      {/* TÍTULO Y EMPRESA */}
-                      <h3 className="text-base font-black text-slate-900 mb-1.5 leading-snug group-hover:text-emerald-700 transition-colors">
-                        {isEstado ? `${job.empresa}: ${job.titulo}` : job.titulo}
-                      </h3>
-                      
-                      <p className="text-xs text-slate-500 font-semibold mb-4 flex items-center gap-1.5">
-                        📍 <span className="text-slate-800 font-bold">{job.empresa}</span> — <span className="text-slate-400">{job.ubicacion || 'Pasco'}</span>
-                      </p>
-                      
-                      {/* DISEÑO INTERNO */}
-                      {isEstado ? (
-                        <div className="space-y-2.5 mb-6">
-                          {job.formacion && (
-                            <div className="text-xs text-slate-700 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-                              <span className="text-slate-900 block text-[10px] uppercase font-black mb-0.5 tracking-wide">🎓 Formación:</span>
-                              <span className="line-clamp-2 font-medium">{job.formacion}</span>
-                            </div>
-                          )}
-                          <div className="flex items-center justify-between text-xs bg-slate-50 p-3.5 rounded-2xl border border-slate-200 font-bold">
-                            <span className="text-slate-500">Plazas: <strong className="text-slate-900">{job.vacantes || '1'}</strong></span>
-                            <span className="font-black text-emerald-600 text-sm">{job.sueldo ? (job.sueldo.toString().startsWith('S/') ? job.sueldo : `S/ ${job.sueldo}`) : 'Sueldo a tratar'}</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="flex items-center justify-between bg-slate-50 p-3.5 rounded-2xl mb-4 border border-slate-200">
-                            <span className="text-xs font-black text-emerald-600 text-sm">{job.sueldo ? (job.sueldo.toString().startsWith('S/') ? job.sueldo : `S/ ${job.sueldo}`) : 'Sueldo a tratar'}</span>
-                            <span className="text-[11px] font-extrabold text-slate-700 bg-white px-3 py-1 rounded-xl border border-slate-200 shadow-xs">{job.modalidad}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
+      <h3 className="text-sm sm:text-base font-black text-slate-900 mb-1 leading-snug">
+        {job.titulo}
+      </h3>
+      
+      <p className="text-xs text-slate-600 font-semibold mb-3 flex items-center gap-1">
+        <span>📍</span> <span className="truncate">{job.ubicacion || 'Pasco'}</span>
+      </p>
 
-                    {/* BOTÓN DE ACCIÓN */}
-                    <button 
-                      onClick={() => setSelectedJob(job)}
-                      className={`w-full text-xs font-black py-3.5 rounded-2xl transition-all duration-300 shadow-sm flex items-center justify-center gap-2 active:scale-95 ${
-                        isEstado
-                          ? 'bg-[#0B132B] hover:bg-slate-800 text-white shadow-slate-900/10'
-                          : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
-                      }`}
-                    >
-                      {isEstado ? '📄 Ver Convocatoria Completa' : 'Ver Detalles y Postular'}
-                    </button>
-                  </div>
-                );
-              })
+      {/* SECCIÓN DIVIDIDA: SUELDO, MODALIDAD Y VACANTES (PARA QUE NO LUZCA VACÍO) */}
+      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-2 mb-3">
+        <div className="flex justify-between items-center text-xs">
+          <span className="text-slate-500 font-bold">Remuneración:</span>
+          <span className="font-black text-emerald-600">{job.sueldo || 'A tratar'}</span>
+        </div>
+        <div className="flex justify-between items-center text-xs">
+          <span className="text-slate-500 font-bold">Modalidad:</span>
+          <span className="font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200 truncate max-w-[150px]">{job.modalidad || 'No especificada'}</span>
+        </div>
+        {job.vacantes && (
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-slate-500 font-bold">Vacantes / Plazas:</span>
+            <span className="font-bold text-blue-600">{job.vacantes}</span>
+          </div>
+        )}
+      </div>
+
+      {/* DESCRIPCIÓN O EXPERIENCIA CORTA */}
+      {(job.descripcion || job.experiencia) && (
+        <p className="text-xs text-slate-600 line-clamp-2 mb-3 leading-relaxed bg-slate-50/50 p-2 rounded-lg border border-slate-100/50">
+          {job.descripcion || job.experiencia}
+        </p>
+      )}
+    </div>
+
+    <button 
+      onClick={() => setSelectedJob(job)}
+      className="w-full bg-[#0B132B] hover:bg-slate-800 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-sm"
+    >
+      {job.tipo === 'Estado' ? 'VER CONVOCATORIA' : 'Ver Detalles y Postular'}
+    </button>
+  </div>
+))}
             ) : (
               <div className="col-span-full py-24 text-center text-slate-500 space-y-4">
                 <p className="text-lg font-bold text-slate-700">No se encontraron ofertas activas 📉</p>

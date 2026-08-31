@@ -14,7 +14,8 @@ export default function AdminDashboard() {
     tipo: 'Estado',
     titulo: '',
     empresa: '',
-    ubicacion: 'Chaupimarca, Pasco',
+    logo: '',
+    ubicacion: '',
     sueldo: '',
     modalidad: 'CAS',
     modalidades: [], // Para múltiples modalidades en negocios locales
@@ -147,6 +148,7 @@ export default function AdminDashboard() {
       tipo: job.tipo || 'Estado',
       titulo: job.titulo || '',
       empresa: job.empresa || '',
+      logo: job.logo || '',
       ubicacion: job.ubicacion || 'Chaupimarca, Pasco',
       sueldo: job.sueldo || '',
       modalidad: job.modalidad || '',
@@ -184,6 +186,7 @@ export default function AdminDashboard() {
       tipo: activeTab === 'estado' ? 'Estado' : 'Privado',
       titulo: '',
       empresa: '',
+      logo: '',
       ubicacion: 'Chaupimarca, Pasco',
       sueldo: '',
       modalidad: activeTab === 'estado' ? 'CAS' : 'Tiempo Completo',
@@ -295,6 +298,10 @@ export default function AdminDashboard() {
                   <div style={styles.field}>
                     <label style={styles.label}>Entidad Pública</label>
                     <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. Gobierno Regional de Pasco" style={styles.input} required />
+                    <div style={styles.field}>
+                      <label style={styles.label}>Logo de la Entidad (URL Imagen)</label>
+                      <input type="url" name="logo" value={formData.logo} onChange={handleChange} placeholder="https://.../logo.png" style={styles.input} />
+                    </div>
                   </div>
                   <div style={styles.field}>
                     <label style={styles.label}>Modalidad</label>
@@ -393,13 +400,24 @@ export default function AdminDashboard() {
                     <label style={styles.label}>Nombre del Negocio</label>
                     <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. Pollería Kimbos" style={styles.input} required />
                   </div>
-                  {renderLocationField()}
+                  <div style={styles.field}>
+                    <label style={styles.label}>Logo del Negocio (URL Imagen)</label>
+                    <input type="url" name="logo" value={formData.logo} onChange={handleChange} placeholder="https://.../logo.png" style={styles.input} />
+                  </div>
                 </div>
 
-                <div style={styles.field}>
-                  <label style={styles.label}>Puesto Requerido</label>
-                  <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Mozo / Ayudante" style={styles.input} required />
+                <div style={styles.row}>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Puesto Requerido</label>
+                    <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Mozo / Ayudante" style={styles.input} required />
+                  </div>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Vacantes</label>
+                    <input type="number" name="vacantes" value={formData.vacantes} onChange={handleChange} placeholder="1" style={styles.input} />
+                  </div>
                 </div>
+                  
+                {renderLocationField()}
 
                 {/* 1. SELECCIÓN MÚLTIPLE DE MODALIDADES DE TRABAJO */}
                 <div style={{ ...styles.field, backgroundColor: '#F8FAFC', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
