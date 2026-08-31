@@ -127,7 +127,7 @@ export default function Home() {
               rel="noopener noreferrer"
               className="w-full sm:w-auto text-center bg-gradient-to-r from-[#06D6A0] to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 text-slate-950 hover:text-white text-xs font-black px-6 py-3.5 rounded-2xl transition-all duration-300 shadow-lg shadow-emerald-600/20 hover:-translate-y-0.5 active:translate-y-0"
             >
-              💬 Publicar Anuncio Gratis
+              💬 Publicar Anuncio
             </a>
           </div>
         </div>
