@@ -2,7 +2,7 @@
 
 export default async function sitemap() {
   // Conectamos a tu backend en producción
-  const API_URL = 'https://chambafija-backend.onrender.com/api/jobs';
+  const API_URL = '/api/jobs';
 
   try {
     // 1. Obtenemos todos los empleos de la base de datos sin usar caché

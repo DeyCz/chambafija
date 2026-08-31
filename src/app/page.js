@@ -23,8 +23,8 @@ export default function Home() {
     setLoading(true);
     try {
       const url = tipoFiltro === 'Todos' || tipoFiltro === 'Destacados'
-        ? 'https://chambafija.com/api/jobs' 
-        : `https://chambafija.com/api/jobs?tipo=${tipoFiltro}`;
+        ? '/api/jobs' 
+        : `/api/jobs?tipo=${tipoFiltro}`;
       
       const res = await fetch(url);
       const result = await res.json();
