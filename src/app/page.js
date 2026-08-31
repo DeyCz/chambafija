@@ -303,9 +303,9 @@ export default function Home() {
                     </div>
                     <div className="p-4 space-y-2.5 font-medium">
                       <p><strong>Número de vacantes:</strong> {selectedJob.vacantes || '1'}</p>
-                      {selectedJob.formacion && <p><strong>Formación Académica:</strong> {selectedJob.formacion}</p>}
-                      {selectedJob.experiencia && <p><strong>Experiencia:</strong> {selectedJob.experiencia}</p>}
-                      {selectedJob.especializacion && <p><strong>Cursos y/o programas:</strong> {selectedJob.especializacion}</p>}
+                      {selectedJob.formacion && <p className="whitespace-pre-wrap"><strong>Formación Académica:</strong><br/>{selectedJob.formacion}</p>}
+                      {selectedJob.experiencia && <p className="whitespace-pre-wrap"><strong>Experiencia:</strong><br/>{selectedJob.experiencia}</p>}
+                      {selectedJob.especializacion && <p className="whitespace-pre-wrap"><strong>Cursos y/o programas: </strong><br/>{selectedJob.especializacion}</p>}
                     </div>
                   </div>
 

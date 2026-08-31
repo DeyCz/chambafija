@@ -265,6 +265,17 @@ export default function AdminDashboard() {
                   <label style={styles.label}>Experiencia Requerida</label>
                   <textarea name="experiencia" value={formData.experiencia} onChange={handleChange} placeholder="Ej. Experiencia general de 2 años..." style={{ ...styles.input, height: '50px' }} />
                 </div>
+                
+                <div style={styles.field}>
+                  <label style={styles.label}>Cursos y/o Programas de Especialización</label>
+                  <textarea 
+                    name="especializacion" 
+                    value={formData.especializacion} 
+                    onChange={handleChange} 
+                    placeholder="Ej. Diplomado, ofimática, cursos afines..." 
+                    style={{ ...styles.input, height: '50px' }} 
+                  />
+                </div>
 
                 <div style={styles.field}>
                   <label style={styles.label}>¿Cómo postular?</label>
