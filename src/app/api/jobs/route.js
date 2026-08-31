@@ -29,6 +29,10 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const newJob = { ...body, createdAt: new Date().toISOString() };
+    
+    // Limpiamos los campos 'undefined' antes de enviarlos a Firebase
+    Object.keys(newJob).forEach(key => newJob[key] === undefined && delete newJob[key]);
+
     const docRef = await db.collection('jobs').add(newJob);
     
     return NextResponse.json({ success: true, id: docRef.id, mensaje: 'Empleo creado' }, { status: 201 });
