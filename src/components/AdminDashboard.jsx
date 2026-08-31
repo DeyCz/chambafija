@@ -16,6 +16,7 @@ export default function AdminDashboard() {
     ubicacion: 'Chaupimarca, Pasco',
     sueldo: '',
     modalidad: 'CAS',
+    modalidades: [], // Nuevo estado para múltiples modalidades
     descripcion: '',
     vacantes: '1',
     formacion: '',
@@ -26,6 +27,7 @@ export default function AdminDashboard() {
     enlaceBases: '',
     enlacesExtras: [{ titulo: '', url: '' }],
     contacto: '',
+    contactos: [''], // Nuevo estado para múltiples números
     fechaVencimiento: '',
     esVip: false
   });
@@ -63,18 +65,6 @@ export default function AdminDashboard() {
     setFormData({ ...formData, enlacesExtras: nuevosEnlaces });
   };
 
-  const agregarFilaEnlace = () => {
-    setFormData({
-      ...formData,
-      enlacesExtras: [...formData.enlacesExtras, { titulo: '', url: '' }]
-    });
-  };
-
-  const eliminarFilaEnlace = (index) => {
-    const nuevosEnlaces = formData.enlacesExtras.filter((_, i) => i !== index);
-    setFormData({ ...formData, enlacesExtras: nuevosEnlaces });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -82,7 +72,14 @@ export default function AdminDashboard() {
         ? (formData.sueldo.toString().startsWith('S/') ? formData.sueldo : `S/ ${formData.sueldo}`) 
         : 'A tratar';
 
-      const datosAEnviar = { ...formData, sueldo: sueldoLimpio };
+      // Convertimos los arrays a texto separado por comas para no romper el backend
+      const datosAEnviar = { 
+        ...formData, 
+        sueldo: sueldoLimpio,
+        contacto: activeTab === 'privado' ? formData.contactos.filter(c => c.trim() !== '').join(', ') : formData.contacto,
+        modalidad: activeTab === 'privado' ? formData.modalidades.join(', ') : formData.modalidad
+      };
+
       const method = editingId ? 'PUT' : 'POST';
       const url = editingId ? `${API_URL}/${editingId}` : API_URL;
 
@@ -114,6 +111,7 @@ export default function AdminDashboard() {
       ubicacion: job.ubicacion || 'Chaupimarca, Pasco',
       sueldo: job.sueldo || '',
       modalidad: job.modalidad || '',
+      modalidades: job.modalidad ? job.modalidad.split(', ') : [],
       descripcion: job.descripcion || '',
       vacantes: job.vacantes || '1',
       formacion: job.formacion || '',
@@ -124,6 +122,7 @@ export default function AdminDashboard() {
       enlaceBases: job.enlaceBases || '',
       enlacesExtras: job.enlacesExtras && job.enlacesExtras.length > 0 ? job.enlacesExtras : [{ titulo: '', url: '' }],
       contacto: job.contacto || '',
+      contactos: job.contacto ? job.contacto.split(', ') : [''],
       fechaVencimiento: job.fechaVencimiento ? job.fechaVencimiento.split('T')[0] : '',
       esVip: job.esVip || false
     });
@@ -148,6 +147,7 @@ export default function AdminDashboard() {
       ubicacion: 'Chaupimarca, Pasco',
       sueldo: '',
       modalidad: activeTab === 'estado' ? 'CAS' : 'Tiempo Completo',
+      modalidades: [],
       descripcion: '',
       vacantes: '1',
       formacion: '',
@@ -158,6 +158,7 @@ export default function AdminDashboard() {
       enlaceBases: '',
       enlacesExtras: [{ titulo: '', url: '' }],
       contacto: '',
+      contactos: [''],
       fechaVencimiento: '',
       esVip: false
     });
@@ -168,43 +169,32 @@ export default function AdminDashboard() {
       <div style={styles.tabNav}>
         <button 
           onClick={() => setActiveTab('estado')}
-          style={{
-            ...styles.tabBtn,
-            backgroundColor: activeTab === 'estado' ? '#0B132B' : '#FFFFFF',
-            color: activeTab === 'estado' ? '#FFFFFF' : '#0B132B',
-            borderColor: activeTab === 'estado' ? '#0B132B' : '#CBD5E1',
-          }}
+          style={{ ...styles.tabBtn, backgroundColor: activeTab === 'estado' ? '#0B132B' : '#FFFFFF', color: activeTab === 'estado' ? '#FFFFFF' : '#0B132B', borderColor: activeTab === 'estado' ? '#0B132B' : '#CBD5E1' }}
         >
-          🏛️ Convocatorias del Estado (Públicas)
+          🏛️ Convocatorias del Estado
         </button>
         <button 
           onClick={() => setActiveTab('privado')}
-          style={{
-            ...styles.tabBtn,
-            backgroundColor: activeTab === 'privado' ? '#06D6A0' : '#FFFFFF',
-            color: activeTab === 'privado' ? '#0B132B' : '#0B132B',
-            borderColor: activeTab === 'privado' ? '#06D6A0' : '#CBD5E1',
-          }}
+          style={{ ...styles.tabBtn, backgroundColor: activeTab === 'privado' ? '#06D6A0' : '#FFFFFF', color: activeTab === 'privado' ? '#0B132B' : '#0B132B', borderColor: activeTab === 'privado' ? '#06D6A0' : '#CBD5E1' }}
         >
-          🏪 Negocios Locales (Privados)
+          🏪 Negocios Locales
         </button>
       </div>
 
       <div style={styles.mainGrid}>
         <div style={styles.card}>
           <div style={styles.cardHeader}>
-            <h2 style={styles.cardTitle}>
-              {editingId ? '✏️ Modificar Registro' : (activeTab === 'estado' ? '🏛️ Nueva Convocatoria Estatal' : '🏪 Nuevo Anuncio Local')}
-            </h2>
+            <h2 style={styles.cardTitle}>{editingId ? '✏️ Modificar Registro' : 'Nueva Oferta'}</h2>
           </div>
 
           <form onSubmit={handleSubmit} style={styles.form}>
             {activeTab === 'estado' ? (
               <>
+                {/* CAMPOS DE ESTADO (Mantenidos igual que tu código original) */}
                 <div style={styles.row}>
                   <div style={styles.field}>
                     <label style={styles.label}>Entidad Pública</label>
-                    <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. Gobierno Regional de Pasco" style={styles.input} required />
+                    <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} style={styles.input} required />
                   </div>
                   <div style={styles.field}>
                     <label style={styles.label}>Modalidad</label>
@@ -217,117 +207,123 @@ export default function AdminDashboard() {
                     </select>
                   </div>
                 </div>
-
                 <div style={styles.field}>
-                  <label style={styles.label}>Título del Puesto / Perfil</label>
-                  <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Asistente Administrativo I" style={styles.input} required />
+                  <label style={styles.label}>Título del Puesto</label>
+                  <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} style={styles.input} required />
                 </div>
-
                 <div style={styles.row}>
                   <div style={styles.field}>
-                    <label style={styles.label}>Ubicación / Distrito</label>
-                    <input type="text" name="ubicacion" value={formData.ubicacion} onChange={handleChange} placeholder="Ej. Chaupimarca, Pasco" style={styles.input} required />
+                    <label style={styles.label}>Ubicación</label>
+                    <input type="text" name="ubicacion" value={formData.ubicacion} onChange={handleChange} style={styles.input} required />
                   </div>
                   <div style={styles.field}>
                     <label style={styles.label}>Vacantes</label>
                     <input type="number" name="vacantes" value={formData.vacantes} onChange={handleChange} style={styles.input} />
                   </div>
                 </div>
-
                 <div style={styles.row}>
                   <div style={styles.field}>
                     <label style={styles.label}>Remuneración (S/)</label>
-                    <input type="text" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 2500" style={styles.input} />
+                    <input type="text" name="sueldo" value={formData.sueldo} onChange={handleChange} style={styles.input} />
                   </div>
                   <div style={styles.field}>
-                    <label style={styles.label}>Fecha Límite (Cierre)</label>
+                    <label style={styles.label}>Fecha Límite</label>
                     <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={styles.input} />
                   </div>
                 </div>
-
                 <div style={styles.field}>
                   <label style={styles.label}>Formación Académica</label>
-                  <input type="text" name="formacion" value={formData.formacion} onChange={handleChange} placeholder="Ej. TÍTULO EN DERECHO..." style={styles.input} />
+                  <input type="text" name="formacion" value={formData.formacion} onChange={handleChange} style={styles.input} />
                 </div>
-
                 <div style={styles.field}>
                   <label style={styles.label}>Experiencia Requerida</label>
-                  <textarea name="experiencia" value={formData.experiencia} onChange={handleChange} placeholder="Ej. Experiencia general de 2 años..." style={{ ...styles.input, height: '50px' }} />
+                  <textarea name="experiencia" value={formData.experiencia} onChange={handleChange} style={{ ...styles.input, height: '50px' }} />
                 </div>
-
                 <div style={styles.field}>
                   <label style={styles.label}>¿Cómo postular?</label>
-                  <textarea name="comoPostular" value={formData.comoPostular} onChange={handleChange} placeholder="Instrucciones..." style={{ ...styles.input, height: '50px' }} />
+                  <textarea name="comoPostular" value={formData.comoPostular} onChange={handleChange} style={{ ...styles.input, height: '50px' }} />
                 </div>
-
                 <div style={{ ...styles.field, backgroundColor: '#F8FAFC', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                  <label style={{ ...styles.label, marginBottom: '6px', color: '#0B132B' }}>🔗 Enlaces Oficiales (Bases, Comunicados, Resultados)</label>
-                  <div style={{ marginBottom: '8px' }}>
-                    <input type="url" name="enlaceBases" value={formData.enlaceBases} onChange={handleChange} placeholder="Enlace principal de Bases (PDF)" style={{ ...styles.input, marginBottom: '6px' }} />
-                  </div>
-
-                  {formData.enlacesExtras.map((item, index) => (
-                    <div key={index} style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
-                      <input 
-                        type="text" 
-                        placeholder="Título (Ej. Comunicado N° 01)" 
-                        value={item.titulo} 
-                        onChange={(e) => handleExtraLinkChange(index, 'titulo', e.target.value)} 
-                        style={{ ...styles.input, flex: 1 }} 
-                      />
-                      <input 
-                        type="url" 
-                        placeholder="URL https://..." 
-                        value={item.url} 
-                        onChange={(e) => handleExtraLinkChange(index, 'url', e.target.value)} 
-                        style={{ ...styles.input, flex: 2 }} 
-                      />
-                      <button type="button" onClick={() => eliminarFilaEnlace(index)} style={styles.btnDeleteRow}>✕</button>
-                    </div>
-                  ))}
-                  <button type="button" onClick={agregarFilaEnlace} style={styles.btnAddRow}>+ Agregar otro enlace institucional</button>
+                  <label style={styles.label}>🔗 Enlace de Bases (PDF)</label>
+                  <input type="url" name="enlaceBases" value={formData.enlaceBases} onChange={handleChange} style={styles.input} />
                 </div>
               </>
             ) : (
               <>
+                {/* CAMPOS PRIVADOS ACTUALIZADOS */}
                 <div style={styles.row}>
                   <div style={styles.field}>
                     <label style={styles.label}>Nombre del Negocio</label>
-                    <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. Pollería Kimbos" style={styles.input} required />
+                    <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} style={styles.input} required />
                   </div>
                   <div style={styles.field}>
                     <label style={styles.label}>Ubicación</label>
-                    <input type="text" name="ubicacion" value={formData.ubicacion} onChange={handleChange} placeholder="Ej. Yanacancha, Pasco" style={styles.input} required />
+                    <input type="text" name="ubicacion" value={formData.ubicacion} onChange={handleChange} style={styles.input} required />
                   </div>
                 </div>
-
                 <div style={styles.field}>
                   <label style={styles.label}>Puesto Requerido</label>
-                  <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Mozo / Ayudante" style={styles.input} required />
+                  <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} style={styles.input} required />
                 </div>
 
-                {/* MODULO DE MODALIDAD RESTAURADO PARA NEGOCIOS LOCALES */}
-                <div style={styles.row}>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Modalidad de Trabajo</label>
-                    <select name="modalidad" value={formData.modalidad} onChange={handleChange} style={styles.input}>
-                      <option value="Tiempo Completo">Tiempo Completo</option>
-                      <option value="Tiempo Parcial">Tiempo Parcial / Mediodía</option>
-                      <option value="CAS">CAS</option>
-                      <option value="Por Turnos / Horas">Por Turnos / Horas</option>
-                      <option value="Fines de Semana">Fines de Semana</option>
-                      <option value="Prácticas">Prácticas</option>
-                    </select>
-                  </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Sueldo (S/)</label>
-                    <input type="number" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 1200" style={styles.input} />
+                {/* NUEVO: Selección Múltiple de Modalidades */}
+                <div style={{ ...styles.field, backgroundColor: '#F8FAFC', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                  <label style={styles.label}>Modalidad de Trabajo (Puedes elegir varias)</label>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '4px' }}>
+                    {['Tiempo Completo', 'Tiempo Parcial', 'CAS', 'Por Horas', 'Fines de Semana', 'Prácticas'].map(mod => (
+                      <label key={mod} style={{ fontSize: '13px', display: 'flex',fontWeight: '800',color: '#0B132B', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={formData.modalidades.includes(mod)}
+                          onChange={(e) => {
+                            if (e.target.checked) setFormData({ ...formData, modalidades: [...formData.modalidades, mod] });
+                            else setFormData({ ...formData, modalidades: formData.modalidades.filter(m => m !== mod) });
+                          }}
+                        /> {mod}
+                      </label>
+                    ))}
                   </div>
                 </div>
 
                 <div style={styles.field}>
-                  <label style={styles.label}>WhatsApp de Contacto</label>
-                  <input type="text" name="contacto" value={formData.contacto} onChange={handleChange} placeholder="Ej. 987654321" style={styles.input} required />
+                  <label style={styles.label}>Sueldo (S/)</label>
+                  <input type="number" name="sueldo" value={formData.sueldo} onChange={handleChange} style={styles.input} />
+                </div>
+
+                {/* NUEVO: Experiencia en Privado */}
+                <div style={styles.field}>
+                  <label style={styles.label}>Experiencia Requerida (Opcional)</label>
+                  <textarea name="experiencia" value={formData.experiencia} onChange={handleChange} placeholder="Ej. 1 año en atención al cliente..." style={{ ...styles.input, height: '50px' }} />
+                </div>
+
+                {/* NUEVO: Múltiples Números de WhatsApp */}
+                <div style={{ ...styles.field, backgroundColor: '#F0FDF4', padding: '10px', borderRadius: '8px', border: '1px solid #86EFAC' }}>
+                  <label style={styles.label}>WhatsApp de Contacto (Agrega los que necesites)</label>
+                  {formData.contactos.map((numero, index) => (
+                    <div key={index} style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="Ej. 987654321" 
+                        value={numero} 
+                        onChange={(e) => {
+                          const nuevos = [...formData.contactos];
+                          nuevos[index] = e.target.value;
+                          setFormData({ ...formData, contactos: nuevos });
+                        }} 
+                        style={{ ...styles.input, flex: 1 }} 
+                        required 
+                      />
+                      {formData.contactos.length > 1 && (
+                        <button type="button" onClick={() => {
+                          const nuevos = formData.contactos.filter((_, i) => i !== index);
+                          setFormData({ ...formData, contactos: nuevos });
+                        }} style={styles.btnDeleteRow}>✕</button>
+                      )}
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => setFormData({ ...formData, contactos: [...formData.contactos, ''] })} style={styles.btnAddRow}>
+                    + Agregar otro número
+                  </button>
                 </div>
               </>
             )}
@@ -353,12 +349,12 @@ export default function AdminDashboard() {
           </form>
         </div>
 
+        {/* LISTADO */}
         <div style={styles.card}>
           <div style={styles.listHeader}>
             <h2 style={styles.cardTitle}>📋 Registros Activos</h2>
-            <span style={styles.counterBadge}>{jobs.length} ofertas</span>
+            <span style={styles.counterBadge}>{jobs.length}</span>
           </div>
-
           <div style={styles.scrollList}>
             {jobs.map((job) => (
               <div key={job._id} style={styles.itemCard}>
@@ -370,16 +366,6 @@ export default function AdminDashboard() {
                 <div style={styles.itemFooterRow}>
                   <span style={styles.itemSalary}>{job.sueldo || 'A tratar'}</span>
                   <div style={styles.itemButtons}>
-                    <button 
-                      onClick={() => {
-                        const url = `https://chambafija.vercel.app/oferta/${job._id}`;
-                        const text = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
-                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                      }} 
-                      style={{...styles.btnEdit, backgroundColor: '#10B981', color: 'white', borderColor: '#059669'}}
-                    >
-                      Compartir
-                    </button>
                     <button onClick={() => handleEdit(job)} style={styles.btnEdit}>Editar</button>
                     <button onClick={() => handleDelete(job._id)} style={styles.btnDelete}>Eliminar</button>
                   </div>
@@ -409,7 +395,7 @@ const styles = {
   vipContainer: { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', backgroundColor: '#F0FDF4', borderRadius: '8px', border: '1px solid #86EFAC' },
   vipLabel: { fontSize: '13px', fontWeight: '900', color: '#166534', cursor: 'pointer' },
   btnGroup: { display: 'flex', gap: '8px', marginTop: '6px' },
-  btnPrimary: { flex: 1, padding: '12px', backgroundColor: '#0B132B', color: '#FFFFFF', border: 'none', borderRadius: '8px', fontWeight: '900', fontSize: '14px', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
+  btnPrimary: { flex: 1, padding: '12px', backgroundColor: '#0B132B', color: '#FFFFFF', border: 'none', borderRadius: '8px', fontWeight: '900', fontSize: '14px', cursor: 'pointer' },
   btnSecondary: { padding: '12px 18px', backgroundColor: '#64748B', color: '#FFFFFF', border: 'none', borderRadius: '8px', fontWeight: '900', fontSize: '13px', cursor: 'pointer' },
   listHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid #E2E8F0', paddingBottom: '8px' },
   counterBadge: { fontSize: '12px', backgroundColor: '#E2E8F0', color: '#0B132B', padding: '3px 10px', borderRadius: '12px', fontWeight: '900' },

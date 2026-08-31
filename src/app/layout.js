@@ -53,6 +53,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
+
       <body className="bg-[#0B0F19] text-slate-100 min-h-screen flex flex-col antialiased">
         {children}
         <WhatsAppButton />

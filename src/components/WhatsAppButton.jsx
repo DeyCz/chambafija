@@ -9,7 +9,7 @@ export default function WhatsAppButton() {
       
       {/* Botón flotante principal con animación de rebote */}
       <a
-        href="https://wa.me/51999999999?text=Hola,%20quiero%20publicar%20un%20anuncio%20en%20ChambaFija"
+        href="https://wa.me/51967576214?text=%C2%A1Hola!%20%E2%9A%A1%20Quiero%20publicar%20un%20empleo%20en%20ChambaFija%20y%20encontrar%20personal%20al%20toque%20%F0%9F%93%B1%F0%9F%94%A5"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Contactar por WhatsApp"

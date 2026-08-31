@@ -104,7 +104,7 @@ export default function Home() {
               type="text" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar puesto, carrera, empresa o DIRESA..." 
+              placeholder="Buscar puesto, carrera o empresa..." 
               className="w-full pl-11 pr-4 py-3 text-sm rounded-2xl bg-slate-900 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#06D6A0] transition-all shadow-inner"
             />
           </div>
@@ -112,7 +112,7 @@ export default function Home() {
           {/* BOTÓN CTA CON ESMERALDA */}
           <div className="w-full sm:w-auto flex justify-end">
             <a 
-              href="https://wa.me/51999999999?text=Hola,%20quiero%20publicar%20un%20anuncio%20en%20ChambaFija" 
+              href="https://wa.me/51967576214?text=%C2%A1Hola!%20%E2%9A%A1%20Quiero%20publicar%20un%20empleo%20en%20ChambaFija%20y%20encontrar%20personal%20al%20toque%20%F0%9F%93%B1%F0%9F%94%A5" 
               target="_blank" 
               rel="noopener noreferrer"
               className="w-full sm:w-auto text-center bg-gradient-to-r from-[#06D6A0] to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 text-slate-950 hover:text-white text-xs font-black px-6 py-3.5 rounded-2xl transition-all duration-300 shadow-lg shadow-emerald-600/20 hover:-translate-y-0.5 active:translate-y-0"
@@ -350,14 +350,28 @@ export default function Home() {
                   </div>
                 </>
               ) : (
-                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3 shadow-2xs">
-                  <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                  <div className="flex justify-between border-b border-slate-200 pb-2">
                     <span className="text-slate-500 font-bold">Remuneración:</span>
-                    <span className="font-black text-emerald-600 text-base">{selectedJob.sueldo ? (selectedJob.sueldo.toString().startsWith('S/') ? selectedJob.sueldo : `S/ ${selectedJob.sueldo}`) : 'A tratar'}</span>
+                    <span className="font-extrabold text-emerald-600">{selectedJob.sueldo || 'A tratar'}</span>
                   </div>
+                  <div className="flex justify-between border-b border-slate-200 pb-2">
+                    <span className="text-slate-500 font-bold">Modalidad:</span>
+                    {/* Al ser texto separado por comas, se verá impecable */}
+                    <span className="font-bold text-slate-800">{selectedJob.modalidad || 'Tiempo Completo'}</span>
+                  </div>
+                  
+                  {/* NUEVO: Módulo de Experiencia para Privados */}
+                  {selectedJob.experiencia && (
+                    <div className="border-b border-slate-200 pb-2">
+                      <h4 className="font-bold text-slate-800 mb-1">Experiencia Requerida:</h4>
+                      <p className="text-slate-600 leading-relaxed">{selectedJob.experiencia}</p>
+                    </div>
+                  )}
+
                   <div>
-                    <h4 className="font-black text-slate-800 mb-1">Descripción del Puesto:</h4>
-                    <p className="text-slate-600 leading-relaxed font-medium">{selectedJob.descripcion}</p>
+                    <h4 className="font-bold text-slate-800 mb-1">Descripción del Puesto:</h4>
+                    <p className="text-slate-600 leading-relaxed whitespace-pre-line">{selectedJob.descripcion}</p>
                   </div>
                 </div>
               )}
@@ -382,14 +396,19 @@ export default function Home() {
                   📄 Descargar Bases Oficiales
                 </a>
               ) : (
-                <a 
-                  href={`https://wa.me/51${selectedJob.contacto}?text=Hola,%20vi%20el%20anuncio%20de%20${selectedJob.titulo}%20en%20ChambaFija`} 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="flex-1 text-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black py-3.5 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2"
-                >
-                  📲 Contactar por WhatsApp
-                </a>
+                <div className="flex-1 flex flex-col sm:flex-row gap-2">
+                  {selectedJob.contacto && selectedJob.contacto.split(', ').map((numero, index) => (
+                    <a 
+                      key={index}
+                      href={`https://wa.me/51${numero.replace(/\s/g, '')}?text=Hola,%20vi%20el%20anuncio%20de%20${encodeURIComponent(selectedJob.titulo)}%20en%20ChambaFija`} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className="flex-1 text-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-3 px-2 rounded-xl shadow-md transition-all flex items-center justify-center"
+                    >
+                      📲 WhatsApp {selectedJob.contacto.split(', ').length > 1 ? `#${index + 1}` : ''}
+                    </a>
+                  ))}
+                </div>
               )}
             </div>
 
