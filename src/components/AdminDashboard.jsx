@@ -35,19 +35,20 @@ export default function AdminDashboard() {
     setLoading(true);
     try {
       const tipoQuery = activeTab === 'estado' ? 'Estado' : 'Privado';
-      // URL corregida con comillas invertidas (backticks)
-      const res = await fetch(`${API_URL}?tipo=${tipoQuery}`);
-      const result = await res.json();
+      const res = await fetch(`/api/jobs?tipo=${tipoQuery}`);
       
+      // 1. Verificamos que la respuesta del servidor sea correcta ANTES de convertir a JSON
+      if (!res.ok) {
+        throw new Error(`Error del servidor: ${res.status} ${res.statusText}`);
+      }
+
+      const result = await res.json();
       if (result.success) {
         setJobs(result.data || []);
-      } else {
-        setJobs([]);
       }
     } catch (error) {
-      console.warn("Aviso: No se pudo conectar con el servidor backend en este momento.", error);
-      // Evitamos que falle la app asignando un array vacío si el servidor no responde
-      setJobs([]);
+      console.error("Error al cargar empleos:", error);
+      setJobs([]); // Dejamos la tabla vacía en vez de colapsar toda la página
     } finally {
       setLoading(false);
     }
