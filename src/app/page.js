@@ -314,7 +314,7 @@ export default function Home() {
                       Condiciones del Contrato
                     </div>
                     <div className="p-4 space-y-2.5 font-medium">
-                      <p><strong>Lugar de prestación:</strong> {selectedJob.lugarPrestacion || selectedJob.empresa}</p>
+                      <p><strong>Lugar de prestación:</strong> { selectedJob.empresa}</p>
                       <p><strong>Remuneración:</strong> <span className="text-emerald-600 font-black">{selectedJob.sueldo ? (selectedJob.sueldo.toString().startsWith('S/') ? selectedJob.sueldo : `S/ ${selectedJob.sueldo}`) : 'A tratar'}</span> ({selectedJob.modalidad})</p>
                     </div>
                   </div>
