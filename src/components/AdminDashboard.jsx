@@ -265,7 +265,7 @@ export default function AdminDashboard() {
                   <label style={styles.label}>Experiencia Requerida</label>
                   <textarea name="experiencia" value={formData.experiencia} onChange={handleChange} placeholder="Ej. Experiencia general de 2 años..." style={{ ...styles.input, height: '50px' }} />
                 </div>
-                
+
                 <div style={styles.field}>
                   <label style={styles.label}>Cursos y/o Programas de Especialización</label>
                   <textarea 
@@ -381,7 +381,7 @@ export default function AdminDashboard() {
                   <div style={styles.itemButtons}>
                     <button 
                       onClick={() => {
-                        const url = `https://chambafija.vercel.app/oferta/${job._id}`;
+                        const url = `https://chambafija.com/oferta/${job._id}`;
                         const text = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
                         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                       }} 
