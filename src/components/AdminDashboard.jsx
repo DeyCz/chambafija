@@ -17,6 +17,7 @@ export default function AdminDashboard() {
     ubicacion: 'Chaupimarca, Pasco',
     sueldo: '',
     modalidad: 'CAS',
+    modalidades: [], // Para múltiples modalidades en negocios locales
     descripcion: '',
     vacantes: '1',
     formacion: '',
@@ -27,17 +28,29 @@ export default function AdminDashboard() {
     enlaceBases: '',
     enlacesExtras: [{ titulo: '', url: '' }],
     contacto: '',
+    contactos: [''], // Para múltiples números de WhatsApp
     fechaVencimiento: '',
     esVip: false
   });
+
+  // Control para alternar entre lista desplegable y escritura libre en ubicación
+  const [customLocation, setCustomLocation] = useState(false);
+  const standardLocations = [
+    'Chaupimarca, Pasco',
+    'Yanacancha, Pasco',
+    'Simón Bolívar, Pasco',
+    'Pallanchacra, Pasco',
+    'Yarusyacán, Pasco',
+    'Oxapampa, Pasco',
+    'Villa Rica, Pasco'
+  ];
 
   const fetchJobs = async () => {
     setLoading(true);
     try {
       const tipoQuery = activeTab === 'estado' ? 'Estado' : 'Privado';
       const res = await fetch(`/api/jobs?tipo=${tipoQuery}`);
-      
-      // 1. Verificamos que la respuesta del servidor sea correcta ANTES de convertir a JSON
+
       if (!res.ok) {
         throw new Error(`Error del servidor: ${res.status} ${res.statusText}`);
       }
@@ -48,7 +61,7 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error("Error al cargar empleos:", error);
-      setJobs([]); // Dejamos la tabla vacía en vez de colapsar toda la página
+      setJobs([]);
     } finally {
       setLoading(false);
     }
@@ -92,9 +105,15 @@ export default function AdminDashboard() {
         ? (formData.sueldo.toString().startsWith('S/') ? formData.sueldo : `S/ ${formData.sueldo}`) 
         : 'A tratar';
 
-      const datosAEnviar = { ...formData, sueldo: sueldoLimpio };
+      // Unificamos las modalidades múltiples y los números de WhatsApp en texto separado por comas para el backend
+      const datosAEnviar = { 
+        ...formData, 
+        sueldo: sueldoLimpio,
+        modalidad: activeTab === 'privado' ? formData.modalidades.join(', ') : formData.modalidad,
+        contacto: activeTab === 'privado' ? formData.contactos.filter(c => c.trim() !== '').join(', ') : formData.contacto
+      };
+
       const method = editingId ? 'PUT' : 'POST';
-      // URL corregida con comillas invertidas
       const url = editingId ? `${API_URL}/${editingId}` : API_URL;
 
       const res = await fetch(url, {
@@ -118,6 +137,12 @@ export default function AdminDashboard() {
 
   const handleEdit = (job) => {
     setEditingId(job._id);
+    if (job.ubicacion && !standardLocations.includes(job.ubicacion)) {
+      setCustomLocation(true);
+    } else {
+      setCustomLocation(false);
+    }
+
     setFormData({
       tipo: job.tipo || 'Estado',
       titulo: job.titulo || '',
@@ -125,6 +150,7 @@ export default function AdminDashboard() {
       ubicacion: job.ubicacion || 'Chaupimarca, Pasco',
       sueldo: job.sueldo || '',
       modalidad: job.modalidad || '',
+      modalidades: job.modalidad && job.tipo === 'Privado' ? job.modalidad.split(', ').map(m => m.trim()) : [],
       descripcion: job.descripcion || '',
       vacantes: job.vacantes || '1',
       formacion: job.formacion || '',
@@ -135,6 +161,7 @@ export default function AdminDashboard() {
       enlaceBases: job.enlaceBases || '',
       enlacesExtras: job.enlacesExtras && job.enlacesExtras.length > 0 ? job.enlacesExtras : [{ titulo: '', url: '' }],
       contacto: job.contacto || '',
+      contactos: job.contacto && job.tipo === 'Privado' ? job.contacto.split(', ').map(c => c.trim()) : [job.contacto || ''],
       fechaVencimiento: job.fechaVencimiento ? job.fechaVencimiento.split('T')[0] : '',
       esVip: job.esVip || false
     });
@@ -143,7 +170,6 @@ export default function AdminDashboard() {
   const handleDelete = async (id) => {
     if (!window.confirm('¿Estás seguro de eliminar este registro?')) return;
     try {
-      // URL corregida con comillas invertidas
       await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
       fetchJobs();
     } catch (error) {
@@ -153,13 +179,15 @@ export default function AdminDashboard() {
 
   const resetForm = () => {
     setEditingId(null);
+    setCustomLocation(false);
     setFormData({
       tipo: activeTab === 'estado' ? 'Estado' : 'Privado',
       titulo: '',
       empresa: '',
-      ubicacion: '',
+      ubicacion: 'Chaupimarca, Pasco',
       sueldo: '',
       modalidad: activeTab === 'estado' ? 'CAS' : 'Tiempo Completo',
+      modalidades: [],
       descripcion: '',
       vacantes: '1',
       formacion: '',
@@ -170,10 +198,60 @@ export default function AdminDashboard() {
       enlaceBases: '',
       enlacesExtras: [{ titulo: '', url: '' }],
       contacto: '',
+      contactos: [''],
       fechaVencimiento: '',
       esVip: false
     });
   };
+
+  // Componente reutilizable para la ubicación dual (elegir o escribir)
+  const renderLocationField = () => (
+    <div style={styles.field}>
+      <label style={styles.label}>Ubicación</label>
+      {!customLocation ? (
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <select 
+            name="ubicacion" 
+            value={formData.ubicacion} 
+            onChange={handleChange} 
+            style={{ ...styles.input, flex: 1 }}
+          >
+            {standardLocations.map(loc => (
+              <option key={loc} value={loc}>{loc}</option>
+            ))}
+          </select>
+          <button 
+            type="button" 
+            onClick={() => { setCustomLocation(true); setFormData({ ...formData, ubicacion: '' }); }}
+            style={styles.btnManual}
+            title="Escribir ubicación libremente"
+          >
+            ✏️ Escribir
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: '6px' }}>
+          <input 
+            type="text" 
+            name="ubicacion" 
+            value={formData.ubicacion} 
+            onChange={handleChange} 
+            placeholder="Escribe la ubicación exacta..." 
+            style={{ ...styles.input, flex: 1 }}
+            required 
+          />
+          <button 
+            type="button" 
+            onClick={() => { setCustomLocation(false); setFormData({ ...formData, ubicacion: 'Chaupimarca, Pasco' }); }}
+            style={styles.btnManual}
+            title="Volver a la lista"
+          >
+            📋 Lista
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div style={styles.wrapper}>
@@ -236,10 +314,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div style={styles.row}>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Ubicación / Distrito</label>
-                    <input type="text" name="ubicacion" value={formData.ubicacion} onChange={handleChange} placeholder="Ej. Chaupimarca, Pasco" style={styles.input} required />
-                  </div>
+                  {renderLocationField()}
                   <div style={styles.field}>
                     <label style={styles.label}>Vacantes</label>
                     <input type="number" name="vacantes" value={formData.vacantes} onChange={handleChange} style={styles.input} />
@@ -273,7 +348,7 @@ export default function AdminDashboard() {
                     name="especializacion" 
                     value={formData.especializacion} 
                     onChange={handleChange} 
-                    placeholder="Ej. Diplomado, ofimática, cursos afines..." 
+                    placeholder="Ej. Diplomado, ofimática..." 
                     style={{ ...styles.input, height: '50px' }} 
                   />
                 </div>
@@ -318,10 +393,7 @@ export default function AdminDashboard() {
                     <label style={styles.label}>Nombre del Negocio</label>
                     <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. Pollería Kimbos" style={styles.input} required />
                   </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Ubicación</label>
-                    <input type="text" name="ubicacion" value={formData.ubicacion} onChange={handleChange} placeholder="Ej. Yanacancha, Pasco" style={styles.input} required />
-                  </div>
+                  {renderLocationField()}
                 </div>
 
                 <div style={styles.field}>
@@ -329,15 +401,72 @@ export default function AdminDashboard() {
                   <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Mozo / Ayudante" style={styles.input} required />
                 </div>
 
-                <div style={styles.row}>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Sueldo (S/)</label>
-                    <input type="text" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 1200" style={styles.input} />
+                {/* 1. SELECCIÓN MÚLTIPLE DE MODALIDADES DE TRABAJO */}
+                <div style={{ ...styles.field, backgroundColor: '#F8FAFC', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                  <label style={styles.label}>Modalidad de Trabajo (Puedes elegir una o varias)</label>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '6px' }}>
+                    {['Tiempo Completo', 'Tiempo Parcial', 'CAS', 'Por Turnos / Horas', 'Fines de Semana', 'Prácticas'].map(mod => (
+                      <label key={mod} style={{ fontSize: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#0B132B' }}>
+                        <input
+                          type="checkbox"
+                          checked={formData.modalidades.includes(mod)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({ ...formData, modalidades: [...formData.modalidades, mod] });
+                            } else {
+                              setFormData({ ...formData, modalidades: formData.modalidades.filter(m => m !== mod) });
+                            }
+                          }}
+                          style={{ accentColor: '#06D6A0', width: '15px', height: '15px' }}
+                        /> {mod}
+                      </label>
+                    ))}
                   </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>WhatsApp de Contacto</label>
-                    <input type="text" name="contacto" value={formData.contacto} onChange={handleChange} placeholder="Ej. 987654321" style={styles.input} required />
-                  </div>
+                </div>
+
+                <div style={styles.field}>
+                  <label style={styles.label}>Sueldo (S/)</label>
+                  <input type="text" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 1200 o A tratar" style={styles.input} />
+                </div>
+
+                {/* 2. MÚLTIPLES NÚMEROS DE WHATSAPP DE CONTACTO */}
+                <div style={{ ...styles.field, backgroundColor: '#F0FDF4', padding: '10px', borderRadius: '8px', border: '1px solid #86EFAC' }}>
+                  <label style={{ ...styles.label, color: '#166534', marginBottom: '6px' }}>📱 Números de WhatsApp de Contacto</label>
+                  {formData.contactos.map((numero, index) => (
+                    <div key={index} style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
+                      <input 
+                        type="text" 
+                        placeholder={`Ej. 987654321 (Contacto #${index + 1})`} 
+                        value={numero} 
+                        onChange={(e) => {
+                          const nuevos = [...formData.contactos];
+                          nuevos[index] = e.target.value;
+                          setFormData({ ...formData, contactos: nuevos });
+                        }} 
+                        style={{ ...styles.input, flex: 1, backgroundColor: '#FFFFFF' }} 
+                        required={index === 0} 
+                      />
+                      {formData.contactos.length > 1 && (
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const nuevos = formData.contactos.filter((_, i) => i !== index);
+                            setFormData({ ...formData, contactos: nuevos });
+                          }} 
+                          style={styles.btnDeleteRow}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button 
+                    type="button" 
+                    onClick={() => setFormData({ ...formData, contactos: [...formData.contactos, ''] })} 
+                    style={styles.btnAddRow}
+                  >
+                    + Agregar otro número de WhatsApp
+                  </button>
                 </div>
               </>
             )}
@@ -382,13 +511,14 @@ export default function AdminDashboard() {
                   <div style={styles.itemButtons}>
                     <button 
                       onClick={() => {
-                        const url = `https://chambafija.com/oferta/${job._id}`;
-                        const text = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
-                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://chambafija.vercel.app';
+                        const url = `${baseUrl}/oferta/${job._id}`;
+                        const text = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo || 'A tratar'}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
+                        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
                       }} 
-                      style={{...styles.btnEdit, backgroundColor: '#10B981', color: 'white', borderColor: '#059669'}}
+                      style={{...styles.btnEdit, backgroundColor: '#06D6A0', color: '#0B132B', borderColor: '#059669', fontWeight: '900'}}
                     >
-                      Compartir
+                      Compartir 📲
                     </button>
                     <button onClick={() => handleEdit(job)} style={styles.btnEdit}>Editar</button>
                     <button onClick={() => handleDelete(job._id)} style={styles.btnDelete}>Eliminar</button>
@@ -416,6 +546,7 @@ const styles = {
   field: { display: 'flex', flexDirection: 'column', gap: '5px', flex: 1 },
   label: { fontSize: '12px', fontWeight: '900', color: '#0B132B' },
   input: { padding: '10px 12px', borderRadius: '8px', border: '1px solid #94A3B8', fontSize: '14px', fontWeight: '600', color: '#0B132B', outline: 'none', backgroundColor: '#FFFFFF' },
+  btnManual: { padding: '10px 12px', backgroundColor: '#E2E8F0', border: '1px solid #94A3B8', borderRadius: '8px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer', color: '#0B132B', whiteSpace: 'nowrap' },
   vipContainer: { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', backgroundColor: '#F0FDF4', borderRadius: '8px', border: '1px solid #86EFAC' },
   vipLabel: { fontSize: '13px', fontWeight: '900', color: '#166534', cursor: 'pointer' },
   btnGroup: { display: 'flex', gap: '8px', marginTop: '6px' },

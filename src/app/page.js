@@ -406,17 +406,17 @@ export default function Home() {
                 </a>
               ) : (
                 <div className="flex-1 flex flex-col sm:flex-row gap-2">
-                  {selectedJob.contacto && selectedJob.contacto.split(', ').map((numero, index) => (
-                    <a 
-                      key={index}
-                      href={`https://wa.me/51${numero.replace(/\s/g, '')}?text=Hola,%20vi%20el%20anuncio%20de%20${encodeURIComponent(selectedJob.titulo)}%20en%20ChambaFija`} 
-                      target="_blank" 
-                      rel="noreferrer" 
-                      className="flex-1 text-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-3 px-2 rounded-xl shadow-md transition-all flex items-center justify-center"
-                    >
-                      📲 WhatsApp {selectedJob.contacto.split(', ').length > 1 ? `#${index + 1}` : ''}
-                    </a>
-                  ))}
+                  {selectedJob.contacto && selectedJob.contacto.split(', ').map((num, i) => (
+                  <a 
+                    key={i}
+                    href={`https://wa.me/51${num.replace(/\s/g, '')}?text=Hola,%20vi%20el%20anuncio%20de%20${encodeURIComponent(selectedJob.titulo)}%20en%20ChambaFija`} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-3 px-4 rounded-xl shadow-md transition-all block text-center"
+                  >
+                    📲 Contactar a WhatsApp #{i + 1}
+                  </a>
+                ))}
                 </div>
               )}
             </div>
