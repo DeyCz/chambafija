@@ -1,6 +1,18 @@
 import React from 'react';
 
+
+
 export default function WhatsAppButton() {
+
+const mensaje =
+  "¡Hola! ⚡ Quiero publicar un empleo en ChambaFija y encontrar personal al toque 📲🔥";
+
+const numeroWhatsApp = "51967576214";
+
+const whatsappUrl =
+  `https://api.whatsapp.com/send?phone=${numeroWhatsApp}&text=${encodeURIComponent(mensaje)}`;
+
+
   return (
     <div className="fixed bottom-6 right-6 z-50 w-14 h-14 flex items-center justify-center">
       
@@ -9,7 +21,7 @@ export default function WhatsAppButton() {
       
       {/* Botón flotante principal con animación de rebote */}
       <a
-        href="https://wa.me/51967576214?text=%C2%A1Hola!%20%E2%9A%A1%20Quiero%20publicar%20un%20empleo%20en%20ChambaFija%20y%20encontrar%20personal%20al%20toque%20%F0%9F%93%B1%F0%9F%94%A5"
+        href={whatsappUrl}        
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Contactar por WhatsApp"

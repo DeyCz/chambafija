@@ -366,6 +366,21 @@ export default function AdminDashboard() {
                 <div style={styles.itemFooterRow}>
                   <span style={styles.itemSalary}>{job.sueldo || 'A tratar'}</span>
                   <div style={styles.itemButtons}>
+                    <button 
+                      onClick={() => {
+                        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://chambafija.com';
+                        const url = `${baseUrl}/oferta/${job._id}`;
+
+                        const text = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo || 'A tratar'}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
+                        
+                        
+                        // encodeURIComponent previene que los emojis se corrompan en caracteres raros ()
+                        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+                      }} 
+                      className="bg-emerald-600 text-white font-bold py-2 px-4 rounded-xl"
+                    >
+                      Compartir 📲
+                    </button>
                     <button onClick={() => handleEdit(job)} style={styles.btnEdit}>Editar</button>
                     <button onClick={() => handleDelete(job._id)} style={styles.btnDelete}>Eliminar</button>
                   </div>

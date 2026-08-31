@@ -9,6 +9,16 @@ export default function Home() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [showTerms, setShowTerms] = useState(false);
 
+
+  const mensaje =
+  "¡Hola! ⚡ Quiero publicar un empleo en ChambaFija y encontrar personal al toque 📲🔥";
+
+  const numeroWhatsApp = "51967576214";
+
+  const whatsappUrl =
+    `https://api.whatsapp.com/send?phone=${numeroWhatsApp}&text=${encodeURIComponent(mensaje)}`;
+
+
   const fetchJobs = async (tipoFiltro) => {
     setLoading(true);
     try {
@@ -112,7 +122,7 @@ export default function Home() {
           {/* BOTÓN CTA CON ESMERALDA */}
           <div className="w-full sm:w-auto flex justify-end">
             <a 
-              href="https://wa.me/51967576214?text=%C2%A1Hola!%20%E2%9A%A1%20Quiero%20publicar%20un%20empleo%20en%20ChambaFija%20y%20encontrar%20personal%20al%20toque%20%F0%9F%93%B1%F0%9F%94%A5" 
+              href={whatsappUrl}      
               target="_blank" 
               rel="noopener noreferrer"
               className="w-full sm:w-auto text-center bg-gradient-to-r from-[#06D6A0] to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 text-slate-950 hover:text-white text-xs font-black px-6 py-3.5 rounded-2xl transition-all duration-300 shadow-lg shadow-emerald-600/20 hover:-translate-y-0.5 active:translate-y-0"
@@ -233,7 +243,6 @@ export default function Home() {
                             <span className="text-xs font-black text-emerald-600 text-sm">{job.sueldo ? (job.sueldo.toString().startsWith('S/') ? job.sueldo : `S/ ${job.sueldo}`) : 'Sueldo a tratar'}</span>
                             <span className="text-[11px] font-extrabold text-slate-700 bg-white px-3 py-1 rounded-xl border border-slate-200 shadow-xs">{job.modalidad}</span>
                           </div>
-                          <p className="text-xs text-slate-600 line-clamp-2 mb-6 leading-relaxed font-medium">{job.descripcion}</p>
                         </>
                       )}
                     </div>
