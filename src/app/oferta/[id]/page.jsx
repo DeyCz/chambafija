@@ -27,11 +27,11 @@ export async function generateMetadata({ params }) {
       openGraph: {
         title: `🚨 ${job.titulo} - ${job.empresa}`,
         description: `📍 Ubicación: ${job.ubicacion} | 💰 Sueldo: ${job.sueldo || 'A tratar'}. Mira todos los requisitos y postula aquí.`,
-        url: `https://chambafija.vercel.app/oferta/${id}`,
+        url: `https://chambafija.com/oferta/${id}`,
         siteName: 'Chamba Fija Pasco',
         images: [
           {
-            url: 'https://chambafija.vercel.app/og-image.png', // Imagen absoluta
+            url: 'https://chambafija.com/og-image.png', // Imagen absoluta
             width: 1200,
             height: 630,
             alt: `Oferta Laboral: ${job.titulo}`,
@@ -44,7 +44,7 @@ export async function generateMetadata({ params }) {
         card: 'summary_large_image',
         title: `${job.titulo} - ${job.empresa}`,
         description: `Oferta laboral en ${job.ubicacion}. Postula ahora.`,
-        images: ['https://chambafija.vercel.app/og-image.png'],
+        images: ['https://chambafija.com/og-image.png'],
       },
     };
   } catch (error) {
