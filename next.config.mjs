@@ -24,7 +24,6 @@ const nextConfig = {
             value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()',
           },
           {
-            // Content Security Policy (CSP) + frame-ancestors
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self';",
@@ -32,7 +31,9 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
               "font-src 'self' data: https://fonts.gstatic.com;",
               "img-src 'self' data: blob: https:;",
-              "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com wss://*.firebaseio.com http://localhost:4000 https://chambafija.vercel.app https://chambafija-backend.onrender.com;",              "frame-ancestors 'none';",
+              // SOLUCIÓN: Agregamos chambafija.com y limpiamos las rutas viejas de Render y localhost
+              "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com wss://*.firebaseio.com https://chambafija.vercel.app https://chambafija.com https://www.chambafija.com;",
+              "frame-ancestors 'none';",
             ].join(' '),
           },
         ],
