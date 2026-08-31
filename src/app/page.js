@@ -184,8 +184,10 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredJobs.length > 0 ? (
-              {filteredJobs.map((job) => (
-  <div key={job._id} className={`bg-white rounded-2xl p-4 sm:p-5 border shadow-sm flex flex-col justify-between ${job.esVip ? 'border-amber-400 bg-amber-50/20' : 'border-slate-200'}`}>
+              filteredJobs.map((job) => {
+                const isEstado = job.tipo === 'Estado';
+                return (
+                  <div key={job._id} className={`bg-white rounded-2xl p-4 sm:p-5 border shadow-sm flex flex-col justify-between ${job.esVip ? 'border-amber-400 bg-amber-50/20' : 'border-slate-200'}`}>
     <div>
       {/* CABECERA DE LA TARJETA CON LOGO Y ETIQUETA */}
       <div className="flex justify-between items-start mb-3 gap-2">
@@ -248,7 +250,8 @@ export default function Home() {
       {job.tipo === 'Estado' ? 'VER CONVOCATORIA' : 'Ver Detalles y Postular'}
     </button>
   </div>
-))}
+                );
+              })
             ) : (
               <div className="col-span-full py-24 text-center text-slate-500 space-y-4">
                 <p className="text-lg font-bold text-slate-700">No se encontraron ofertas activas 📉</p>
