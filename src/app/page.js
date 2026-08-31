@@ -11,7 +11,7 @@ export default function Home() {
 
 
   const mensaje =
-  "¡Hola! ⚡ Quiero publicar un empleo en ChambaFija y encontrar personal al toque 📲🔥";
+  "¡Hola! ⚡ Quiero publicar un empleo en *ChambaFija* y encontrar personal al toque 📲🔥";
 
   const numeroWhatsApp = "51967576214";
 
