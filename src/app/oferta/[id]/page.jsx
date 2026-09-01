@@ -1,8 +1,11 @@
 import React from 'react';
 import Link from 'next/link';
 
-// URL de tu backend en producción
-const API_URL = '/api/jobs';
+// Helper crítico para Next.js: Las consultas SSR necesitan URLs absolutas
+const getBaseUrl = () => {
+  if (process.env.NODE_ENV === 'development') return 'http://localhost:3000';
+  return 'https://www.chambafija.com'; // Tu dominio de producción
+};
 
 // =========================================================
 // 1. GENERADOR DE METADATOS DINÁMICOS (SEO Y WHATSAPP)
@@ -11,10 +14,12 @@ export async function generateMetadata({ params }) {
   const { id } = params;
 
   try {
-    // Consultamos el backend para buscar el empleo específico
-    const res = await fetch(API_URL, { cache: 'no-store' });
+    // Consultamos el endpoint exacto con la URL absoluta
+    const res = await fetch(`${getBaseUrl()}/api/jobs/${id}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error("Error fetching job data");
+    
     const result = await res.json();
-    const job = result.data?.find((j) => j._id === id);
+    const job = result.data; // Ahora recibimos directamente el objeto del empleo
 
     if (!job) {
       return { title: 'Oferta no encontrada | Chamba Fija Pasco' };
@@ -27,11 +32,11 @@ export async function generateMetadata({ params }) {
       openGraph: {
         title: `🚨 ${job.titulo} - ${job.empresa}`,
         description: `📍 Ubicación: ${job.ubicacion} | 💰 Sueldo: ${job.sueldo || 'A tratar'}. Mira todos los requisitos y postula aquí.`,
-        url: `https://chambafija.com/oferta/${id}`,
+        url: `https://www.chambafija.com/oferta/${id}`,
         siteName: 'Chamba Fija Pasco',
         images: [
           {
-            url: 'https://chambafija.com/og-image.png', // Imagen absoluta
+            url: 'https://www.chambafija.com/og-image.png', // URL absoluta vital para WhatsApp
             width: 1200,
             height: 630,
             alt: `Oferta Laboral: ${job.titulo}`,
@@ -44,7 +49,7 @@ export async function generateMetadata({ params }) {
         card: 'summary_large_image',
         title: `${job.titulo} - ${job.empresa}`,
         description: `Oferta laboral en ${job.ubicacion}. Postula ahora.`,
-        images: ['https://chambafija.com/og-image.png'],
+        images: ['https://www.chambafija.com/og-image.png'],
       },
     };
   } catch (error) {
@@ -61,14 +66,17 @@ export default async function OfertaPage({ params }) {
   let job = null;
   
   try {
-    const res = await fetch(API_URL, { cache: 'no-store' });
-    const result = await res.json();
-    job = result.data?.find((j) => j._id === id);
+    // Consulta absoluta al anuncio específico
+    const res = await fetch(`${getBaseUrl()}/api/jobs/${id}`, { cache: 'no-store' });
+    if (res.ok) {
+      const result = await res.json();
+      job = result.data;
+    }
   } catch (error) {
     console.error("Error cargando la oferta:", error);
   }
 
-  // Pantalla de error si la oferta ya fue eliminada del panel admin
+  // Pantalla de error si la oferta ya fue eliminada o no se encontró
   if (!job) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6 text-center">
