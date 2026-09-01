@@ -107,6 +107,21 @@ export default async function OfertaPage({ params }) {
 
   const shareUrl = `https://www.chambafija.com/oferta/${id}`;
 
+  const whatsappMessage = [
+    `🚨 *${job.titulo}*`,
+    '',
+    `🏢 ${job.empresa}`,
+    `📍 ${job.ubicacion || 'Cerro de Pasco'}`,
+    `💰 ${job.sueldo || 'A tratar'}`,
+    '',
+    `📲 *Postula aquí:*`,
+    shareUrl,
+    '',
+    `🔎 *ChambaFija*`
+  ].join('\n');
+
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`;
+
   return (
     <div className="bg-[#F8FAFC] text-slate-900 min-h-screen font-sans">
 
@@ -320,17 +335,10 @@ export default async function OfertaPage({ params }) {
 
             {/* COMPARTIR */}
             <a
-              href={`https://wa.me/?text=${encodeURIComponent(
-                `🚨 *${job.titulo}*\n\n` +
-                `🏢 ${job.empresa}\n` +
-                `📍 ${job.ubicacion || 'Cerro de Pasco'}\n` +
-                `💰 ${job.sueldo || 'A tratar'}\n\n` +
-                `📲 Postula aquí:\n${shareUrl}\n\n` +
-                `🔎 ChambaFija`
-              )}`}
+              href={whatsappUrl}
               target="_blank"
-              rel="noreferrer"
-              className="flex-1 text-center bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl shadow-lg"
+              rel="noopener noreferrer"
+              className="flex-1 text-center bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all"
             >
               📤 Compartir por WhatsApp
             </a>
