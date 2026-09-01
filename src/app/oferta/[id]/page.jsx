@@ -191,74 +191,67 @@ export default async function OfertaPage({ params }) {
               <>
                 <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
 
-                  <div className="bg-blue-100/70 text-blue-900 font-bold px-5 py-3 border-b border-blue-200">
-                    📋 Requisitos Principales
-                  </div>
-
-                  <div className="p-5 space-y-3">
-
-                    <p>
-                      <strong>Vacantes:</strong> {job.vacantes || '1'}
-                    </p>
-
-                    {job.formacion && (
-                      <p>
-                        <strong>Formación Académica:</strong>{' '}
-                        {job.formacion}
-                      </p>
-                    )}
-
-                    {job.experiencia && (
-                      <p>
-                        <strong>Experiencia Requerida:</strong>{' '}
-                        {job.experiencia}
-                      </p>
-                    )}
-
-                    {job.especializacion && (
-                      <p>
-                        <strong>Cursos/Especialización:</strong>{' '}
-                        {job.especializacion}
-                      </p>
-                    )}
-
-                  </div>
+                  <div className="bg-[#0B132B] text-white font-black px-4 py-3">
+                      Requisitos del Puesto
+                    </div>
+                    <div className="p-4 space-y-2.5 font-medium">
+                      <p><strong>Número de vacantes:</strong> {selectedJob.vacantes || '1'}</p>
+                      {selectedJob.formacion && <p className="whitespace-pre-wrap"><strong>Formación Académica:</strong><br/>{selectedJob.formacion}</p>}
+                      {selectedJob.experiencia && <p className="whitespace-pre-wrap"><strong>Experiencia:</strong><br/>{selectedJob.experiencia}</p>}
+                      {selectedJob.especializacion && <p className="whitespace-pre-wrap"><strong>Cursos y/o programas: </strong><br/>{selectedJob.especializacion}</p>}
+                    </div>
                 </div>
 
                 <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">
 
-                  <div className="bg-blue-100/70 text-blue-900 font-bold px-5 py-3 border-b border-blue-200">
-                    💼 Condiciones del contrato
-                  </div>
-
-                  <div className="p-5 space-y-3">
-
-                    <p>
-                      <strong>Lugar de prestación:</strong>{' '}
-                      {job.lugarPrestacion || job.empresa}
-                    </p>
-
-                    <p>
-                      <strong>Remuneración:</strong>{' '}
-                      <span className="text-emerald-600 font-bold text-base">
-                        {job.sueldo || 'A tratar'}
-                      </span>{' '}
-                      ({job.modalidad})
-                    </p>
-
-                    {job.fechaVencimiento && (
-                      <p>
-                        <strong>Vencimiento:</strong>{' '}
-                        <span className="text-rose-600 font-bold">
-                          {new Date(job.fechaVencimiento).toLocaleDateString(
-                            'es-PE'
-                          )}
-                        </span>
-                      </p>
-                    )}
-
-                  </div>
+                  <div className="bg-[#0B132B] text-white font-black px-4 py-3">
+                      Condiciones del Contrato
+                    </div>
+                    <div className="p-4 space-y-2.5 font-medium">
+                      <p><strong>Lugar de prestación:</strong> { selectedJob.empresa}</p>
+                      <p><strong>Remuneración:</strong> <span className="text-emerald-600 font-black">{selectedJob.sueldo ? (selectedJob.sueldo.toString().startsWith('S/') ? selectedJob.sueldo : `S/ ${selectedJob.sueldo}`) : 'A tratar'}</span></p>
+                    </div>
                 </div>
+
+                <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden">  
+                  <div className="bg-[#0B132B] text-white font-black px-4 py-3">
+                      ¿Cómo postular?
+                    </div>
+                    <div className="p-4 space-y-2.5 font-medium">
+                      <p><strong>Plazo límite:</strong> {selectedJob.fechaVencimiento ? selectedJob.fechaVencimiento.split('T')[0].split('-').reverse().join('/') : 'Ver cronograma'}</p>
+                      <p><strong>Procedimiento:</strong> {selectedJob.comoPostular || 'Presentación de expediente según bases oficiales.'}</p>
+                    </div>
+                </div>
+
+                {/* BLOQUE DINÁMICO DE ENLACES OFICIALES EN EL MODAL */}
+                  <div className="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden">
+                    <div className="bg-[#0B132B] text-white font-black px-4 py-3">
+                      Enlaces Oficiales y Bases del Concurso
+                    </div>
+                    <div className="p-4 space-y-2.5 font-medium">
+                      {selectedJob.enlaceBases && (
+                        <p>
+                          👉 <a href={selectedJob.enlaceBases} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline font-bold">Ver Bases y Convocatoria Completa (PDF)</a>
+                        </p>
+                      )}
+                      
+                      {/* Mapeo de enlaces extras si fueron agregados */}
+                      {selectedJob.enlacesExtras && selectedJob.enlacesExtras.map((link, idx) => (
+                        link.url && (
+                          <p key={idx}>
+                            👉 <a href={link.url} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline font-bold">
+                              {link.titulo || 'Ver enlace oficial'}
+                            </a>
+                          </p>
+                        )
+                      ))}
+
+                      {!selectedJob.enlaceBases && (!selectedJob.enlacesExtras || selectedJob.enlacesExtras.length === 0) && (
+                        <p className="text-slate-400 italic">No hay enlaces externos registrados para este proceso.</p>
+                      )}
+                    </div>
+                  </div>
+
               </>
             ) : (
               <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 space-y-4">
