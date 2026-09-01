@@ -195,10 +195,10 @@ export default async function OfertaPage({ params }) {
                       Requisitos del Puesto
                     </div>
                     <div className="p-4 space-y-2.5 font-medium">
-                      <p><strong>Número de vacantes:</strong> {selectedJob.vacantes || '1'}</p>
-                      {selectedJob.formacion && <p className="whitespace-pre-wrap"><strong>Formación Académica:</strong><br/>{selectedJob.formacion}</p>}
-                      {selectedJob.experiencia && <p className="whitespace-pre-wrap"><strong>Experiencia:</strong><br/>{selectedJob.experiencia}</p>}
-                      {selectedJob.especializacion && <p className="whitespace-pre-wrap"><strong>Cursos y/o programas: </strong><br/>{selectedJob.especializacion}</p>}
+                      <p><strong>Número de vacantes:</strong> {job.vacantes || '1'}</p>
+                      {job.formacion && <p className="whitespace-pre-wrap"><strong>Formación Académica:</strong><br/>{job.formacion}</p>}
+                      {job.experiencia && <p className="whitespace-pre-wrap"><strong>Experiencia:</strong><br/>{job.experiencia}</p>}
+                      {job.especializacion && <p className="whitespace-pre-wrap"><strong>Cursos y/o programas: </strong><br/>{job.especializacion}</p>}
                     </div>
                 </div>
 
@@ -208,8 +208,8 @@ export default async function OfertaPage({ params }) {
                       Condiciones del Contrato
                     </div>
                     <div className="p-4 space-y-2.5 font-medium">
-                      <p><strong>Lugar de prestación:</strong> { selectedJob.empresa}</p>
-                      <p><strong>Remuneración:</strong> <span className="text-emerald-600 font-black">{selectedJob.sueldo ? (selectedJob.sueldo.toString().startsWith('S/') ? selectedJob.sueldo : `S/ ${selectedJob.sueldo}`) : 'A tratar'}</span></p>
+                      <p><strong>Lugar de prestación:</strong> { job.empresa}</p>
+                      <p><strong>Remuneración:</strong> <span className="text-emerald-600 font-black">{job.sueldo ? (job.sueldo.toString().startsWith('S/') ? job.sueldo : `S/ ${job.sueldo}`) : 'A tratar'}</span></p>
                     </div>
                 </div>
 
@@ -218,8 +218,8 @@ export default async function OfertaPage({ params }) {
                       ¿Cómo postular?
                     </div>
                     <div className="p-4 space-y-2.5 font-medium">
-                      <p><strong>Plazo límite:</strong> {selectedJob.fechaVencimiento ? selectedJob.fechaVencimiento.split('T')[0].split('-').reverse().join('/') : 'Ver cronograma'}</p>
-                      <p><strong>Procedimiento:</strong> {selectedJob.comoPostular || 'Presentación de expediente según bases oficiales.'}</p>
+                      <p><strong>Plazo límite:</strong> {job.fechaVencimiento ? job.fechaVencimiento.split('T')[0].split('-').reverse().join('/') : 'Ver cronograma'}</p>
+                      <p><strong>Procedimiento:</strong> {job.comoPostular || 'Presentación de expediente según bases oficiales.'}</p>
                     </div>
                 </div>
 
@@ -229,14 +229,14 @@ export default async function OfertaPage({ params }) {
                       Enlaces Oficiales y Bases del Concurso
                     </div>
                     <div className="p-4 space-y-2.5 font-medium">
-                      {selectedJob.enlaceBases && (
+                      {job.enlaceBases && (
                         <p>
-                          👉 <a href={selectedJob.enlaceBases} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline font-bold">Ver Bases y Convocatoria Completa (PDF)</a>
+                          👉 <a href={job.enlaceBases} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline font-bold">Ver Bases y Convocatoria Completa (PDF)</a>
                         </p>
                       )}
                       
                       {/* Mapeo de enlaces extras si fueron agregados */}
-                      {selectedJob.enlacesExtras && selectedJob.enlacesExtras.map((link, idx) => (
+                      {job.enlacesExtras && job.enlacesExtras.map((link, idx) => (
                         link.url && (
                           <p key={idx}>
                             👉 <a href={link.url} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline font-bold">
@@ -246,7 +246,7 @@ export default async function OfertaPage({ params }) {
                         )
                       ))}
 
-                      {!selectedJob.enlaceBases && (!selectedJob.enlacesExtras || selectedJob.enlacesExtras.length === 0) && (
+                      {!job.enlaceBases && (!job.enlacesExtras || job.enlacesExtras.length === 0) && (
                         <p className="text-slate-400 italic">No hay enlaces externos registrados para este proceso.</p>
                       )}
                     </div>
