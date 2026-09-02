@@ -55,6 +55,13 @@ export default function Home() {
     return matchesSearch;
   });
 
+  // ORDENAR: Sector Privado siempre primero
+  const sortedJobs = [...filteredJobs].sort((a, b) => {
+    if (a.tipo === 'Privado' && b.tipo !== 'Privado') return -1;
+    if (a.tipo !== 'Privado' && b.tipo === 'Privado') return 1;
+    return 0;
+  });
+
   // Función universal para compartir
   const handleShare = (job, e) => {
     e.stopPropagation(); // Evita que se abra el modal al hacer clic en compartir
@@ -183,8 +190,8 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredJobs.length > 0 ? (
-              filteredJobs.map((job) => {
+            {sortedJobs.length > 0 ? (
+              sortedJobs.map((job) => {
                 const isEstado = job.tipo === 'Estado';
                 return (
                   <div key={job._id} className={`bg-white rounded-2xl p-4 sm:p-5 border shadow-sm flex flex-col justify-between ${job.esVip ? 'border-amber-400 bg-amber-50/20' : 'border-slate-200'}`}>
@@ -206,7 +213,16 @@ export default function Home() {
                           <p className="text-xs text-slate-500 font-bold mt-0.5">{job.empresa}</p>
                         </div>
                       </div>
-                      {job.esVip && <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">⭐ VIP</span>}
+                      
+                      {/* LADO DERECHO SUPERIOR: VIP y FECHA DE VENCIMIENTO */}
+                      <div className="flex flex-col items-end gap-1">
+                        {job.esVip && <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">⭐ VIP</span>}
+                        {job.fechaVencimiento && (
+                          <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded-md">
+                            Vence: {job.fechaVencimiento.split('T')[0].split('-').reverse().join('/')}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <h3 className="text-sm sm:text-base font-black text-slate-900 mb-1 leading-snug">
@@ -217,7 +233,7 @@ export default function Home() {
                       <span>📍</span> <span className="truncate">{job.ubicacion || 'Pasco'}</span>
                     </p>
 
-                    {/* SECCIÓN DIVIDIDA: SUELDO, MODALIDAD Y VACANTES (PARA QUE NO LUZCA VACÍO) */}
+                    {/* SECCIÓN DIVIDIDA: SUELDO, MODALIDAD Y VACANTES */}
                     <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-2 mb-3">
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-slate-500 font-bold">Remuneración:</span>
@@ -480,7 +496,6 @@ export default function Home() {
         </div>
       </footer>
 
-    
     </div>
   );
 }
