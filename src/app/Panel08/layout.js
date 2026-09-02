@@ -5,3 +5,7 @@ export const metadata = {
     nocache: true,
   },
 };
+
+export default function PanelLayout({ children }) {
+  return children;
+}

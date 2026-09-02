@@ -3,6 +3,7 @@ export default function robots() {
     rules: {
       userAgent: '*',
       allow: '/',
+      disallow: ['/Panel08', '/Panel08/', '/mipanel', '/mipanel/'],
     },
     sitemap: 'https://www.chambafija.com/sitemap.xml',
   };
