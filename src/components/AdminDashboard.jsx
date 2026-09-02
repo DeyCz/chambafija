@@ -155,7 +155,7 @@ export default function AdminDashboard() {
       logo: job.logo || '',
       ubicacion: job.ubicacion || 'Chaupimarca, Pasco',
       sueldo: job.sueldo || '',
-      modalidad: job.modalidad || '',
+      modalidad: job.modalidad || 'CAS',
       modalidades: job.modalidad && job.tipo === 'Privado' && job.modalidad !== 'No especificado' ? job.modalidad.split(', ').map(m => m.trim()) : [],
       descripcion: job.descripcion || '',
       vacantes: job.vacantes || '1',
