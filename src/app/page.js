@@ -217,9 +217,10 @@ export default function Home() {
                       <div className="flex flex-col items-end gap-1">
                         {job.esVip && <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">⭐ VIP</span>}
                         {job.tipo === 'Estado' && job.fechaVencimiento && (
-                          <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded-md flex items-center gap-1 whitespace-nowrap">
-                            ⏳ Vence: {formatDateTime(job.fechaVencimiento, job.horaVencimiento)}
-                          </span>
+                          <div className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-1 rounded-md flex flex-col items-end leading-tight text-right">
+                            <span>⏳ Vence: {job.fechaVencimiento.split('T')[0].split('-').reverse().join('/')}</span>
+                            <span>⏰ {formatTimeStr(job.horaVencimiento)}</span>
+                          </div>
                         )}
                       </div>
                     </div>
