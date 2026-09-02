@@ -366,14 +366,7 @@ export default function Home() {
                     <span className="font-bold text-slate-800">{selectedJob.modalidad || 'No especificada'}</span>
                   </div>
 
-                  {/* SE MUESTRA FECHA Y HORA DE CIERRE PARA PRIVADOS TAMBIÉN */}
-                  {selectedJob.fechaVencimiento && (
-                    <div className="flex justify-between border-b border-slate-200 pb-2">
-                      <span className="text-slate-500 font-bold">Válido hasta:</span>
-                      <span className="font-extrabold text-red-600">{formatDateTime(selectedJob.fechaVencimiento, selectedJob.horaVencimiento)}</span>
-                    </div>
-                  )}
-                  
+                                    
                   {selectedJob.experiencia && (
                     <div className="border-b border-slate-200 pb-2">
                       <h4 className="font-bold text-slate-800 mb-1">Experiencia Requerida:</h4>
