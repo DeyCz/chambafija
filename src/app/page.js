@@ -1,6 +1,23 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 
+// Formatea la hora manual para asegurar compatibilidad universal
+const formatTimeStr = (hora) => {
+  if (!hora) return '11:59 PM';
+  const [h, m] = hora.split(':');
+  const hour = parseInt(h, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const formattedHour = hour % 12 || 12;
+  return `${formattedHour}:${m} ${ampm}`;
+};
+
+// Formatea Fecha y Hora Elegante (Ej. 02/09/2026 - 03:30 PM)
+const formatDateTime = (fecha, hora) => {
+  if (!fecha) return '';
+  const fechaFormateada = fecha.split('T')[0].split('-').reverse().join('/');
+  return `${fechaFormateada} - ${formatTimeStr(hora)}`;
+};
+
 export default function Home() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,12 +59,20 @@ export default function Home() {
   }, [filter]);
 
   const filteredJobs = jobs.filter(job => {
-    // CORRECCIÓN 2: Eliminación automática interna cuando se cumple la fecha de vencimiento
+    // ELIMINACIÓN AUTOMÁTICA CON HORA EXACTA (o 23:59:59 si no se especificó)
     if (job.fechaVencimiento) {
       const [year, month, day] = job.fechaVencimiento.split('T')[0].split('-');
-      const fechaExp = new Date(Number(year), Number(month) - 1, Number(day), 23, 59, 59);
+      
+      let h = 23, m = 59;
+      if (job.horaVencimiento) {
+        const [hours, minutes] = job.horaVencimiento.split(':');
+        h = parseInt(hours, 10);
+        m = parseInt(minutes, 10);
+      }
+
+      const fechaExp = new Date(Number(year), Number(month) - 1, Number(day), h, m, 59);
       if (new Date() > fechaExp) {
-        return false; // El anuncio expiró, se oculta automáticamente
+        return false; // El anuncio expiró y se oculta automáticamente
       }
     }
 
@@ -62,7 +87,6 @@ export default function Home() {
     return matchesSearch;
   });
 
-  // ORDENAR: Sector Privado siempre primero
   const sortedJobs = [...filteredJobs].sort((a, b) => {
     if (a.tipo === 'Privado' && b.tipo !== 'Privado') return -1;
     if (a.tipo !== 'Privado' && b.tipo === 'Privado') return 1;
@@ -72,11 +96,9 @@ export default function Home() {
   return (
     <div className="bg-[#F8FAFC] text-slate-900 min-h-screen flex flex-col justify-between font-sans selection:bg-emerald-600 selection:text-white">
       
-      {/* CABECERA CON AZUL MARINO PROFUNDO */}
       <header className="bg-[#0B132B] text-white sticky top-0 z-40 shadow-xl border-b border-slate-800">
         <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
           
-          {/* LOGO */}
           <div className="flex items-center justify-between w-full sm:w-auto">
             <h1 
               className="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2 group cursor-pointer select-none" 
@@ -98,7 +120,6 @@ export default function Home() {
             </h1>
           </div>
 
-          {/* BUSCADOR MODERNO */}
           <div className="w-full sm:w-[420px] relative">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">🔍</span>
             <input 
@@ -110,7 +131,6 @@ export default function Home() {
             />
           </div>
 
-          {/* BOTÓN CTA CON ESMERALDA */}
           <div className="w-full sm:w-auto flex justify-end">
             <a 
               href={whatsappUrl}      
@@ -124,7 +144,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* HERO BANNER INSTITUCIONAL */}
       <section className="relative bg-cover bg-[center_bottom_55%] overflow-hidden bg-gradient-to-br from-[#0B132B] via-[#1C2541] to-[#0B132B] text-white py-14 px-4 text-center shadow-xl" style={{ backgroundImage: "url('/portadav2.png')" }}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(6,214,160,0.1)_0,transparent_50%)] pointer-events-none"></div>
         <div className="max-w-3xl mx-auto relative z-10 space-y-4">
@@ -140,7 +159,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FILTROS RÁPIDOS EN PÍLDORAS */}
       <nav className="max-w-6xl mx-auto px-4 py-8 w-full flex flex-wrap gap-3 items-center justify-center sm:justify-start">
         {['Todos', 'Privado', 'Estado', 'Destacados'].map((filtro) => (
           <button 
@@ -157,7 +175,6 @@ export default function Home() {
         ))}
       </nav>
 
-      {/* CONTENIDO PRINCIPAL */}
       <main className="max-w-6xl mx-auto px-4 pb-24 w-full flex-grow">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -179,7 +196,6 @@ export default function Home() {
                 return (
                   <div key={job._id} className={`bg-white rounded-2xl p-4 sm:p-5 border shadow-sm flex flex-col justify-between ${job.esVip ? 'border-amber-400 bg-amber-50/20' : 'border-slate-200'}`}>
                   <div>
-                    {/* CABECERA DE LA TARJETA CON LOGO Y ETIQUETA */}
                     <div className="flex justify-between items-start mb-3 gap-2">
                       <div className="flex items-center gap-2.5">
                         {job.logo ? (
@@ -197,13 +213,12 @@ export default function Home() {
                         </div>
                       </div>
                       
-                      {/* LADO DERECHO SUPERIOR: VIP y FECHA DE VENCIMIENTO */}
-                      {/* CORRECCIÓN 2: Fecha de vencimiento solo visible para las convocatorias del Estado */}
+                      {/* ETIQUETAS ESQUINA SUPERIOR DERECHA (Con Fecha y Hora para Ambos Sectores) */}
                       <div className="flex flex-col items-end gap-1">
                         {job.esVip && <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">⭐ VIP</span>}
-                        {job.fechaVencimiento && job.tipo === 'Estado' && (
-                          <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded-md">
-                            Vence: {job.fechaVencimiento.split('T')[0].split('-').reverse().join('/')}
+                        {job.fechaVencimiento && (
+                          <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                            ⏳ Vence: {formatDateTime(job.fechaVencimiento, job.horaVencimiento)}
                           </span>
                         )}
                       </div>
@@ -217,7 +232,6 @@ export default function Home() {
                       <span>📍</span> <span className="truncate">{job.ubicacion || 'Pasco'}</span>
                     </p>
 
-                    {/* SECCIÓN DIVIDIDA: SUELDO, MODALIDAD Y VACANTES */}
                     <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-2 mb-3">
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-slate-500 font-bold">Remuneración:</span>
@@ -308,12 +322,12 @@ export default function Home() {
                       ¿Cómo postular?
                     </div>
                     <div className="p-4 space-y-2.5 font-medium">
-                      <p><strong>Plazo límite:</strong> {selectedJob.fechaVencimiento ? selectedJob.fechaVencimiento.split('T')[0].split('-').reverse().join('/') : 'Ver cronograma'}</p>
+                      {/* SE MUESTRA FECHA Y HORA DE CIERRE PARA EL ESTADO */}
+                      <p><strong>Plazo límite:</strong> <span className="font-bold text-red-600">{selectedJob.fechaVencimiento ? formatDateTime(selectedJob.fechaVencimiento, selectedJob.horaVencimiento) : 'Ver cronograma'}</span></p>
                       <p><strong>Procedimiento:</strong> {selectedJob.comoPostular || 'Presentación de expediente según bases oficiales.'}</p>
                     </div>
                   </div>
 
-                  {/* BLOQUE DINÁMICO DE ENLACES OFICIALES EN EL MODAL */}
                   <div className="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden">
                     <div className="bg-[#0B132B] text-white font-black px-4 py-3">
                       Enlaces Oficiales y Bases del Concurso
@@ -351,6 +365,14 @@ export default function Home() {
                     <span className="text-slate-500 font-bold">Modalidad:</span>
                     <span className="font-bold text-slate-800">{selectedJob.modalidad || 'No especificada'}</span>
                   </div>
+
+                  {/* SE MUESTRA FECHA Y HORA DE CIERRE PARA PRIVADOS TAMBIÉN */}
+                  {selectedJob.fechaVencimiento && (
+                    <div className="flex justify-between border-b border-slate-200 pb-2">
+                      <span className="text-slate-500 font-bold">Válido hasta:</span>
+                      <span className="font-extrabold text-red-600">{formatDateTime(selectedJob.fechaVencimiento, selectedJob.horaVencimiento)}</span>
+                    </div>
+                  )}
                   
                   {selectedJob.experiencia && (
                     <div className="border-b border-slate-200 pb-2">
@@ -368,7 +390,6 @@ export default function Home() {
 
             </div>
 
-            {/* BOTONES DE ACCIÓN */}
             <div className="flex gap-3 pt-4 border-t border-slate-100">
               <button 
                 onClick={() => setSelectedJob(null)}
@@ -386,7 +407,6 @@ export default function Home() {
                   📄 Descargar Bases Oficiales
                 </a>
               ) : (
-                /* CORRECCIÓN 3: Botón de WhatsApp optimizado sin recortes visuales cuando solo hay un número */
                 <div className="flex-1 flex flex-col sm:flex-row gap-2 w-full">
                   {selectedJob.contacto && selectedJob.contacto.split(',').map(c => c.trim()).filter(Boolean).map((num, i, arr) => (
                     <a 
@@ -407,7 +427,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* MODAL DE TÉRMINOS Y CONDICIONES */}
       {showTerms && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 relative max-h-[85vh] flex flex-col">
@@ -436,10 +455,8 @@ export default function Home() {
         </div>
       )}
 
-      {/* FOOTER */}
       <footer className="bg-[#0F172A] text-slate-400 text-xs px-4 py-8 text-center border-t border-slate-800 mt-auto">
         <div className="max-w-4xl mx-auto space-y-6">
-          
           <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700 max-w-lg mx-auto">
             <h4 className="text-white text-base font-extrabold mb-2">🔔 Recibe alertas de empleo diarias en tu celular</h4>
             <p className="text-slate-400 text-xs mb-4">Únete a nuestros canales oficiales y sé el primero en postular a las convocatorias del Estado y negocios locales de Cerro de Pasco.</p>

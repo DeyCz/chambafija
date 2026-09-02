@@ -31,10 +31,10 @@ export default function AdminDashboard() {
     contacto: '',
     contactos: [''],
     fechaVencimiento: '',
+    horaVencimiento: '', // NUEVO CAMPO DE HORA
     esVip: false
   });
 
-  // Control para alternar entre lista desplegable y escritura libre en ubicación
   const [customLocation, setCustomLocation] = useState(false);
   const standardLocations = [
     'Chaupimarca, Pasco',
@@ -106,7 +106,6 @@ export default function AdminDashboard() {
         ? (formData.sueldo.toString().startsWith('S/') ? formData.sueldo : `S/ ${formData.sueldo}`) 
         : 'A tratar';
 
-      // CORRECCIÓN 1: Si no se marca ninguna modalidad en el sector privado, asigna "No especificado"
       const modalidadFinal = activeTab === 'privado' 
         ? (formData.modalidades.length > 0 ? formData.modalidades.join(', ') : 'No especificado')
         : (formData.modalidad || 'No especificado');
@@ -169,6 +168,7 @@ export default function AdminDashboard() {
       contacto: job.contacto || '',
       contactos: job.contacto && job.tipo === 'Privado' ? job.contacto.split(', ').map(c => c.trim()) : [job.contacto || ''],
       fechaVencimiento: job.fechaVencimiento ? job.fechaVencimiento.split('T')[0] : '',
+      horaVencimiento: job.horaVencimiento || '',
       esVip: job.esVip || false
     });
   };
@@ -207,6 +207,7 @@ export default function AdminDashboard() {
       contacto: '',
       contactos: [''],
       fechaVencimiento: '',
+      horaVencimiento: '',
       esVip: false
     });
   };
@@ -259,11 +260,20 @@ export default function AdminDashboard() {
     </div>
   );
 
-  // CORRECCIÓN 2: Filtrar internamente registros que hayan cumplido su fecha de vencimiento
+  // Filtrar internamente considerando la Fecha y Hora Exacta
   const activeJobsList = jobs.filter(job => {
     if (!job.fechaVencimiento) return true;
     const [year, month, day] = job.fechaVencimiento.split('T')[0].split('-');
-    const fechaExp = new Date(Number(year), Number(month) - 1, Number(day), 23, 59, 59);
+    
+    // Por defecto es a las 11:59 PM (23:59:59) si no se especifica hora
+    let h = 23, m = 59;
+    if (job.horaVencimiento) {
+      const [hours, minutes] = job.horaVencimiento.split(':');
+      h = parseInt(hours, 10);
+      m = parseInt(minutes, 10);
+    }
+    
+    const fechaExp = new Date(Number(year), Number(month) - 1, Number(day), h, m, 59);
     return new Date() <= fechaExp;
   });
 
@@ -344,8 +354,11 @@ export default function AdminDashboard() {
                     <input type="text" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 2500" style={styles.input} />
                   </div>
                   <div style={styles.field}>
-                    <label style={styles.label}>Fecha Límite</label>
-                    <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={styles.input} />
+                    <label style={styles.label}>Fecha y Hora Límite</label>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={{ ...styles.input, flex: '1 1 auto' }} />
+                      <input type="time" name="horaVencimiento" value={formData.horaVencimiento} onChange={handleChange} style={{ ...styles.input, flex: '1 1 auto' }} />
+                    </div>
                   </div>
                 </div>
 
@@ -441,15 +454,17 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* CORRECCIÓN 2: Se agrega el campo de Fecha de Vencimiento para el Sector Privado */}
                 <div style={styles.row}>
                   <div style={styles.field}>
                     <label style={styles.label}>Sueldo (S/)</label>
                     <input type="text" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 1200 o A tratar" style={styles.input} />
                   </div>
                   <div style={styles.field}>
-                    <label style={styles.label}>Fecha de Vencimiento (Interna)</label>
-                    <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={styles.input} />
+                    <label style={styles.label}>Fecha y Hora de Cierre</label>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={{ ...styles.input, flex: '1 1 auto' }} />
+                      <input type="time" name="horaVencimiento" value={formData.horaVencimiento} onChange={handleChange} style={{ ...styles.input, flex: '1 1 auto' }} />
+                    </div>
                   </div>
                 </div>
 
