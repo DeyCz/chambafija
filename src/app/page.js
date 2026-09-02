@@ -216,7 +216,7 @@ export default function Home() {
                       {/* ETIQUETAS ESQUINA SUPERIOR DERECHA (Con Fecha y Hora para Ambos Sectores) */}
                       <div className="flex flex-col items-end gap-1">
                         {job.esVip && <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">⭐ VIP</span>}
-                        {job.fechaVencimiento && (
+                        {job.tipo === 'Estado' && job.fechaVencimiento && (
                           <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded-md flex items-center gap-1">
                             ⏳ Vence: {formatDateTime(job.fechaVencimiento, job.horaVencimiento)}
                           </span>
