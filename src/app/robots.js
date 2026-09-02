@@ -1,11 +1,9 @@
-// src/app/robots.js
-
 export default function robots() {
   return {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: '/Panel08/', // Evita que Google indexe tu panel privado
+      disallow: ['/Panel08/', '/mipanel/'],
     },
     sitemap: 'https://chambafija.com/sitemap.xml',
   };
