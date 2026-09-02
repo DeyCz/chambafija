@@ -2,7 +2,7 @@ import './globals.css';
 import WhatsAppButton from '@/components/WhatsAppButton';
 
 export const metadata = {
-  metadataBase: new URL('https://chambafija.com'),
+  metadataBase: new URL('https://www.chambafija.com'),
   title: {
     default: 'Chamba Fija Pasco | Empleos y Convocatorias en Cerro de Pasco',
     template: '%s | Chamba Fija Pasco',
@@ -29,11 +29,11 @@ export const metadata = {
   openGraph: {
     title: 'Chamba Fija Pasco | Bolsa de Trabajo y Convocatorias',
     description: 'Encuentra las mejores oportunidades laborales del sector privado y procesos oficiales del Estado en Cerro de Pasco.',
-    url: 'https://chambafija.com',
+    url: 'https://www.chambafija.com',
     siteName: 'Chamba Fija Pasco',
     images: [
       {
-        url: 'https://chambafija.com/og-image.png',
+        url: 'https://www.chambafija.com/og-image.png',
         width: 1200,
         height: 630,
         alt: 'Chamba Fija Pasco - Empleos y Convocatorias',
@@ -46,7 +46,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'Chamba Fija Pasco | Empleos en Cerro de Pasco',
     description: 'Encuentra ofertas laborales del sector privado y convocatorias del Estado en Cerro de Pasco.',
-    images: ['/og-image.png'],
+    images: ['https://www.chambafija.com/og-image.png'],
   },
 };
 
