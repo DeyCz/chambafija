@@ -117,11 +117,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
           
           <div className="flex items-center justify-between w-full sm:w-auto">
-            <h1 
-              className="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2 group cursor-pointer select-none" 
-              onDoubleClick={() => window.location.href = '/admin'}
-              title="Panel de Administración"
-            >
+            
               <div className="flex items-center justify-between w-full sm:w-auto">
                 <a href="/" className="flex items-center gap-2 group cursor-pointer">
                   <img 
@@ -134,7 +130,7 @@ export default function Home() {
               <span className="text-[10px] bg-slate-800/90 text-orange-400 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full ml-1 border border-orange-500/30 animate-pulse font-semibold whitespace-nowrap">
                 Pasco 🏔️
               </span>
-            </h1>
+
           </div>
 
           <div className="w-full sm:w-[420px] relative">
@@ -503,7 +499,7 @@ export default function Home() {
                 Ver Términos y Condiciones
               </button>
             </div>
-            <p className="text-[11px] text-slate-500 pt-2 opacity-75">© 2026 ChambaFija. Todos los derechos reservados. <a href="/Panel08" className="text-[10px] text-slate-700 hover:text-slate-500 transition-colors">·</a></p>
+            <p className="text-[11px] text-slate-500 pt-2 opacity-75">© 2026 ChambaFija. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>
