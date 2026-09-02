@@ -7,6 +7,6 @@ export default function robots() {
       allow: '/',
       disallow: '/Panel08/', // Evita que Google indexe tu panel privado
     },
-    sitemap: 'https://chambafija.vercel.app/sitemap.xml',
+    sitemap: 'https://chambafija.com/sitemap.xml',
   };
 }
