@@ -1,6 +1,23 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 
+// Formatea un rango de fechas limpio sin desfases de zona horaria
+const formatDateRange = (inicio, fin, hora) => {
+  const formatD = (d) => {
+    if (!d) return '';
+    return d.split('T')[0].split('-').reverse().join('/');
+  };
+
+  const horaFormateada = formatTimeStr(hora);
+
+  if (inicio && inicio !== fin) {
+    return `Del ${formatD(inicio)} al ${formatD(fin)} (${horaFormateada})`;
+  } else if (fin) {
+    return `Vence: ${formatD(fin)} - ${horaFormateada}`;
+  }
+  return '';
+};
+
 // Formatea la hora manual para asegurar compatibilidad universal
 const formatTimeStr = (hora) => {
   if (!hora) return '11:59 PM';
@@ -218,8 +235,7 @@ export default function Home() {
                         {job.esVip && <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">⭐ VIP</span>}
                         {job.tipo === 'Estado' && job.fechaVencimiento && (
                           <div className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-1 rounded-md flex flex-col items-end leading-tight text-right">
-                            <span>⏳ Vence: {job.fechaVencimiento.split('T')[0].split('-').reverse().join('/')}</span>
-                            <span>⏰ {formatTimeStr(job.horaVencimiento)}</span>
+                            <span>⏳ {formatDateRange(job.fechaInicio, job.fechaVencimiento, job.horaVencimiento)}</span>
                           </div>
                         )}
                       </div>
