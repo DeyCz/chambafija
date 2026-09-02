@@ -140,15 +140,7 @@ export default async function OfertaPage({ params }) {
               </div>
               <span className="text-[10px] bg-slate-800/90 text-orange-400 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full ml-1 border border-orange-500/30 animate-pulse font-semibold whitespace-nowrap">
                 Pasco 🏔️
-              </span><div className="flex items-center justify-between w-full sm:w-auto">
-                <a href="/" className="flex items-center gap-2 group cursor-pointer">
-                  <img 
-                    src="/logo.png" 
-                    alt="Chamba Fija Pasco" 
-                    className="h-9 sm:h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-300" 
-                  />
-                </a>
-              </div>
+              </span>
 
           <Link
             href="/"
