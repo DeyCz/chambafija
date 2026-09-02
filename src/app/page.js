@@ -340,11 +340,11 @@ export default function Home() {
                     </div>
                     <div className="p-4 space-y-2.5 font-medium">
                       {/* SE MUESTRA FECHA Y HORA DE CIERRE PARA EL ESTADO */}
-                      <p><strong>Plazo límite:</strong><span className="font-bold text-red-600">
-                                                          {selectedJob.fechaVencimiento 
-                                                            ? formatDateRangeWithTime(selectedJob.fechaInicio, selectedJob.fechaVencimiento, selectedJob.horaVencimiento) 
-                                                            : 'Ver cronograma'}
-                                                        </span></p>
+                      <p><strong>Plazo límite:</strong> <span className="font-bold text-red-600">
+                        {selectedJob.fechaVencimiento 
+                          ? formatDateRange(selectedJob.fechaInicio, selectedJob.fechaVencimiento, selectedJob.horaVencimiento) 
+                          : 'Ver cronograma'}
+                      </span></p>
                       <p><strong>Procedimiento:</strong> {selectedJob.comoPostular || 'Presentación de expediente según bases oficiales.'}</p>
                     </div>
                   </div>
