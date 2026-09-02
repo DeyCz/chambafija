@@ -467,6 +467,11 @@ export default function AdminDashboard() {
                     <label style={styles.label}>Fecha y Hora de Cierre</label>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={{ ...styles.input, flex: '1 1 auto' }} />
+                    </div>
+                  </div>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Fecha y Hora de Cierre</label>
+                    <div style={{ display: 'flex', gap: '6px' }}>
                       <input type="time" name="horaVencimiento" value={formData.horaVencimiento} onChange={handleChange} style={{ ...styles.input, flex: '1 1 auto' }} />
                     </div>
                   </div>
