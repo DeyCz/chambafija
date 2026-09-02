@@ -20,7 +20,7 @@ export default async function sitemap() {
     const jobUrls = jobs
       .filter((job) => job?._id)
       .map((job) => ({
-        url: `https://chambafija.com/oferta/${job._id}`,
+        url: `https://www.chambafija.com/oferta/${job._id}`,
         lastModified: job.updatedAt
           ? new Date(job.updatedAt)
           : new Date(),
@@ -30,7 +30,7 @@ export default async function sitemap() {
 
     return [
       {
-        url: 'https://chambafija.com',
+        url: 'https://www.chambafija.com',
         lastModified: new Date(),
         changeFrequency: 'daily',
         priority: 1.0,
