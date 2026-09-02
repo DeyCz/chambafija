@@ -9,7 +9,6 @@ export default function Home() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [showTerms, setShowTerms] = useState(false);
 
-
   const mensaje =
   "¡Hola! ⚡ Quiero publicar un empleo en *Chamba Fija* y encontrar personal al toque 📲🔥";
 
@@ -17,7 +16,6 @@ export default function Home() {
 
   const whatsappUrl =
     `https://api.whatsapp.com/send?phone=${numeroWhatsApp}&text=${encodeURIComponent(mensaje)}`;
-
 
   const fetchJobs = async (tipoFiltro) => {
     setLoading(true);
@@ -44,6 +42,15 @@ export default function Home() {
   }, [filter]);
 
   const filteredJobs = jobs.filter(job => {
+    // CORRECCIÓN 2: Eliminación automática interna cuando se cumple la fecha de vencimiento
+    if (job.fechaVencimiento) {
+      const [year, month, day] = job.fechaVencimiento.split('T')[0].split('-');
+      const fechaExp = new Date(Number(year), Number(month) - 1, Number(day), 23, 59, 59);
+      if (new Date() > fechaExp) {
+        return false; // El anuncio expiró, se oculta automáticamente
+      }
+    }
+
     const matchesSearch = job.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           job.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           job.ubicacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -62,29 +69,6 @@ export default function Home() {
     return 0;
   });
 
-  // Función universal para compartir
-  const handleShare = (job, e) => {
-    e.stopPropagation(); // Evita que se abra el modal al hacer clic en compartir
-    
-    // Obtiene el dominio actual de la web (funciona en localhost y en Vercel)
-    const baseUrl = window.location.origin;
-    const shareUrl = `${baseUrl}/oferta/${job._id}`;
-    const shareText = `🚨 *Nueva Oferta en ChambaFija*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n💰 ${job.sueldo || 'A tratar'}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${shareUrl}`;
-
-    // Si el navegador es un celular compatible con Web Share API
-    if (navigator.share) {
-      navigator.share({
-        title: job.titulo,
-        text: shareText,
-        url: shareUrl,
-      }).catch((error) => console.log('Error al compartir:', error));
-    } else {
-      // Si es PC o no soporta Web Share, abre WhatsApp directamente con el texto formateado
-      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-      window.open(whatsappUrl, '_blank');
-    }
-  };
-
   return (
     <div className="bg-[#F8FAFC] text-slate-900 min-h-screen flex flex-col justify-between font-sans selection:bg-emerald-600 selection:text-white">
       
@@ -95,7 +79,7 @@ export default function Home() {
           {/* LOGO */}
           <div className="flex items-center justify-between w-full sm:w-auto">
             <h1 
-              className="text-xl text-2xl font-black tracking-tight flex items-center gap-2 group cursor-pointer select-none" 
+              className="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2 group cursor-pointer select-none" 
               onDoubleClick={() => window.location.href = '/admin'}
               title="Panel de Administración"
             >
@@ -192,7 +176,6 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedJobs.length > 0 ? (
               sortedJobs.map((job) => {
-                const isEstado = job.tipo === 'Estado';
                 return (
                   <div key={job._id} className={`bg-white rounded-2xl p-4 sm:p-5 border shadow-sm flex flex-col justify-between ${job.esVip ? 'border-amber-400 bg-amber-50/20' : 'border-slate-200'}`}>
                   <div>
@@ -215,9 +198,10 @@ export default function Home() {
                       </div>
                       
                       {/* LADO DERECHO SUPERIOR: VIP y FECHA DE VENCIMIENTO */}
+                      {/* CORRECCIÓN 2: Fecha de vencimiento solo visible para las convocatorias del Estado */}
                       <div className="flex flex-col items-end gap-1">
                         {job.esVip && <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">⭐ VIP</span>}
-                        {job.fechaVencimiento && (
+                        {job.fechaVencimiento && job.tipo === 'Estado' && (
                           <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded-md">
                             Vence: {job.fechaVencimiento.split('T')[0].split('-').reverse().join('/')}
                           </span>
@@ -341,7 +325,6 @@ export default function Home() {
                         </p>
                       )}
                       
-                      {/* Mapeo de enlaces extras si fueron agregados */}
                       {selectedJob.enlacesExtras && selectedJob.enlacesExtras.map((link, idx) => (
                         link.url && (
                           <p key={idx}>
@@ -366,11 +349,9 @@ export default function Home() {
                   </div>
                   <div className="flex justify-between border-b border-slate-200 pb-2">
                     <span className="text-slate-500 font-bold">Modalidad:</span>
-                    {/* Al ser texto separado por comas, se verá impecable */}
-                    <span className="font-bold text-slate-800">{selectedJob.modalidad || ''}</span>
+                    <span className="font-bold text-slate-800">{selectedJob.modalidad || 'No especificada'}</span>
                   </div>
                   
-                  {/* NUEVO: Módulo de Experiencia para Privados */}
                   {selectedJob.experiencia && (
                     <div className="border-b border-slate-200 pb-2">
                       <h4 className="font-bold text-slate-800 mb-1">Experiencia Requerida:</h4>
@@ -405,18 +386,19 @@ export default function Home() {
                   📄 Descargar Bases Oficiales
                 </a>
               ) : (
-                <div className="flex-1 flex flex-col sm:flex-row gap-2">
-                  {selectedJob.contacto && selectedJob.contacto.split(', ').map((num, i) => (
-                  <a 
-                    key={i}
-                    href={`https://wa.me/51${num.replace(/\s/g, '')}?text=Hola,%20vi%20el%20anuncio%20de%20${encodeURIComponent(selectedJob.titulo)}%20en%20ChambaFija`} 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-3 px-4 rounded-xl shadow-md transition-all block text-center"
-                  >
-                    📲 Contactar a WhatsApp #{i + 1}
-                  </a>
-                ))}
+                /* CORRECCIÓN 3: Botón de WhatsApp optimizado sin recortes visuales cuando solo hay un número */
+                <div className="flex-1 flex flex-col sm:flex-row gap-2 w-full">
+                  {selectedJob.contacto && selectedJob.contacto.split(',').map(c => c.trim()).filter(Boolean).map((num, i, arr) => (
+                    <a 
+                      key={i}
+                      href={`https://wa.me/51${num.replace(/\D/g, '')}?text=Hola,%20vi%20el%20anuncio%20de%20${encodeURIComponent(selectedJob.titulo)}%20en%20ChambaFija`} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className="w-full flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center text-center gap-1"
+                    >
+                      📲 {arr.length === 1 ? 'Contactar por WhatsApp' : `Contactar WhatsApp #${i + 1}`}
+                    </a>
+                  ))}
                 </div>
               )}
             </div>
@@ -454,11 +436,10 @@ export default function Home() {
         </div>
       )}
 
-      {/* FOOTER Y CANALES DE NOTIFICACIÓN */}
+      {/* FOOTER */}
       <footer className="bg-[#0F172A] text-slate-400 text-xs px-4 py-8 text-center border-t border-slate-800 mt-auto">
         <div className="max-w-4xl mx-auto space-y-6">
           
-          {/* NUEVO: Bloque de Canales Oficiales */}
           <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700 max-w-lg mx-auto">
             <h4 className="text-white text-base font-extrabold mb-2">🔔 Recibe alertas de empleo diarias en tu celular</h4>
             <p className="text-slate-400 text-xs mb-4">Únete a nuestros canales oficiales y sé el primero en postular a las convocatorias del Estado y negocios locales de Cerro de Pasco.</p>

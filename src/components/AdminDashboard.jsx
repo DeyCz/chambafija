@@ -106,10 +106,15 @@ export default function AdminDashboard() {
         ? (formData.sueldo.toString().startsWith('S/') ? formData.sueldo : `S/ ${formData.sueldo}`) 
         : 'A tratar';
 
+      // CORRECCIÓN 1: Si no se marca ninguna modalidad en el sector privado, asigna "No especificado"
+      const modalidadFinal = activeTab === 'privado' 
+        ? (formData.modalidades.length > 0 ? formData.modalidades.join(', ') : 'No especificado')
+        : (formData.modalidad || 'No especificado');
+
       const datosAEnviar = { 
         ...formData, 
         sueldo: sueldoLimpio,
-        modalidad: activeTab === 'privado' ? formData.modalidades.join(', ') : formData.modalidad,
+        modalidad: modalidadFinal,
         contacto: activeTab === 'privado' ? formData.contactos.filter(c => c.trim() !== '').join(', ') : formData.contacto
       };
 
@@ -151,7 +156,7 @@ export default function AdminDashboard() {
       ubicacion: job.ubicacion || 'Chaupimarca, Pasco',
       sueldo: job.sueldo || '',
       modalidad: job.modalidad || '',
-      modalidades: job.modalidad && job.tipo === 'Privado' ? job.modalidad.split(', ').map(m => m.trim()) : [],
+      modalidades: job.modalidad && job.tipo === 'Privado' && job.modalidad !== 'No especificado' ? job.modalidad.split(', ').map(m => m.trim()) : [],
       descripcion: job.descripcion || '',
       vacantes: job.vacantes || '1',
       formacion: job.formacion || '',
@@ -254,6 +259,14 @@ export default function AdminDashboard() {
     </div>
   );
 
+  // CORRECCIÓN 2: Filtrar internamente registros que hayan cumplido su fecha de vencimiento
+  const activeJobsList = jobs.filter(job => {
+    if (!job.fechaVencimiento) return true;
+    const [year, month, day] = job.fechaVencimiento.split('T')[0].split('-');
+    const fechaExp = new Date(Number(year), Number(month) - 1, Number(day), 23, 59, 59);
+    return new Date() <= fechaExp;
+  });
+
   return (
     <div style={styles.wrapper}>
       <div style={styles.tabNav}>
@@ -309,7 +322,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 
-                {/* AGRUPACIÓN COMPACTA: LOGO, TÍTULO Y UBICACIÓN */}
                 <div style={styles.row}>
                   <div style={styles.field}>
                     <label style={styles.label}>Logo (URL Imagen)</label>
@@ -337,7 +349,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* TEXTAREAS CON TAMAÑO FIJO PARA EVITAR SCROLL */}
                 <div style={styles.field}>
                   <label style={styles.label}>Formación Académica</label>
                   <textarea name="formacion" value={formData.formacion} onChange={handleChange} placeholder="Ej. TÍTULO EN DERECHO..." style={styles.textarea} />
@@ -399,7 +410,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* AGRUPACIÓN COMPACTA: LOGO, TÍTULO Y UBICACIÓN */}
                 <div style={styles.row}>
                   <div style={styles.field}>
                     <label style={styles.label}>Logo (URL Imagen)</label>
@@ -431,10 +441,15 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
+                {/* CORRECCIÓN 2: Se agrega el campo de Fecha de Vencimiento para el Sector Privado */}
                 <div style={styles.row}>
                   <div style={styles.field}>
                     <label style={styles.label}>Sueldo (S/)</label>
                     <input type="text" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 1200 o A tratar" style={styles.input} />
+                  </div>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Fecha de Vencimiento (Interna)</label>
+                    <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={styles.input} />
                   </div>
                 </div>
 
@@ -488,11 +503,11 @@ export default function AdminDashboard() {
         <div style={styles.card}>
           <div style={styles.listHeader}>
             <h2 style={styles.cardTitle}>📋 Registros Activos</h2>
-            <span style={styles.counterBadge}>{jobs.length} ofertas</span>
+            <span style={styles.counterBadge}>{activeJobsList.length} ofertas</span>
           </div>
 
           <div style={styles.scrollList}>
-            {jobs.map((job) => (
+            {activeJobsList.map((job) => (
               <div key={job._id} style={styles.itemCard}>
                 <div>
                   <span style={styles.tagModality}>{job.modalidad || job.tipo}</span>
@@ -530,37 +545,24 @@ const styles = {
   wrapper: { padding: 'clamp(8px, 3vw, 24px)', backgroundColor: '#F1F5F9', minHeight: '100vh', fontFamily: 'system-ui, sans-serif' },
   tabNav: { display: 'flex', gap: '8px', marginBottom: '16px', maxWidth: '1200px', margin: '0 auto 16px auto', flexWrap: 'wrap' },
   tabBtn: { flex: '1 1 45%', padding: '12px', borderRadius: '10px', borderWidth: '1px', borderStyle: 'solid', fontWeight: '900', fontSize: 'clamp(12px, 4vw, 14px)', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'center' },
-  
   mainGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '16px', maxWidth: '1200px', margin: '0 auto' },
-  
   card: { backgroundColor: '#FFFFFF', padding: 'clamp(14px, 4vw, 24px)', borderRadius: '14px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #CBD5E1' },
   cardHeader: { marginBottom: '12px', borderBottom: '1px solid #E2E8F0', paddingBottom: '10px' },
   cardTitle: { fontSize: 'clamp(14px, 4vw, 16px)', fontWeight: '900', color: '#0B132B', margin: 0 },
-  
   form: { display: 'flex', flexDirection: 'column', gap: '12px' },
   row: { display: 'flex', gap: '10px', flexWrap: 'wrap' },
-  
   field: { display: 'flex', flexDirection: 'column', gap: '4px', flex: '1 1 130px', minWidth: 0 },
-  
   label: { fontSize: '11px', fontWeight: '900', color: '#0B132B' },
-  
-  // Input general
   input: { padding: '9px 12px', borderRadius: '8px', border: '1px solid #94A3B8', fontSize: '13px', fontWeight: '600', color: '#0B132B', outline: 'none', backgroundColor: '#FFFFFF', width: '100%', boxSizing: 'border-box' },
-  
-  // Nuevo estilo específico para los Textareas (evita el scroll innecesario)
   textarea: { padding: '9px 12px', borderRadius: '8px', border: '1px solid #94A3B8', fontSize: '13px', fontWeight: '600', color: '#0B132B', outline: 'none', backgroundColor: '#FFFFFF', width: '100%', boxSizing: 'border-box', minHeight: '80px', resize: 'vertical' },
-
   btnManual: { padding: '8px 10px', backgroundColor: '#E2E8F0', border: '1px solid #94A3B8', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', color: '#0B132B', flex: '0 0 auto', textAlign: 'center' },
   vipContainer: { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', backgroundColor: '#F0FDF4', borderRadius: '8px', border: '1px solid #86EFAC', flexWrap: 'wrap' },
   vipLabel: { fontSize: '12px', fontWeight: '900', color: '#166534', cursor: 'pointer', flex: '1 1 auto' },
-  
   btnGroup: { display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap' },
   btnPrimary: { flex: '1 1 100%', padding: '12px', backgroundColor: '#0B132B', color: '#FFFFFF', border: 'none', borderRadius: '8px', fontWeight: '900', fontSize: '14px', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
   btnSecondary: { flex: '1 1 100%', padding: '12px', backgroundColor: '#64748B', color: '#FFFFFF', border: 'none', borderRadius: '8px', fontWeight: '900', fontSize: '13px', cursor: 'pointer' },
-  
   listHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #E2E8F0', paddingBottom: '8px', flexWrap: 'wrap', gap: '8px' },
   counterBadge: { fontSize: '11px', backgroundColor: '#E2E8F0', color: '#0B132B', padding: '3px 10px', borderRadius: '12px', fontWeight: '900' },
-  
   scrollList: { display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '70vh', overflowY: 'auto', paddingRight: '2px' },
   itemCard: { padding: '14px', borderRadius: '10px', backgroundColor: '#FFFFFF', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
   tagModality: { fontSize: '9px', fontWeight: '900', backgroundColor: '#0B132B', color: '#FFFFFF', padding: '2px 6px', borderRadius: '4px', display: 'inline-block', marginBottom: '4px' },
@@ -568,11 +570,9 @@ const styles = {
   itemMeta: { fontSize: '11px', color: '#334155', margin: 0, fontWeight: '700' },
   itemFooterRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid #F1F5F9', flexWrap: 'wrap', gap: '8px' },
   itemSalary: { fontSize: '13px', fontWeight: '900', color: '#059669' },
-  
   itemButtons: { display: 'flex', gap: '6px', flexWrap: 'wrap', flex: '1 1 auto', justifyContent: 'flex-end' },
   btnEdit: { padding: '6px 12px', fontSize: '11px', fontWeight: '900', backgroundColor: '#F1F5F9', color: '#0B132B', border: '1px solid #94A3B8', borderRadius: '6px', cursor: 'pointer', flex: '1 1 auto', textAlign: 'center' },
   btnDelete: { padding: '6px 12px', fontSize: '11px', fontWeight: '900', backgroundColor: '#FEF2F2', color: '#991B1B', border: '1px solid #FCA5A5', borderRadius: '6px', cursor: 'pointer', flex: '1 1 auto', textAlign: 'center' },
-  
   btnAddRow: { background: 'none', border: 'none', color: '#059669', fontSize: '11px', fontWeight: '900', cursor: 'pointer', padding: '4px 0', textAlign: 'left', width: '100%' },
   btnDeleteRow: { background: 'none', border: 'none', color: '#EF4444', fontWeight: '900', fontSize: '13px', cursor: 'pointer', padding: '4px 8px', textAlign: 'center' }
 };
