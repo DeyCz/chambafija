@@ -464,13 +464,13 @@ export default function AdminDashboard() {
                     <input type="text" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 1200 o A tratar" style={styles.input} />
                   </div>
                   <div style={styles.field}>
-                    <label style={styles.label}>Fecha y Hora de Cierre</label>
+                    <label style={styles.label}>Fecha de Cierre</label>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={{ ...styles.input, flex: '1 1 auto' }} />
                     </div>
                   </div>
                   <div style={styles.field}>
-                    <label style={styles.label}>Fecha y Hora de Cierre</label>
+                    <label style={styles.label}>Hora de Cierre</label>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <input type="time" name="horaVencimiento" value={formData.horaVencimiento} onChange={handleChange} style={{ ...styles.input, flex: '1 1 auto' }} />
                     </div>
