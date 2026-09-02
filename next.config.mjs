@@ -44,7 +44,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
-            value: 'https://chambafija.vercel.app',
+            value: 'https://www.chambafija.vercel.app',
           },
         ],
       },
