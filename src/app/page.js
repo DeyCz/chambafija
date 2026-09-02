@@ -367,7 +367,7 @@ export default function Home() {
                   <div className="flex justify-between border-b border-slate-200 pb-2">
                     <span className="text-slate-500 font-bold">Modalidad:</span>
                     {/* Al ser texto separado por comas, se verá impecable */}
-                    <span className="font-bold text-slate-800">{selectedJob.modalidad || 'Tiempo Completo'}</span>
+                    <span className="font-bold text-slate-800">{selectedJob.modalidad || ''}</span>
                   </div>
                   
                   {/* NUEVO: Módulo de Experiencia para Privados */}
