@@ -315,7 +315,7 @@ export default async function OfertaPage({ params }) {
 
               <a
                 href={`https://wa.me/51${job.contacto}?text=${encodeURIComponent(
-                  `Hola, vi el anuncio de "${job.titulo}" en ChambaFija.`
+                  `Hola, vi el anuncio de "${job.titulo}" en *ChambaFija*.`
                 )}`}
                 target="_blank"
                 rel="noreferrer"
