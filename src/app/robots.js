@@ -5,6 +5,6 @@ export default function robots() {
       allow: '/',
       disallow: ['/Panel08/', '/mipanel/'],
     },
-    sitemap: 'https://chambafija.com/sitemap.xml',
+    sitemap: 'https://www.chambafija.com/sitemap.xml',
   };
 }

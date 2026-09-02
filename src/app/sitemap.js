@@ -2,7 +2,7 @@
 // src/app/sitemap.js
 
 export default async function sitemap() {
-  const API_URL = 'https://chambafija.com/api/jobs';
+  const API_URL = 'https://www.chambafija.com/api/jobs';
 
   try {
     const res = await fetch(API_URL, {
@@ -42,7 +42,7 @@ export default async function sitemap() {
 
     return [
       {
-        url: 'https://chambafija.com',
+        url: 'https://www.chambafija.com',
         lastModified: new Date(),
         changeFrequency: 'daily',
         priority: 1.0,
