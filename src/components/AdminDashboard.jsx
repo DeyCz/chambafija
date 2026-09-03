@@ -32,8 +32,10 @@ export default function AdminDashboard() {
     contactos: [''],
     fechaInicio: '',
     fechaVencimiento: '',
-    horaVencimiento: '', // NUEVO CAMPO DE HORA
-    esVip: false
+    horaVencimiento: '',
+    esVip: false,
+    area: '',
+    categoriaClasificados: 'Locales en Alquiler',
   });
 
   const [customLocation, setCustomLocation] = useState(false);
@@ -50,7 +52,10 @@ export default function AdminDashboard() {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const tipoQuery = activeTab === 'estado' ? 'Estado' : 'Privado';
+      let tipoQuery = 'Estado';
+      if (activeTab === 'privado') tipoQuery = 'Privado';
+      if (activeTab === 'clasificados') tipoQuery = 'Clasificado';
+
       const res = await fetch(`/api/jobs?tipo=${tipoQuery}`);
 
       if (!res.ok) {
@@ -70,7 +75,10 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    setFormData(prev => ({ ...prev, tipo: activeTab === 'estado' ? 'Estado' : 'Privado' }));
+    let nuevoTipo = 'Estado';
+    if (activeTab === 'privado') nuevoTipo = 'Privado';
+    if (activeTab === 'clasificados') nuevoTipo = 'Clasificado';
+    setFormData(prev => ({ ...prev, tipo: nuevoTipo }));
     fetchJobs();
   }, [activeTab]);
 
@@ -115,8 +123,13 @@ export default function AdminDashboard() {
         ...formData, 
         sueldo: sueldoLimpio,
         modalidad: modalidadFinal,
-        contacto: activeTab === 'privado' ? formData.contactos.filter(c => c.trim() !== '').join(', ') : formData.contacto
+        contacto: (activeTab === 'privado' || activeTab === 'clasificados') ? formData.contactos.filter(c => c.trim() !== '').join(', ') : formData.contacto
       };
+
+      // Si es un anuncio nuevo, agregamos fecha de creación para mostrar "Publicado el..."
+      if (!editingId) {
+        datosAEnviar.fechaInicio = new Date().toISOString();
+      }
 
       const method = editingId ? 'PUT' : 'POST';
       const url = editingId ? `${API_URL}/${editingId}` : API_URL;
@@ -167,11 +180,13 @@ export default function AdminDashboard() {
       enlaceBases: job.enlaceBases || '',
       enlacesExtras: job.enlacesExtras && job.enlacesExtras.length > 0 ? job.enlacesExtras : [{ titulo: '', url: '' }],
       contacto: job.contacto || '',
-      contactos: job.contacto && job.tipo === 'Privado' ? job.contacto.split(', ').map(c => c.trim()) : [job.contacto || ''],
+      contactos: (job.contacto && (job.tipo === 'Privado' || job.tipo === 'Clasificado')) ? job.contacto.split(', ').map(c => c.trim()) : [job.contacto || ''],
       fechaVencimiento: job.fechaVencimiento ? job.fechaVencimiento.split('T')[0] : '',
       fechaInicio: job.fechaInicio ? job.fechaInicio.split('T')[0] : '',
       horaVencimiento: job.horaVencimiento || '',
-      esVip: job.esVip || false
+      esVip: job.esVip || false,
+      area: job.area || '',
+      categoriaClasificado: job.categoriaClasificado || 'Locales en alquiler'
     });
   };
 
@@ -189,7 +204,7 @@ export default function AdminDashboard() {
     setEditingId(null);
     setCustomLocation(false);
     setFormData({
-      tipo: activeTab === 'estado' ? 'Estado' : 'Privado',
+      tipo: activeTab === 'estado' ? 'Estado' : activeTab === 'privado' ? 'Privado' : 'Clasificado',
       titulo: '',
       empresa: '',
       logo: '',
@@ -210,7 +225,9 @@ export default function AdminDashboard() {
       contactos: [''],
       fechaVencimiento: '',
       horaVencimiento: '',
-      esVip: false
+      esVip: false,
+      area: '',
+      categoriaClasificado: 'Locales en alquiler'
     });
   };
 
@@ -302,7 +319,10 @@ export default function AdminDashboard() {
             borderColor: activeTab === 'privado' ? '#06D6A0' : '#CBD5E1',
           }}
         >
-          🏪 Negocios Locales
+          💼 Empleos Locales
+        </button>
+        <button onClick={() => setActiveTab('clasificados')} style={{...styles.tabBtn, backgroundColor: activeTab === 'clasificados' ? '#4F46E5' : '#FFFFFF', color: activeTab === 'clasificados' ? '#FFFFFF' : '#0B132B', borderColor: activeTab === 'clasificados' ? '#4F46E5' : '#CBD5E1'}}>
+          📢 Clasificados
         </button>
       </div>
 
@@ -310,11 +330,11 @@ export default function AdminDashboard() {
         <div style={styles.card}>
           <div style={styles.cardHeader}>
             <h2 style={styles.cardTitle}>
-              {editingId ? '✏️ Modificar Registro' : (activeTab === 'estado' ? '🏛️ Nueva Convocatoria Estatal' : '🏪 Nuevo Anuncio Local')}
-            </h2>
+              {editingId ? '✏️ Modificar Registro' : (activeTab === 'estado' ? '🏛️ Nueva Convocatoria' : activeTab === 'privado' ? '💼 Nuevo Empleo Local' : '📢 Nuevo Anuncio Clasificado')}            </h2>
           </div>
 
           <form onSubmit={handleSubmit} style={styles.form}>
+            {/* ================= ESTADO ================= */}
             {activeTab === 'estado' ? (
               <>
                 <div style={styles.row}>
@@ -419,7 +439,7 @@ export default function AdminDashboard() {
                   <button type="button" onClick={agregarFilaEnlace} style={styles.btnAddRow}>+ Agregar otro enlace</button>
                 </div>
               </>
-            ) : (
+            ) : activeTab === 'privado' ? (
               <>
                 <div style={styles.row}>
                   <div style={styles.field}>
@@ -506,11 +526,75 @@ export default function AdminDashboard() {
                   <button type="button" onClick={() => setFormData({ ...formData, contactos: [...formData.contactos, ''] })} style={styles.btnAddRow}>+ Agregar otro número</button>
                 </div>
               </>
+            ) : (
+              /* ================= CLASIFICADOS ================= */
+              <>
+                <div style={styles.row}>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Título del Anuncio</label>
+                    <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Alquiler de local comercial" style={styles.input} required />
+                  </div>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Categoría</label>
+                    <select name="categoriaClasificado" value={formData.categoriaClasificado} onChange={handleChange} style={styles.input}>
+                      <option value="Locales en alquiler">🏪 Locales en alquiler</option>
+                      <option value="Viviendas en alquiler">🏠 Viviendas en alquiler</option>
+                      <option value="Vehículos">🚗 Vehículos</option>
+                      <option value="Servicios">🛠️ Servicios</option>
+                      <option value="Ventas">🏷️ Ventas</option>
+                      <option value="Otros">📌 Otros</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div style={styles.row}>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Precio (S/)</label>
+                    <input type="text" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 1,500 mensuales" style={styles.input} />
+                  </div>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Área / Medidas</label>
+                    <input type="text" name="area" value={formData.area} onChange={handleChange} placeholder="Ej. 80 m²" style={styles.input} />
+                  </div>
+                  {renderLocationField()}
+                </div>
+
+                <div style={styles.row}>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Fecha de Vencimiento (Autoborrado)</label>
+                    <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={styles.input} />
+                  </div>
+                </div>
+
+                <div style={{ ...styles.field, backgroundColor: '#FEFCE8', padding: '10px', borderRadius: '8px', border: '1px solid #FEF08A' }}>
+                  <label style={{ ...styles.label, color: '#854D0E', marginBottom: '6px' }}>📱 WhatsApp del Anunciante</label>
+                  {formData.contactos.map((numero, index) => (
+                    <div key={index} style={{ display: 'flex', gap: '4px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                      <input 
+                        type="text" 
+                        placeholder={`Ej. 987654321 (#${index + 1})`} 
+                        value={numero} 
+                        onChange={(e) => {
+                          const nuevos = [...formData.contactos];
+                          nuevos[index] = e.target.value;
+                          setFormData({ ...formData, contactos: nuevos });
+                        }} 
+                        style={{ ...styles.input, flex: '1 1 120px', backgroundColor: '#FFFFFF' }} 
+                        required={index === 0} 
+                      />
+                      {formData.contactos.length > 1 && (
+                        <button type="button" onClick={() => setFormData({ ...formData, contactos: formData.contactos.filter((_, i) => i !== index) })} style={{ ...styles.btnDeleteRow, flex: '1 1 auto' }}>✕ Quitar</button>
+                      )}
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => setFormData({ ...formData, contactos: [...formData.contactos, ''] })} style={styles.btnAddRow}>+ Agregar otro número</button>
+                </div>
+              </>
             )}
 
             <div style={styles.field}>
               <label style={styles.label}>Descripción / Notas</label>
-              <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} style={styles.textarea} />
+              <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} style={styles.textarea} required />
             </div>
 
             <div style={styles.vipContainer}>
@@ -539,9 +623,9 @@ export default function AdminDashboard() {
             {activeJobsList.map((job) => (
               <div key={job._id} style={styles.itemCard}>
                 <div>
-                  <span style={styles.tagModality}>{job.modalidad || job.tipo}</span>
+                  <span style={{...styles.tagModality, backgroundColor: job.tipo === 'Clasificado' ? '#4F46E5' : '#0B132B'}}>{job.tipo === 'Clasificado' ? job.categoriaClasificado : job.tipo}</span>
                   <h3 style={styles.itemTitle}>{job.titulo}</h3>
-                  <p style={styles.itemMeta}><strong>{job.empresa}</strong> • 📍 {job.ubicacion}</p>
+                  <p style={styles.itemMeta}><strong>{job.tipo === 'Clasificado' ? 'Clasificado' : job.empresa}</strong> • 📍 {job.ubicacion}</p>
                 </div>
                 <div style={styles.itemFooterRow}>
                   <span style={styles.itemSalary}>{job.sueldo || 'A tratar'}</span>

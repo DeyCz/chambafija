@@ -28,13 +28,6 @@ const formatTimeStr = (hora) => {
   return `${formattedHour}:${m} ${ampm}`;
 };
 
-// Formatea Fecha y Hora Elegante (Ej. 02/09/2026 - 03:30 PM)
-const formatDateTime = (fecha, hora) => {
-  if (!fecha) return '';
-  const fechaFormateada = fecha.split('T')[0].split('-').reverse().join('/');
-  return `${fechaFormateada} - ${formatTimeStr(hora)}`;
-};
-
 export default function Home() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -54,16 +47,17 @@ export default function Home() {
   const fetchJobs = async (tipoFiltro) => {
     setLoading(true);
     try {
-      const url = tipoFiltro === 'Todos' || tipoFiltro === 'Destacados'
-        ? '/api/jobs' 
-        : `/api/jobs?tipo=${tipoFiltro}`;
-      
+      // Map del filtro a la query de backend
+      let queryVal = '';
+      if (tipoFiltro === 'Empleos') queryVal = '?tipo=Privado';
+      else if (tipoFiltro === 'Estado') queryVal = '?tipo=Estado';
+      else if (tipoFiltro === 'Anuncios Clasificados') queryVal = '?tipo=Clasificado';
+
+      const url = (tipoFiltro === 'Todos' || tipoFiltro === 'Destacados') ? '/api/jobs' : `/api/jobs${queryVal}`;
       const res = await fetch(url);
       const result = await res.json();
-      
-      if (result.success) {
-        setJobs(result.data);
-      }
+      if (result.success) setJobs(result.data);
+
     } catch (error) {
       console.error("Error al conectar con el servidor:", error);
     } finally {
@@ -98,9 +92,11 @@ export default function Home() {
                           job.ubicacion.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (job.formacion && job.formacion.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    if (filter === 'Destacados') {
-      return matchesSearch && job.esVip;
-    }
+    if (filter === 'Destacados') return matchesSearch && job.esVip;
+    if (filter === 'Empleos') return matchesSearch && job.tipo === 'Privado';
+    if (filter === 'Estado') return matchesSearch && job.tipo === 'Estado';
+    if (filter === 'Anuncios Clasificados') return matchesSearch && job.tipo === 'Clasificado';
+
     return matchesSearch;
   });
 
@@ -110,14 +106,19 @@ export default function Home() {
     return 0;
   });
 
+  // Helper para la fecha de publicación
+  const formatearFechaPub = (fechaISO) => {
+    if (!fechaISO) return 'Recientemente';
+    const opciones = { day: 'numeric', month: 'long', year: 'numeric' };
+    return new Date(fechaISO).toLocaleDateString('es-PE', opciones);
+  };
+
   return (
     <div className="bg-[#F8FAFC] text-slate-900 min-h-screen flex flex-col justify-between font-sans selection:bg-emerald-600 selection:text-white">
       
       <header className="bg-[#0B132B] text-white sticky top-0 z-40 shadow-xl border-b border-slate-800">
         <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-          
           <div className="flex items-center justify-between w-full sm:w-auto">
-            
               <div className="flex items-center justify-between w-full sm:w-auto">
                 <a href="/" className="flex items-center gap-2 group cursor-pointer">
                   <img 
@@ -139,7 +140,7 @@ export default function Home() {
               type="text" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar puesto, carrera o empresa..." 
+              placeholder="Buscar empleo, local, vehículo..." 
               className="w-full pl-11 pr-4 py-3 text-sm rounded-2xl bg-slate-900 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#06D6A0] transition-all shadow-inner"
             />
           </div>
@@ -161,19 +162,19 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(6,214,160,0.1)_0,transparent_50%)] pointer-events-none"></div>
         <div className="max-w-3xl mx-auto relative z-10 space-y-4">
           <span className="bg-slate-800/90 text-orange-400 text-xs font-bold px-4 py-1.5 rounded-full border border-orange-500/30 inline-flex items-center gap-1.5 shadow-sm backdrop-blur-md animate-pulse">
-            ⚡ Empleos formales y convocatorias actualizadas al instante
+            ⚡ Empleos, convocatorias y clasificados al instante.
           </span>
           <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-            Encuentra tu próxima chamba en <span className="text-[#06D6A0]">Cerro de Pasco</span>
+            Encuentra de todo en <span className="text-[#06D6A0]">Cerro de Pasco</span>
           </h2>
           <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto font-medium">
-            Conectando negocios locales y procesos del Estado de forma directa y sin intermediarios.
+            Conectando negocios locales, procesos del Estado, y anuncios clasificados de forma directa y sin intermediarios.
           </p>
         </div>
       </section>
 
       <nav className="max-w-6xl mx-auto px-4 py-8 w-full flex flex-wrap gap-3 items-center justify-center sm:justify-start">
-        {['Todos', 'Privado', 'Estado', 'Destacados'].map((filtro) => (
+        {['Todos', 'Empleos', 'Estado', 'Anuncios Clasificados','Destacados'].map((filtro) => (
           <button 
             key={filtro}
             onClick={() => setFilter(filtro)}
@@ -183,8 +184,7 @@ export default function Home() {
                 : 'bg-white hover:bg-slate-100 border border-slate-200 text-slate-700'
             }`}
           >
-            {filtro === 'Todos' ? '🔍 Todos' : filtro === 'Privado' ? '🏢 Sector Privado' : filtro === 'Estado' ? '🏛️ Convocatorias Estado' : '⭐ Destacados'}
-          </button>
+          {filtro === 'Todos' ? '🔍 Todos' : filtro === 'Empleos' ? '💼 Empleos' : filtro === 'Estado' ? '🏛️ Estado' : filtro === 'Anuncios Clasificados' ? '📢 Clasificados' : '⭐ Destacados'}          </button>
         ))}
       </nav>
 
@@ -206,6 +206,57 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedJobs.length > 0 ? (
               sortedJobs.map((job) => {
+
+                if (job.tipo === 'Clasificado') {
+                  return (
+                    <div key={job._id} className={`bg-white rounded-2xl p-5 border-2 flex flex-col justify-between shadow-lg relative overflow-hidden transition-all hover:-translate-y-1 ${job.esVip ? 'border-indigo-400 bg-indigo-50/30' : 'border-indigo-100'}`}>
+                      {job.esVip && <div className="absolute top-0 right-0 bg-indigo-500 text-white text-[9px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-wider">⭐ VIP</div>}
+                      
+                      <div>
+                        <div className="mb-3">
+                          <span className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-800 uppercase tracking-wide">
+                            {job.categoriaClasificado || '📢 Clasificado'}
+                          </span>
+                        </div>
+                        
+                        <h3 className="text-lg sm:text-xl font-black text-slate-900 mb-4 leading-tight">
+                          {job.titulo}
+                        </h3>
+                        
+                        <div className="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase">📍 Ubicación</span>
+                            <span className="text-xs font-bold text-slate-700 truncate">{job.ubicacion}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase">💰 Precio</span>
+                            <span className="text-sm font-black text-indigo-600">{job.sueldo || 'A tratar'}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase">📐 Área / Medida</span>
+                            <span className="text-xs font-bold text-slate-700">{job.area || 'N/A'}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase">🏢 Tipo</span>
+                            <span className="text-xs font-bold text-slate-700 truncate">{job.categoriaClasificado}</span>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-slate-600 font-medium mb-3 line-clamp-3">
+                          {job.descripcion}
+                        </p>
+                        
+                        <p className="text-[10px] text-slate-400 font-bold mb-4">
+                          📅 Publicado: {formatearFechaPub(job.fechaInicio)}
+                        </p>
+                      </div>
+
+                      <button onClick={() => setSelectedJob(job)} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black py-3 rounded-xl transition-all shadow-md">
+                        📲 Contactar anunciante
+                      </button>
+                    </div>
+                  );
+                }
                 return (
                   <div key={job._id} className={`bg-white rounded-2xl p-4 sm:p-5 border shadow-sm flex flex-col justify-between ${job.esVip ? 'border-amber-400 bg-amber-50/20' : 'border-slate-200'}`}>
                   <div>
@@ -220,7 +271,7 @@ export default function Home() {
                         )}
                         <div>
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${job.tipo === 'Estado' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-[#FF6B00]'}`}>
-                            {job.tipo === 'Estado' ? '🏛️ Público' : '🏪 Privado'}
+                            {job.tipo === 'Estado' ? '🏛️ Público' : '🏪 Empleo Local'}
                           </span>
                           <p className="text-xs text-slate-500 font-bold mt-0.5">{job.empresa}</p>
                         </div>
@@ -284,34 +335,37 @@ export default function Home() {
         )}
       </main>
 
-      {/* MODAL DETALLADO */}
+      {/* MODAL DETALLADO PARA TODOS (ESTADO / PRIVADO / CLASIFICADO) */}
       {selectedJob && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 relative max-h-[90vh] flex flex-col">
             <button 
               onClick={() => setSelectedJob(null)}
               className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 text-sm font-bold bg-slate-100 hover:bg-slate-200 w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-            >
-              ✕
-            </button>
+            >✕</button>
 
+            {/* CABECERA DEL MODAL */}
             <span className={`inline-block text-[10px] font-black px-3.5 py-1.5 rounded-xl mb-3 self-start ${
-              selectedJob.tipo === 'Estado' ? 'bg-slate-100 text-slate-800 border border-slate-300' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+              selectedJob.tipo === 'Estado' ? 'bg-slate-100 text-slate-800 border-slate-300' : 
+              selectedJob.tipo === 'Clasificado' ? 'bg-indigo-100 text-indigo-800 border-indigo-200' : 
+              'bg-emerald-50 text-emerald-700 border-emerald-200'
             }`}>
-              {selectedJob.tipo === 'Estado' ? 'Convocatoria Oficial del Estado' : 'Sector Privado Local'}
+              {selectedJob.tipo === 'Estado' ? 'Convocatoria Oficial del Estado' : selectedJob.tipo === 'Clasificado' ? selectedJob.categoriaClasificado : 'Empleo Privado Local'}
             </span>
 
-            <h3 className="text-xl sm:text-2xl font-black text-slate-900 mb-1 leading-tight">{selectedJob.empresa}: {selectedJob.titulo}</h3>
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 mb-1 leading-tight">
+              {selectedJob.tipo === 'Clasificado' ? selectedJob.titulo : `${selectedJob.empresa}: ${selectedJob.titulo}`}
+            </h3>
             <p className="text-xs text-slate-500 font-semibold mb-6 flex items-center gap-1">📍 {selectedJob.ubicacion}</p>
 
+            {/* CONTENIDO SCROLLEABLE */}
             <div className="overflow-y-auto pr-2 space-y-4 mb-6 text-xs text-slate-700">
               
               {selectedJob.tipo === 'Estado' ? (
+                 /* MODAL: ESTADO (Se mantiene igual) */
                 <>
                   <div className="bg-slate-50 rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs">
-                    <div className="bg-[#0B132B] text-white font-black px-4 py-3">
-                      Requisitos del Puesto
-                    </div>
+                    <div className="bg-[#0B132B] text-white font-black px-4 py-3">Requisitos del Puesto</div>
                     <div className="p-4 space-y-2.5 font-medium">
                       <p><strong>Número de vacantes:</strong> {selectedJob.vacantes || '1'}</p>
                       {selectedJob.formacion && <p className="whitespace-pre-wrap"><strong>Formación Académica:</strong><br/>{selectedJob.formacion}</p>}
@@ -319,60 +373,59 @@ export default function Home() {
                       {selectedJob.especializacion && <p className="whitespace-pre-wrap"><strong>Cursos y/o programas: </strong><br/>{selectedJob.especializacion}</p>}
                     </div>
                   </div>
-
                   <div className="bg-slate-50 rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs">
-                    <div className="bg-[#0B132B] text-white font-black px-4 py-3">
-                      Condiciones del Contrato
-                    </div>
+                    <div className="bg-[#0B132B] text-white font-black px-4 py-3">Condiciones del Contrato</div>
                     <div className="p-4 space-y-2.5 font-medium">
                       <p><strong>Lugar de prestación:</strong> { selectedJob.empresa}</p>
                       <p><strong>Remuneración:</strong> <span className="text-emerald-600 font-black">{selectedJob.sueldo ? (selectedJob.sueldo.toString().startsWith('S/') ? selectedJob.sueldo : `S/ ${selectedJob.sueldo}`) : 'A tratar'}</span></p>
                     </div>
                   </div>
-
                   <div className="bg-slate-50 rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs">
-                    <div className="bg-[#0B132B] text-white font-black px-4 py-3">
-                      ¿Cómo postular?
-                    </div>
+                    <div className="bg-[#0B132B] text-white font-black px-4 py-3">¿Cómo postular?</div>
                     <div className="p-4 space-y-2.5 font-medium">
-                      {/* SE MUESTRA FECHA Y HORA DE CIERRE PARA EL ESTADO */}
                       <p><strong>Plazo límite:</strong> <span className="font-bold text-red-600">
-                        {selectedJob.fechaVencimiento 
-                          ? formatDateRange(selectedJob.fechaInicio, selectedJob.fechaVencimiento, selectedJob.horaVencimiento) 
-                          : 'Ver cronograma'}
+                        {selectedJob.fechaVencimiento ? formatDateRange(selectedJob.fechaInicio, selectedJob.fechaVencimiento, selectedJob.horaVencimiento) : 'Ver cronograma'}
                       </span></p>
                       <p><strong>Procedimiento:</strong> {selectedJob.comoPostular || 'Presentación de expediente según bases oficiales.'}</p>
                     </div>
                   </div>
-
                   <div className="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden">
-                    <div className="bg-[#0B132B] text-white font-black px-4 py-3">
-                      Enlaces Oficiales y Bases del Concurso
-                    </div>
+                    <div className="bg-[#0B132B] text-white font-black px-4 py-3">Enlaces Oficiales y Bases del Concurso</div>
                     <div className="p-4 space-y-2.5 font-medium">
-                      {selectedJob.enlaceBases && (
-                        <p>
-                          👉 <a href={selectedJob.enlaceBases} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline font-bold">Ver Bases y Convocatoria Completa (PDF)</a>
-                        </p>
-                      )}
-                      
-                      {selectedJob.enlacesExtras && selectedJob.enlacesExtras.map((link, idx) => (
-                        link.url && (
-                          <p key={idx}>
-                            👉 <a href={link.url} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline font-bold">
-                              {link.titulo || 'Ver enlace oficial'}
-                            </a>
-                          </p>
-                        )
-                      ))}
-
-                      {!selectedJob.enlaceBases && (!selectedJob.enlacesExtras || selectedJob.enlacesExtras.length === 0) && (
-                        <p className="text-slate-400 italic">No hay enlaces externos registrados para este proceso.</p>
-                      )}
+                      {selectedJob.enlaceBases && (<p>👉 <a href={selectedJob.enlaceBases} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline font-bold">Ver Bases y Convocatoria Completa (PDF)</a></p>)}
+                      {selectedJob.enlacesExtras && selectedJob.enlacesExtras.map((link, idx) => (link.url && (<p key={idx}>👉 <a href={link.url} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline font-bold">{link.titulo || 'Ver enlace oficial'}</a></p>)))}
+                      {!selectedJob.enlaceBases && (!selectedJob.enlacesExtras || selectedJob.enlacesExtras.length === 0) && (<p className="text-slate-400 italic">No hay enlaces externos registrados para este proceso.</p>)}
                     </div>
                   </div>
                 </>
+              ) : selectedJob.tipo === 'Clasificado' ? (
+                /* MODAL: CLASIFICADO (NUEVO) */
+                <div className="bg-indigo-50/30 p-5 rounded-xl border border-indigo-100 space-y-5">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="border-b border-indigo-100 pb-2">
+                      <span className="block text-[10px] uppercase text-indigo-400 font-bold mb-1">Precio</span>
+                      <span className="font-extrabold text-indigo-700 text-lg">{selectedJob.sueldo || 'A tratar'}</span>
+                    </div>
+                    <div className="border-b border-indigo-100 pb-2">
+                      <span className="block text-[10px] uppercase text-indigo-400 font-bold mb-1">Área / Medidas</span>
+                      <span className="font-bold text-slate-800 text-sm">{selectedJob.area || 'No especificado'}</span>
+                    </div>
+                    <div className="border-b border-indigo-100 pb-2">
+                      <span className="block text-[10px] uppercase text-indigo-400 font-bold mb-1">Tipo</span>
+                      <span className="font-bold text-slate-800 text-sm">{selectedJob.categoriaClasificado}</span>
+                    </div>
+                    <div className="border-b border-indigo-100 pb-2">
+                      <span className="block text-[10px] uppercase text-indigo-400 font-bold mb-1">Publicado el</span>
+                      <span className="font-bold text-slate-800 text-sm">{formatearFechaPub(selectedJob.fechaInicio)}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-indigo-900 mb-2">Descripción Detallada:</h4>
+                    <p className="text-slate-700 leading-relaxed whitespace-pre-line text-sm">{selectedJob.descripcion}</p>
+                  </div>
+                </div>
               ) : (
+                /* MODAL: EMPLEO PRIVADO */
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                   <div className="flex justify-between border-b border-slate-200 pb-2">
                     <span className="text-slate-500 font-bold">Remuneración:</span>
@@ -382,22 +435,18 @@ export default function Home() {
                     <span className="text-slate-500 font-bold">Modalidad:</span>
                     <span className="font-bold text-slate-800">{selectedJob.modalidad || 'No especificada'}</span>
                   </div>
-
-                                    
                   {selectedJob.experiencia && (
                     <div className="border-b border-slate-200 pb-2">
                       <h4 className="font-bold text-slate-800 mb-1">Experiencia Requerida:</h4>
                       <p className="text-slate-600 leading-relaxed">{selectedJob.experiencia}</p>
                     </div>
                   )}
-
                   <div>
                     <h4 className="font-bold text-slate-800 mb-1">Descripción del Puesto:</h4>
                     <p className="text-slate-600 leading-relaxed whitespace-pre-line">{selectedJob.descripcion}</p>
                   </div>
                 </div>
               )}
-
             </div>
 
             <div className="flex gap-3 pt-4 border-t border-slate-100">
