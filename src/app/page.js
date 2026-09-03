@@ -258,7 +258,7 @@ export default function Home() {
                   );
                 }
                 return (
-                  <div key={job._id} className={`bg-white rounded-2xl p-4 sm:p-5 border shadow-sm flex flex-col justify-between ${job.esVip ? 'border-amber-400 bg-amber-50/20' : 'border-slate-200'}`}>
+                  <div key={job._id} className={`bg-white rounded-2xl p-4 sm:p-5 border shadow-sm flex flex-col justify-between transition-all hover:-translate-y-1 ${job.esVip ? 'border-amber-400 bg-amber-50/20' : 'border-slate-200'}`}>
                   <div>
                     <div className="flex justify-between items-start mb-3 gap-2">
                       <div className="flex items-center gap-2.5">
