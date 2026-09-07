@@ -53,10 +53,28 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
-
       <body className="bg-[#0B0F19] text-slate-100 min-h-screen flex flex-col antialiased">
+
         {children}
+
         <WhatsAppButton />
+
+        {/* Google Analytics */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-BFJ0RJFN9N"
+          strategy="afterInteractive"
+        />
+
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-BFJ0RJFN9N');
+          `}
+        </Script>
+
       </body>
     </html>
   );
