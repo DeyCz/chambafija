@@ -14,7 +14,7 @@ const formatDateRange = (inicio, fin, hora) => {
     return (
       <>
         <span className="whitespace-nowrap">
-          ⏳ Del {formatD(inicio)} al
+          ⏳ Del {formatD(inicio)} al 
         </span>
 
         <span className="whitespace-nowrap">
