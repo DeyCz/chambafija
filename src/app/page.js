@@ -130,17 +130,21 @@ export default function Home() {
   });
 
 
-
-  // ORDENAR: Las últimas publicadas primero (más recientes arriba)
+  // ORDENAMIENTO PERFECTO: VIP primero, y luego CRONOLÓGICO (Más recientes arriba)
   const sortedJobs = [...filteredJobs].sort((a, b) => {
-    
-    if (a.tipo === 'Privado' && b.tipo !== 'Privado') return -1;
-    if (a.tipo !== 'Privado' && b.tipo === 'Privado') return 1;
+    // 1. Los VIP siempre se mantienen en la parte superior
+    if (a.esVip && !b.esVip) return -1;
+    if (!a.esVip && b.esVip) return 1;
 
+    // 2. Orden cronológico: Las últimas publicaciones primero
+    // Como usamos MongoDB, el _id contiene la fecha de creación exacta.
     if (a._id > b._id) return -1;
     if (a._id < b._id) return 1;
+    
     return 0;
   });
+
+
 
   const formatearFechaPub = (fechaISO) => {
     if (!fechaISO) return 'Recientemente';
