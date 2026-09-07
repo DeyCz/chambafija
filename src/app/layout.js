@@ -1,5 +1,6 @@
 import './globals.css';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import Script from 'next/script';
 
 export const metadata = {
   metadataBase: new URL('https://www.chambafija.com'),
