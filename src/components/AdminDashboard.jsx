@@ -220,7 +220,7 @@ export default function AdminDashboard() {
       logo: '',
       ubicacion: 'Chaupimarca, Pasco',
       sueldo: '',
-      modalidad: activeTab === 'estado' ? '' : '',
+      modalidad: activeTab === 'estado' ? '' : 'CAS',
       modalidades: [],
       descripcion: '',
       vacantes: '1',
