@@ -129,9 +129,16 @@ export default function Home() {
     return matchesSearch;
   });
 
+
+
+  // ORDENAR: Las últimas publicadas primero (más recientes arriba)
   const sortedJobs = [...filteredJobs].sort((a, b) => {
+    
     if (a.tipo === 'Privado' && b.tipo !== 'Privado') return -1;
     if (a.tipo !== 'Privado' && b.tipo === 'Privado') return 1;
+
+    if (a._id > b._id) return -1;
+    if (a._id < b._id) return 1;
     return 0;
   });
 
