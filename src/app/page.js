@@ -19,9 +19,9 @@ const formatDateRange = (inicio, fin, hora) => {
     );
   } else if (fin) {
     return (
-      <>
-        <span>⏳ Vence: {formatD(fin)} - {horaFormateada}</span>
-      </>
+      <span>
+        ⏳ Vence: {formatD(fin)} - {horaFormateada}
+      </span>
     );
   }
 
