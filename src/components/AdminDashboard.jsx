@@ -35,7 +35,12 @@ export default function AdminDashboard() {
     horaVencimiento: '',
     esVip: false,
     area: '',
-    categoriaClasificados: 'Locales en Alquiler',
+    categoriaClasificado: 'Locales en alquiler',
+    tipoLocal: '', ambientes: '', banos: '', garantia: '',
+    tipoVivienda: '', dormitorios: '', cochera: '', amoblado: '', serviciosIncluidos: '',
+    tipoVehiculo: '', marca: '', modelo: '', anio: '', kilometraje: '', combustible: '',
+    transmision: '', colorVehiculo: '', tipoServicio: '', modalidadServicio: '', zonaAtencion: '',
+    producto: '', marcaProducto: '', estadoProducto: '', cantidad: ''
   });
 
   const [customLocation, setCustomLocation] = useState(false);
@@ -186,7 +191,12 @@ export default function AdminDashboard() {
       horaVencimiento: job.horaVencimiento || '',
       esVip: job.esVip || false,
       area: job.area || '',
-      categoriaClasificado: job.categoriaClasificado || 'Locales en alquiler'
+      categoriaClasificado: job.categoriaClasificado || 'Locales en alquiler',
+      tipoLocal: job.tipoLocal || '', ambientes: job.ambientes || '', banos: job.banos || '', garantia: job.garantia || '',
+      tipoVivienda: job.tipoVivienda || '', dormitorios: job.dormitorios || '', cochera: job.cochera || '', amoblado: job.amoblado || '', serviciosIncluidos: job.serviciosIncluidos || '',
+      tipoVehiculo: job.tipoVehiculo || '', marca: job.marca || '', modelo: job.modelo || '', anio: job.anio || '', kilometraje: job.kilometraje || '', combustible: job.combustible || '',
+      transmision: job.transmision || '', colorVehiculo: job.colorVehiculo || '', tipoServicio: job.tipoServicio || '', modalidadServicio: job.modalidadServicio || '', zonaAtencion: job.zonaAtencion || '',
+      producto: job.producto || '', marcaProducto: job.marcaProducto || '', estadoProducto: job.estadoProducto || '', cantidad: job.cantidad || ''
     });
   };
 
@@ -227,8 +237,64 @@ export default function AdminDashboard() {
       horaVencimiento: '',
       esVip: false,
       area: '',
-      categoriaClasificado: 'Locales en alquiler'
+      categoriaClasificado: 'Locales en alquiler',
+      tipoLocal: '', ambientes: '', banos: '', garantia: '',
+      tipoVivienda: '', dormitorios: '', cochera: '', amoblado: '', serviciosIncluidos: '',
+      tipoVehiculo: '', marca: '', modelo: '', anio: '', kilometraje: '', combustible: '',
+      transmision: '', colorVehiculo: '', tipoServicio: '', modalidadServicio: '', zonaAtencion: '',
+      producto: '', marcaProducto: '', estadoProducto: '', cantidad: ''
     });
+  };
+
+  // Configuración dinámica de Clasificados: cada categoría tiene campos y color propios.
+  const categoriasClasificados = {
+    'Locales en alquiler': { icono: '🏪', color: '#2563EB', fondo: '#EFF6FF', borde: '#93C5FD', titulo: 'Información del Local', campos: ['tipoLocal','area','ambientes','banos','garantia','precio'] },
+    'Viviendas en alquiler': { icono: '🏠', color: '#16A34A', fondo: '#F0FDF4', borde: '#86EFAC', titulo: 'Información de la Vivienda', campos: ['tipoVivienda','dormitorios','banos','area','cochera','amoblado','serviciosIncluidos','garantia','precio'] },
+    'Vehículos': { icono: '🚗', color: '#DC2626', fondo: '#FEF2F2', borde: '#FCA5A5', titulo: 'Información del Vehículo', campos: ['tipoVehiculo','marca','modelo','anio','kilometraje','combustible','transmision','colorVehiculo','precio'] },
+    'Servicios': { icono: '🛠️', color: '#9333EA', fondo: '#FAF5FF', borde: '#D8B4FE', titulo: 'Información del Servicio', campos: ['tipoServicio','modalidadServicio','zonaAtencion','precio'] },
+    'Ventas': { icono: '🏷️', color: '#EA580C', fondo: '#FFF7ED', borde: '#FDBA74', titulo: 'Información del Producto', campos: ['producto','marcaProducto','estadoProducto','cantidad','precio'] },
+    'Otros': { icono: '📌', color: '#64748B', fondo: '#F8FAFC', borde: '#CBD5E1', titulo: 'Información del Anuncio', campos: ['precio'] }
+  };
+
+  const categoriaActual = categoriasClasificados[formData.categoriaClasificado] || categoriasClasificados['Otros'];
+
+  const renderCampoClasificado = (campo) => {
+    const inputStyle = { ...styles.input, borderColor: categoriaActual.borde };
+    const text = (name, label, placeholder, type = 'text') => (
+      <div style={styles.field} key={name}><label style={styles.label}>{label}</label><input type={type} name={name} value={formData[name] || ''} onChange={handleChange} placeholder={placeholder} style={inputStyle} /></div>
+    );
+    const select = (name, label, options) => (
+      <div style={styles.field} key={name}><label style={styles.label}>{label}</label><select name={name} value={formData[name] || ''} onChange={handleChange} style={inputStyle}><option value="">Seleccionar...</option>{options.map(o => <option key={o} value={o}>{o}</option>)}</select></div>
+    );
+    switch (campo) {
+      case 'tipoLocal': return select('tipoLocal','🏪 Tipo de Local',['Local comercial','Tienda','Oficina','Restaurante','Almacén','Taller','Consultorio','Otro']);
+      case 'area': return text('area','📐 Área / Medidas','Ej. 80 m²');
+      case 'ambientes': return text('ambientes','🚪 Ambientes','Ej. 3','number');
+      case 'banos': return text('banos','🚿 Baños','Ej. 2','number');
+      case 'garantia': return text('garantia','🔐 Garantía','Ej. 1 mes / 2 meses');
+      case 'tipoVivienda': return select('tipoVivienda','🏠 Tipo de Vivienda',['Casa','Departamento','Habitación','Mini departamento','Cuarto','Otro']);
+      case 'dormitorios': return text('dormitorios','🛏️ Dormitorios','Ej. 3','number');
+      case 'cochera': return select('cochera','🚘 Cochera',['Sí','No','Incluida','Opcional']);
+      case 'amoblado': return select('amoblado','🛋️ Amoblado',['Amoblado','Semi amoblado','Sin amoblar']);
+      case 'serviciosIncluidos': return text('serviciosIncluidos','💡 Servicios incluidos','Ej. Agua, luz, internet');
+      case 'tipoVehiculo': return select('tipoVehiculo','🚗 Tipo de Vehículo',['Auto','SUV','Camioneta','Motocicleta','Minivan','Camión','Bus','Otro']);
+      case 'marca': return text('marca','🏷️ Marca','Ej. Toyota');
+      case 'modelo': return text('modelo','🚘 Modelo','Ej. Corolla');
+      case 'anio': return text('anio','📅 Año','Ej. 2022','number');
+      case 'kilometraje': return text('kilometraje','🛣️ Kilometraje','Ej. 45,000 km');
+      case 'combustible': return select('combustible','⛽ Combustible',['Gasolina','Diésel','GLP','GNV','Eléctrico','Híbrido']);
+      case 'transmision': return select('transmision','⚙️ Transmisión',['Manual','Automática','CVT','Otra']);
+      case 'colorVehiculo': return text('colorVehiculo','🎨 Color','Ej. Blanco');
+      case 'tipoServicio': return text('tipoServicio','🛠️ Tipo de Servicio','Ej. Diseño gráfico, reparación, fotografía...');
+      case 'modalidadServicio': return select('modalidadServicio','📋 Modalidad',['Presencial','A domicilio','Virtual','Presencial y virtual']);
+      case 'zonaAtencion': return text('zonaAtencion','📍 Zona de Atención','Ej. Cerro de Pasco y alrededores');
+      case 'producto': return text('producto','📦 Producto','Ej. Laptop Lenovo');
+      case 'marcaProducto': return text('marcaProducto','🏷️ Marca','Ej. Lenovo');
+      case 'estadoProducto': return select('estadoProducto','✨ Estado',['Nuevo','Seminuevo','Usado','Reacondicionado']);
+      case 'cantidad': return text('cantidad','🔢 Cantidad','Ej. 1','number');
+      case 'precio': return text('sueldo','💰 Precio',formData.categoriaClasificado === 'Vehículos' ? 'Ej. 45,000' : 'Ej. 1,500 mensuales');
+      default: return null;
+    }
   };
 
   const renderLocationField = () => (
@@ -529,64 +595,24 @@ export default function AdminDashboard() {
             ) : (
               /* ================= CLASIFICADOS ================= */
               <>
-                <div style={styles.row}>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Título del Anuncio</label>
-                    <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Alquiler de local comercial" style={styles.input} required />
+                <div style={{ backgroundColor: categoriaActual.fondo, border: `1px solid ${categoriaActual.borde}`, borderLeft: `5px solid ${categoriaActual.color}`, borderRadius: '10px', padding: '12px', marginBottom: '2px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '22px' }}>{categoriaActual.icono}</span>
+                    <div><div style={{ fontSize: '11px', fontWeight: '900', color: categoriaActual.color }}>CATEGORÍA DEL ANUNCIO</div><div style={{ fontSize: '16px', fontWeight: '900', color: '#0B132B' }}>{formData.categoriaClasificado}</div></div>
                   </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Categoría</label>
-                    <select name="categoriaClasificado" value={formData.categoriaClasificado} onChange={handleChange} style={styles.input}>
-                      <option value="Locales en alquiler">🏪 Locales en alquiler</option>
-                      <option value="Viviendas en alquiler">🏠 Viviendas en alquiler</option>
-                      <option value="Vehículos">🚗 Vehículos</option>
-                      <option value="Servicios">🛠️ Servicios</option>
-                      <option value="Ventas">🏷️ Ventas</option>
-                      <option value="Otros">📌 Otros</option>
-                    </select>
+                  <div style={styles.row}>
+                    <div style={styles.field}><label style={styles.label}>Título del Anuncio</label><input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder={formData.categoriaClasificado === 'Vehículos' ? 'Ej. Toyota Corolla 2022' : formData.categoriaClasificado === 'Viviendas en alquiler' ? 'Ej. Departamento en alquiler de 3 dormitorios' : formData.categoriaClasificado === 'Servicios' ? 'Ej. Servicio de fotografía y video' : formData.categoriaClasificado === 'Ventas' ? 'Ej. Laptop Lenovo en venta' : 'Ej. Alquiler de local comercial'} style={{ ...styles.input, borderColor: categoriaActual.borde }} required /></div>
+                    <div style={styles.field}><label style={styles.label}>Categoría</label><select name="categoriaClasificado" value={formData.categoriaClasificado} onChange={handleChange} style={{ ...styles.input, borderColor: categoriaActual.color, fontWeight: '800' }}><option value="Locales en alquiler">🏪 Locales en alquiler</option><option value="Viviendas en alquiler">🏠 Viviendas en alquiler</option><option value="Vehículos">🚗 Vehículos</option><option value="Servicios">🛠️ Servicios</option><option value="Ventas">🏷️ Ventas</option><option value="Otros">📌 Otros</option></select></div>
+                  </div>
+                  <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: `1px solid ${categoriaActual.borde}` }}>
+                    <div style={{ color: categoriaActual.color, fontSize: '12px', fontWeight: '900', marginBottom: '9px' }}>{categoriaActual.icono} {categoriaActual.titulo}</div>
+                    <div style={styles.row}>{categoriaActual.campos.map(renderCampoClasificado)}{renderLocationField()}</div>
                   </div>
                 </div>
-                
-                <div style={styles.row}>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Precio (S/)</label>
-                    <input type="text" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 1,500 mensuales" style={styles.input} />
-                  </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Área / Medidas</label>
-                    <input type="text" name="area" value={formData.area} onChange={handleChange} placeholder="Ej. 80 m²" style={styles.input} />
-                  </div>
-                  {renderLocationField()}
-                </div>
-
-                <div style={styles.row}>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Fecha de Vencimiento (Autoborrado)</label>
-                    <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={styles.input} />
-                  </div>
-                </div>
-
+                <div style={styles.row}><div style={styles.field}><label style={styles.label}>Fecha de Vencimiento (Autoborrado)</label><input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={{ ...styles.input, borderColor: categoriaActual.borde }} /></div></div>
                 <div style={{ ...styles.field, backgroundColor: '#FEFCE8', padding: '10px', borderRadius: '8px', border: '1px solid #FEF08A' }}>
                   <label style={{ ...styles.label, color: '#854D0E', marginBottom: '6px' }}>📱 WhatsApp del Anunciante</label>
-                  {formData.contactos.map((numero, index) => (
-                    <div key={index} style={{ display: 'flex', gap: '4px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                      <input 
-                        type="text" 
-                        placeholder={`Ej. 987654321 (#${index + 1})`} 
-                        value={numero} 
-                        onChange={(e) => {
-                          const nuevos = [...formData.contactos];
-                          nuevos[index] = e.target.value;
-                          setFormData({ ...formData, contactos: nuevos });
-                        }} 
-                        style={{ ...styles.input, flex: '1 1 120px', backgroundColor: '#FFFFFF' }} 
-                        required={index === 0} 
-                      />
-                      {formData.contactos.length > 1 && (
-                        <button type="button" onClick={() => setFormData({ ...formData, contactos: formData.contactos.filter((_, i) => i !== index) })} style={{ ...styles.btnDeleteRow, flex: '1 1 auto' }}>✕ Quitar</button>
-                      )}
-                    </div>
-                  ))}
+                  {formData.contactos.map((numero, index) => (<div key={index} style={{ display: 'flex', gap: '4px', marginBottom: '6px', flexWrap: 'wrap' }}><input type="text" placeholder={`Ej. 987654321 (#${index + 1})`} value={numero} onChange={(e) => { const nuevos = [...formData.contactos]; nuevos[index] = e.target.value; setFormData({ ...formData, contactos: nuevos }); }} style={{ ...styles.input, flex: '1 1 120px', backgroundColor: '#FFFFFF' }} required={index === 0} />{formData.contactos.length > 1 && (<button type="button" onClick={() => setFormData({ ...formData, contactos: formData.contactos.filter((_, i) => i !== index) })} style={{ ...styles.btnDeleteRow, flex: '1 1 auto' }}>✕ Quitar</button>)}</div>))}
                   <button type="button" onClick={() => setFormData({ ...formData, contactos: [...formData.contactos, ''] })} style={styles.btnAddRow}>+ Agregar otro número</button>
                 </div>
               </>
@@ -603,7 +629,7 @@ export default function AdminDashboard() {
             </div>
 
             <div style={styles.btnGroup}>
-              <button type="submit" style={styles.btnPrimary}>
+              <button type="submit" style={activeTab === 'clasificados' ? { ...styles.btnPrimary, backgroundColor: categoriaActual.color } : styles.btnPrimary}>
                 {editingId ? 'Guardar Cambios' : 'Publicar Anuncio'}
               </button>
               {editingId && (
@@ -623,7 +649,7 @@ export default function AdminDashboard() {
             {activeJobsList.map((job) => (
               <div key={job._id} style={styles.itemCard}>
                 <div>
-                  <span style={{...styles.tagModality, backgroundColor: job.tipo === 'Clasificado' ? '#4F46E5' : '#0B132B'}}>{job.tipo === 'Clasificado' ? job.categoriaClasificado : job.tipo}</span>
+                  <span style={{...styles.tagModality, backgroundColor: job.tipo === 'Clasificado' ? (categoriasClasificados[job.categoriaClasificado]?.color || '#4F46E5') : '#0B132B'}}>{job.tipo === 'Clasificado' ? `${categoriasClasificados[job.categoriaClasificado]?.icono || '📌'} ${job.categoriaClasificado}` : job.tipo}</span>
                   <h3 style={styles.itemTitle}>{job.titulo}</h3>
                   <p style={styles.itemMeta}><strong>{job.tipo === 'Clasificado' ? 'Clasificado' : job.empresa}</strong> • 📍 {job.ubicacion}</p>
                 </div>
