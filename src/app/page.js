@@ -131,15 +131,23 @@ export default function Home() {
 
 
 
-  // ORDENAR: Las últimas publicadas primero (más recientes arriba)
   const sortedJobs = [...filteredJobs].sort((a, b) => {
-    
+
+    // PRIVADO primero
     if (a.tipo === 'Privado' && b.tipo !== 'Privado') return -1;
     if (a.tipo !== 'Privado' && b.tipo === 'Privado') return 1;
 
-    if (a._id > b._id) return -1;
-    if (a._id < b._id) return 1;
-    return 0;
+    // Fecha de publicación
+    const fechaA = new Date(
+      a.fechaPublicacion || a.createdAt || 0
+    ).getTime();
+
+    const fechaB = new Date(
+      b.fechaPublicacion || b.createdAt || 0
+    ).getTime();
+
+    // Más reciente primero
+    return fechaB - fechaA;
   });
 
   const formatearFechaPub = (fechaISO) => {

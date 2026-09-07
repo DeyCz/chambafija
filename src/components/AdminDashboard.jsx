@@ -33,6 +33,7 @@ export default function AdminDashboard() {
     fechaInicio: '',
     fechaVencimiento: '',
     horaVencimiento: '',
+    fechaPublicacion: '',
     esVip: false,
     area: '',
     categoriaClasificado: 'Locales en alquiler',
@@ -128,13 +129,10 @@ export default function AdminDashboard() {
         ...formData, 
         sueldo: sueldoLimpio,
         modalidad: modalidadFinal,
-        contacto: (activeTab === 'privado' || activeTab === 'clasificados') ? formData.contactos.filter(c => c.trim() !== '').join(', ') : formData.contacto
+        contacto: (activeTab === 'privado' || activeTab === 'clasificados')
+          ? formData.contactos.filter(c => c.trim() !== '').join(', ')
+          : formData.contacto
       };
-
-      // Si es un anuncio nuevo, agregamos fecha de creación para mostrar "Publicado el..."
-      if (!editingId) {
-        datosAEnviar.fechaInicio = new Date().toISOString();
-      }
 
       const method = editingId ? 'PUT' : 'POST';
       const url = editingId ? `${API_URL}/${editingId}` : API_URL;
@@ -188,6 +186,7 @@ export default function AdminDashboard() {
       contactos: (job.contacto && (job.tipo === 'Privado' || job.tipo === 'Clasificado')) ? job.contacto.split(', ').map(c => c.trim()) : [job.contacto || ''],
       fechaVencimiento: job.fechaVencimiento ? job.fechaVencimiento.split('T')[0] : '',
       fechaInicio: job.fechaInicio ? job.fechaInicio.split('T')[0] : '',
+      fechaPublicacion: job.fechaPublicacion || '',
       horaVencimiento: job.horaVencimiento || '',
       esVip: job.esVip || false,
       area: job.area || '',
@@ -234,6 +233,7 @@ export default function AdminDashboard() {
       contacto: '',
       contactos: [''],
       fechaVencimiento: '',
+      fechaPublicacion: '',
       horaVencimiento: '',
       esVip: false,
       area: '',
