@@ -13,13 +13,18 @@ const formatDateRange = (inicio, fin, hora) => {
   if (inicio && inicio !== fin) {
     return (
       <>
-        <span>⏳ Del {formatD(inicio)} al</span>
-        <span>{formatD(fin)} ({horaFormateada})</span>
+        <span className="whitespace-nowrap">
+          ⏳ Del {formatD(inicio)} al
+        </span>
+
+        <span className="whitespace-nowrap">
+          {formatD(fin)} ({horaFormateada})
+        </span>
       </>
     );
   } else if (fin) {
     return (
-      <span>
+      <span className="whitespace-nowrap">
         ⏳ Vence: {formatD(fin)} - {horaFormateada}
       </span>
     );
