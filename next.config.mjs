@@ -27,13 +27,12 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self';",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://*.firebaseapp.com https://*.googleapis.com;",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://*.firebaseapp.com https://*.googleapis.com https://www.googletagmanager.com;",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
               "font-src 'self' data: https://fonts.gstatic.com;",
               "img-src 'self' data: blob: https:;",
               // SOLUCIÓN: Agregamos chambafija.com y limpiamos las rutas viejas de Render y localhost
-              "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com wss://*.firebaseio.com https://chambafija.vercel.app https://chambafija.com https://www.chambafija.com;",
-              "frame-ancestors 'none';",
+              "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com wss://*.firebaseio.com https://chambafija.com https://www.chambafija.com https://www.google-analytics.com https://*.google-analytics.com;",              "frame-ancestors 'none';",
             ].join(' '),
           },
         ],
