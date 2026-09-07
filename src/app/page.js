@@ -180,7 +180,7 @@ export default function Home() {
             ⚡ Empleos, convocatorias y clasificados al instante.
           </span>
           <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-            Encuentra de todo en <span className="text-[#06D6A0]">Cerro de Pasco</span>
+            Encuentra de todo en <span className="text-[#06D6A0]">PASCO</span>
           </h2>
           <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto font-medium">
             Conectando negocios locales, procesos del Estado, y anuncios clasificados de forma directa y sin intermediarios.
