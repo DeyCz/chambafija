@@ -11,10 +11,20 @@ const formatDateRange = (inicio, fin, hora) => {
   const horaFormateada = formatTimeStr(hora);
 
   if (inicio && inicio !== fin) {
-    return `Del ${formatD(inicio)} al ${formatD(fin)} (${horaFormateada})`;
+    return (
+      <>
+        <span>⏳ Del {formatD(inicio)} al</span>
+        <span>{formatD(fin)} ({horaFormateada})</span>
+      </>
+    );
   } else if (fin) {
-    return `Vence: ${formatD(fin)} - ${horaFormateada}`;
+    return (
+      <>
+        <span>⏳ Vence: {formatD(fin)} - {horaFormateada}</span>
+      </>
+    );
   }
+
   return '';
 };
 
@@ -282,7 +292,11 @@ export default function Home() {
                         {job.esVip && <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">⭐ VIP</span>}
                         {job.tipo === 'Estado' && job.fechaVencimiento && (
                           <div className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-1 rounded-md flex flex-col items-end leading-tight text-right">
-                            <span>⏳ {formatDateRange(job.fechaInicio, job.fechaVencimiento, job.horaVencimiento)}</span>
+                            {formatDateRange(
+                              job.fechaInicio,
+                              job.fechaVencimiento,
+                              job.horaVencimiento
+                            )}
                           </div>
                         )}
                       </div>
