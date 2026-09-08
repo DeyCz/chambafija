@@ -74,16 +74,22 @@ export default function Home() {
   const whatsappUrl = `https://api.whatsapp.com/send?phone=${numeroWhatsApp}&text=${encodeURIComponent(mensaje)}`;
 
   const irAAnuncios = () => {
-    // Pequeño retraso para permitir que React termine de actualizar
-    // los resultados antes de hacer el desplazamiento.
     setTimeout(() => {
       if (anunciosRef.current) {
-        anunciosRef.current.scrollIntoView({
+        const headerOffset = 120;
+
+        const elementPosition =
+          anunciosRef.current.getBoundingClientRect().top;
+
+        const offsetPosition =
+          elementPosition + window.pageYOffset - headerOffset;
+
+        window.scrollTo({
+          top: offsetPosition,
           behavior: 'smooth',
-          block: 'start',
         });
       }
-    }, 100);
+    }, 150);
   };
 
   const fetchJobs = async (tipoFiltro) => {
@@ -259,56 +265,132 @@ export default function Home() {
   return (
     <div className="bg-[#F8FAFC] text-slate-900 min-h-screen flex flex-col justify-between font-sans selection:bg-emerald-600 selection:text-white">
       <header className="bg-[#0B132B] text-white sticky top-0 z-40 shadow-xl border-b border-slate-800">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex items-center justify-between w-full sm:w-auto">
-            <div className="flex items-center justify-between w-full sm:w-auto">
-              <a href="/" className="flex items-center gap-2 group cursor-pointer">
-                <img src="/logo.png" alt="Chamba Fija Pasco" className="h-9 sm:h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-300" />
-              </a>
-            </div>
-            <span className="text-[10px] bg-slate-800/90 text-orange-400 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full ml-1 border border-orange-500/30 animate-pulse font-semibold whitespace-nowrap">Pasco 🏔️</span>
-          </div>
 
-          <div className="w-full sm:w-[420px] relative">
-            <div className="flex gap-2">
+          <div className="max-w-6xl mx-auto px-3 sm:px-4">
 
-              {/* Buscador */}
-              <div className="relative flex-1">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
-                  🔍
+            {/* =====================================================
+                FILA SUPERIOR
+            ====================================================== */}
+            <div className="flex items-center justify-between gap-2 py-3 sm:py-4">
+
+              {/* LOGO + PASCO */}
+              <div className="flex items-center min-w-0">
+
+                <a
+                  href="/"
+                  className="flex items-center gap-2 group cursor-pointer"
+                >
+                  <img
+                    src="/logo.png"
+                    alt="Chamba Fija Pasco"
+                    className="h-8 sm:h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+                  />
+                </a>
+
+                <span className="text-[9px] sm:text-[10px] bg-slate-800/90 text-orange-400 px-2 py-1 rounded-full ml-2 border border-orange-500/30 font-semibold whitespace-nowrap">
+                  Pasco 🏔️
                 </span>
 
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      irAAnuncios();
-                    }
-                  }}
-                  placeholder="Buscar empleo, local, vehículo..."
-                  className="w-full pl-11 pr-4 py-3 text-sm rounded-2xl bg-slate-900 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#06D6A0] transition-all shadow-inner"
-                />
               </div>
 
-              {/* Botón buscar */}
-              <button
-                type="button"
-                onClick={irAAnuncios}
-                className="sm:hidden shrink-0 bg-[#06D6A0] hover:bg-emerald-500 text-slate-950 font-black text-xs px-4 py-3 rounded-2xl shadow-md active:scale-95 transition-all"
+
+              {/* BOTÓN PUBLICAR - PC */}
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden sm:block text-center bg-gradient-to-r from-[#06D6A0] to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 text-slate-950 hover:text-white text-xs font-black px-6 py-3 rounded-2xl transition-all duration-300 shadow-lg shadow-emerald-600/20 hover:-translate-y-0.5 active:translate-y-0"
               >
-                🔍 Buscar
-              </button>
+                💬 Publicar Anuncio
+              </a>
 
             </div>
+
+
+            {/* =====================================================
+                BUSCADOR
+            ====================================================== */}
+            <div className="pb-3 sm:pb-4">
+
+              <div className="flex gap-2">
+
+                {/* INPUT */}
+                <div className="relative flex-1">
+
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                    🔍
+                  </span>
+
+                  <input
+                    type="search"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        irAAnuncios();
+                      }
+                    }}
+                    placeholder="Buscar empleo, local, vehículo..."
+                    className="w-full pl-11 pr-4 py-3 sm:py-3.5 text-sm rounded-2xl bg-slate-900 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#06D6A0] focus:border-[#06D6A0] transition-all shadow-inner"
+                  />
+
+                  {/* X PARA LIMPIAR */}
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchTerm('');
+                        setTimeout(() => {
+                          irAAnuncios();
+                        }, 50);
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-sm w-7 h-7 rounded-full hover:bg-slate-700 transition-all"
+                      aria-label="Limpiar búsqueda"
+                    >
+                      ✕
+                    </button>
+                  )}
+
+                </div>
+
+
+                {/* BOTÓN BUSCAR SOLO CELULAR */}
+                <button
+                  type="button"
+                  onClick={irAAnuncios}
+                  className="sm:hidden shrink-0 bg-[#06D6A0] hover:bg-emerald-500 text-slate-950 font-black text-xs px-4 rounded-2xl shadow-md active:scale-95 transition-all"
+                >
+                  🔍
+                  <span className="hidden xs:inline ml-1">
+                    Buscar
+                  </span>
+                </button>
+
+              </div>
+
+            </div>
+
+
+            {/* =====================================================
+                BOTÓN PUBLICAR - CELULAR
+            ====================================================== */}
+            <div className="sm:hidden pb-3">
+
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center bg-gradient-to-r from-[#06D6A0] to-emerald-600 text-slate-950 text-xs font-black py-2.5 rounded-xl shadow-md active:scale-[0.98] transition-all"
+              >
+                💬 Publicar Anuncio
+              </a>
+
+            </div>
+
           </div>
 
-          <div className="w-full sm:w-auto flex justify-end">
-            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto text-center bg-gradient-to-r from-[#06D6A0] to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 text-slate-950 hover:text-white text-xs font-black px-6 py-3.5 rounded-2xl transition-all duration-300 shadow-lg shadow-emerald-600/20 hover:-translate-y-0.5 active:translate-y-0">💬 Publicar Anuncio</a>
-          </div>
-        </div>
-      </header>
+        </header>
 
       <section className="relative bg-cover bg-[center_bottom_55%] overflow-hidden bg-gradient-to-br from-[#0B132B] via-[#1C2541] to-[#0B132B] text-white py-14 px-4 text-center shadow-xl" style={{ backgroundImage: "url('/portadav2.png')" }}>
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(6,214,160,0.1)_0,transparent_50%)] pointer-events-none"></div>
@@ -321,13 +403,39 @@ export default function Home() {
 
       <nav className="max-w-6xl mx-auto px-4 py-8 w-full flex flex-wrap gap-3 items-center justify-center sm:justify-start">
         {['Todos', 'Empleos', 'Estado', 'Anuncios Clasificados','Destacados'].map((filtro) => (
-          <button key={filtro} onClick={() => setFilter(filtro)} className={`text-xs px-6 py-3 rounded-2xl font-black transition-all duration-300 shadow-xs ${filter === filtro ? 'bg-[#0B132B] text-white shadow-md shadow-slate-900/20 scale-105' : 'bg-white hover:bg-slate-100 border border-slate-200 text-slate-700'}`}>
+          <button key={filtro} onClick={() => {
+            setFilter(filtro);
+
+            setTimeout(() => {
+              irAAnuncios();
+            }, 100);
+          }} className={`text-xs px-6 py-3 rounded-2xl font-black transition-all duration-300 shadow-xs ${filter === filtro ? 'bg-[#0B132B] text-white shadow-md shadow-slate-900/20 scale-105' : 'bg-white hover:bg-slate-100 border border-slate-200 text-slate-700'}`}>
             {filtro === 'Todos' ? '🔍 Todos' : filtro === 'Empleos' ? '💼 Empleos' : filtro === 'Estado' ? '🏛️ Estado' : filtro === 'Anuncios Clasificados' ? '📢 Clasificados' : '⭐ Destacados'}
           </button>
         ))}
       </nav>
 
       <main ref={anunciosRef} id="anuncios" className="max-w-6xl mx-auto px-4 pb-24 w-full flex-grow">
+        {/* INDICADOR DE RESULTADOS */}
+        {!loading && searchTerm && (
+          <div className="mb-5 bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm flex items-center justify-between gap-3">
+
+            <div className="min-w-0">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-wide">
+                Resultados de búsqueda
+              </p>
+
+              <p className="text-sm font-black text-slate-800 truncate">
+                🔎 "{searchTerm}"
+              </p>
+            </div>
+
+            <span className="shrink-0 bg-emerald-100 text-emerald-700 text-[10px] font-black px-3 py-1.5 rounded-full">
+              {sortedJobs.length} resultado{sortedJobs.length !== 1 ? 's' : ''}
+            </span>
+
+          </div>
+        )}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((n) => (
@@ -414,7 +522,14 @@ export default function Home() {
             }) : (
               <div className="col-span-full py-24 text-center text-slate-500 space-y-4">
                 <p className="text-lg font-bold text-slate-700">No se encontraron ofertas activas 📉</p>
-                <button onClick={() => {setSearchTerm(''); setFilter('Todos');}} className="text-xs bg-emerald-600 text-white px-6 py-3 rounded-2xl font-black shadow-md">Restablecer filtros</button>
+                <button onClick={() => {
+                  setSearchTerm('');
+                  setFilter('Todos');
+
+                  setTimeout(() => {
+                    irAAnuncios();
+                  }, 100);
+                }} className="text-xs bg-emerald-600 text-white px-6 py-3 rounded-2xl font-black shadow-md">Restablecer filtros</button>
               </div>
             )}
           </div>
