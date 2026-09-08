@@ -166,7 +166,7 @@ export default function Home() {
 
   const fechaA = new Date(
     a.fechaPublicacion || a.createdAt || a.fechaInicio || 0
-  ).getTime();F
+  ).getTime();
 
   const fechaB = new Date(
     b.fechaPublicacion || b.createdAt || b.fechaInicio || 0
