@@ -132,36 +132,46 @@ export default function Home() {
 
 
   const sortedJobs = [...filteredJobs].sort((a, b) => {
+  // ==========================================================
+  // 1. VIP SIEMPRE ARRIBA
+  // ==========================================================
+  if (a.esVip !== b.esVip) {
+    return a.esVip ? -1 : 1;
+  }
 
-    // ==========================================================
-    // 1. ANUNCIOS VIP SIEMPRE ARRIBA
-    // ==========================================================
-    if (a.esVip && !b.esVip) return -1;
-    if (!a.esVip && b.esVip) return 1;
+  // ==========================================================
+  // 2. SI LOS DOS SON VIP O LOS DOS SON NORMALES,
+  //    MANTENER EL ORDEN ORIGINAL:
+  //    Privado → Estado → Clasificado
+  // ==========================================================
 
-    // ==========================================================
-    // 2. SI AMBOS SON VIP O AMBOS NO SON VIP
-    //    ORDENAR POR TIPO
-    // ==========================================================
+  const prioridadTipo = {
+    Privado: 1,
+    Estado: 2,
+    Clasificado: 3,
+  };
 
-    // PRIVADO primero
-    if (a.tipo === 'Privado' && b.tipo !== 'Privado') return -1;
-    if (a.tipo !== 'Privado' && b.tipo === 'Privado') return 1;
+  const prioridadA = prioridadTipo[a.tipo] || 99;
+  const prioridadB = prioridadTipo[b.tipo] || 99;
 
-    // ==========================================================
-    // 3. FINALMENTE, MÁS RECIENTE PRIMERO
-    // ==========================================================
+  if (prioridadA !== prioridadB) {
+    return prioridadA - prioridadB;
+  }
 
-    const fechaA = new Date(
-      a.fechaPublicacion || a.fechaInicio || a.createdAt || 0
-    ).getTime();
+  // ==========================================================
+  // 3. MISMO TIPO → MÁS RECIENTE PRIMERO
+  // ==========================================================
 
-    const fechaB = new Date(
-      b.fechaPublicacion || b.fechaInicio || b.createdAt || 0
-    ).getTime();
+  const fechaA = new Date(
+    a.fechaPublicacion || a.createdAt || a.fechaInicio || 0
+  ).getTime();
 
-    return fechaB - fechaA;
-  });
+  const fechaB = new Date(
+    b.fechaPublicacion || b.createdAt || b.fechaInicio || 0
+  ).getTime();
+
+  return fechaB - fechaA;
+});
 
   const formatearFechaPub = (fechaISO) => {
     if (!fechaISO) return 'Recientemente';
