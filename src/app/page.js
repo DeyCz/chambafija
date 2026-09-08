@@ -1202,7 +1202,7 @@ export default function Home() {
                     <SectionTitle
                       icon="⭐"
                       title="Anuncios Destacados"
-                      subtitle="Los anuncios VIP aparecen primero"
+                      subtitle="🚀 ¡Que todos vean tu negocio! Destácalo en ChambaFija"
                       color="#6366F1"
                     />
 
