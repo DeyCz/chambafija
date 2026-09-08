@@ -64,12 +64,27 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJob, setSelectedJob] = useState(null);
   const [showTerms, setShowTerms] = useState(false);
+  
+  const anunciosRef = React.useRef(null);
 
   
 
   const mensaje = "¡Hola! ⚡ Quiero publicar un empleo en *Chamba Fija* y encontrar personal al toque 📲🔥";
   const numeroWhatsApp = "51967576214";
   const whatsappUrl = `https://api.whatsapp.com/send?phone=${numeroWhatsApp}&text=${encodeURIComponent(mensaje)}`;
+
+  const irAAnuncios = () => {
+    // Pequeño retraso para permitir que React termine de actualizar
+    // los resultados antes de hacer el desplazamiento.
+    setTimeout(() => {
+      if (anunciosRef.current) {
+        anunciosRef.current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }
+    }, 100);
+  };
 
   const fetchJobs = async (tipoFiltro) => {
     setLoading(true);
@@ -255,8 +270,38 @@ export default function Home() {
           </div>
 
           <div className="w-full sm:w-[420px] relative">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">🔍</span>
-            <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar empleo, local, vehículo..." className="w-full pl-11 pr-4 py-3 text-sm rounded-2xl bg-slate-900 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#06D6A0] transition-all shadow-inner" />
+            <div className="flex gap-2">
+
+              {/* Buscador */}
+              <div className="relative flex-1">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                  🔍
+                </span>
+
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      irAAnuncios();
+                    }
+                  }}
+                  placeholder="Buscar empleo, local, vehículo..."
+                  className="w-full pl-11 pr-4 py-3 text-sm rounded-2xl bg-slate-900 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#06D6A0] transition-all shadow-inner"
+                />
+              </div>
+
+              {/* Botón buscar */}
+              <button
+                type="button"
+                onClick={irAAnuncios}
+                className="sm:hidden shrink-0 bg-[#06D6A0] hover:bg-emerald-500 text-slate-950 font-black text-xs px-4 py-3 rounded-2xl shadow-md active:scale-95 transition-all"
+              >
+                🔍 Buscar
+              </button>
+
+            </div>
           </div>
 
           <div className="w-full sm:w-auto flex justify-end">
@@ -282,7 +327,7 @@ export default function Home() {
         ))}
       </nav>
 
-      <main className="max-w-6xl mx-auto px-4 pb-24 w-full flex-grow">
+      <main ref={anunciosRef} id="anuncios" className="max-w-6xl mx-auto px-4 pb-24 w-full flex-grow">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((n) => (
