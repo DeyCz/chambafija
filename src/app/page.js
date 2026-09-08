@@ -65,44 +65,7 @@ export default function Home() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [showTerms, setShowTerms] = useState(false);
 
-  const anunciosRef = React.useRef(null);
-
-  const scrollToAnuncios = () => {
-    if (anunciosRef.current) {
-      const esCelular = window.innerWidth < 768;
-
-      if (esCelular) {
-        const headerOffset = 85;
-        const elementPosition = anunciosRef.current.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.scrollY - headerOffset;
-
-        window.scrollTo({
-          top: offsetPosition,
-          behavior: 'smooth',
-        });
-      }
-    }
-  };
-
-  useEffect(() => {
-  if (!searchTerm.trim()) return;
-
-  const timer = setTimeout(() => {
-      if (window.innerWidth < 768 && anunciosRef.current) {
-        const headerOffset = 85;
-        const elementPosition = anunciosRef.current.getBoundingClientRect().top;
-        const offsetPosition =
-          elementPosition + window.scrollY - headerOffset;
-
-        window.scrollTo({
-          top: offsetPosition,
-          behavior: 'smooth',
-        });
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+  
 
   const mensaje = "¡Hola! ⚡ Quiero publicar un empleo en *Chamba Fija* y encontrar personal al toque 📲🔥";
   const numeroWhatsApp = "51967576214";
@@ -293,13 +256,7 @@ export default function Home() {
 
           <div className="w-full sm:w-[420px] relative">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">🔍</span>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar empleo, local, vehículo..."
-              className="w-full pl-11 pr-4 py-3 text-sm rounded-2xl bg-slate-900 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#06D6A0] transition-all shadow-inner"
-            />
+            <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar empleo, local, vehículo..." className="w-full pl-11 pr-4 py-3 text-sm rounded-2xl bg-slate-900 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#06D6A0] transition-all shadow-inner" />
           </div>
 
           <div className="w-full sm:w-auto flex justify-end">
@@ -325,7 +282,7 @@ export default function Home() {
         ))}
       </nav>
 
-      <main ref={anunciosRef}id="anuncios" className="max-w-6xl mx-auto px-4 pb-24 w-full flex-grow">
+      <main className="max-w-6xl mx-auto px-4 pb-24 w-full flex-grow">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((n) => (
