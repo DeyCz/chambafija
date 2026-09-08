@@ -133,20 +133,33 @@ export default function Home() {
 
   const sortedJobs = [...filteredJobs].sort((a, b) => {
 
+    // ==========================================================
+    // 1. ANUNCIOS VIP SIEMPRE ARRIBA
+    // ==========================================================
+    if (a.esVip && !b.esVip) return -1;
+    if (!a.esVip && b.esVip) return 1;
+
+    // ==========================================================
+    // 2. SI AMBOS SON VIP O AMBOS NO SON VIP
+    //    ORDENAR POR TIPO
+    // ==========================================================
+
     // PRIVADO primero
     if (a.tipo === 'Privado' && b.tipo !== 'Privado') return -1;
     if (a.tipo !== 'Privado' && b.tipo === 'Privado') return 1;
 
-    // Fecha de publicación
+    // ==========================================================
+    // 3. FINALMENTE, MÁS RECIENTE PRIMERO
+    // ==========================================================
+
     const fechaA = new Date(
-      a.fechaPublicacion || a.createdAt || 0
+      a.fechaPublicacion || a.fechaInicio || a.createdAt || 0
     ).getTime();
 
     const fechaB = new Date(
-      b.fechaPublicacion || b.createdAt || 0
+      b.fechaPublicacion || b.fechaInicio || b.createdAt || 0
     ).getTime();
 
-    // Más reciente primero
     return fechaB - fechaA;
   });
 
