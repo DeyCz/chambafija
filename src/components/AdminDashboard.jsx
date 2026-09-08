@@ -137,6 +137,13 @@ export default function AdminDashboard() {
       const method = editingId ? 'PUT' : 'POST';
       const url = editingId ? `${API_URL}/${editingId}` : API_URL;
 
+      console.log('📅 FECHAS QUE SE ENVIARÁN:', {
+        fechaInicio: datosAEnviar.fechaInicio,
+        fechaVencimiento: datosAEnviar.fechaVencimiento,
+        horaVencimiento: datosAEnviar.horaVencimiento,
+        fechaPublicacion: datosAEnviar.fechaPublicacion
+      });
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -232,6 +239,7 @@ export default function AdminDashboard() {
       enlacesExtras: [{ titulo: '', url: '' }],
       contacto: '',
       contactos: [''],
+      fechaInicio: '',
       fechaVencimiento: '',
       fechaPublicacion: '',
       horaVencimiento: '',

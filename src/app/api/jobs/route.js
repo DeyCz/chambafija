@@ -57,12 +57,18 @@ export async function POST(request) {
     const newJob = {
       ...body,
 
-      // Fecha interna para ordenar los anuncios.
-      // NO debe confundirse con fechaInicio.
+      // Se genera automáticamente SOLO para saber cuándo
+      // se publicó el anuncio.
       fechaPublicacion,
 
-      // Conservamos createdAt por compatibilidad
-      createdAt: fechaPublicacion
+      // Compatibilidad
+      createdAt: fechaPublicacion,
+
+      // Las fechas de postulación se conservan exactamente
+      // como vienen del formulario.
+      fechaInicio: body.fechaInicio || '',
+      fechaVencimiento: body.fechaVencimiento || '',
+      horaVencimiento: body.horaVencimiento || ''
     };
 
     // Limpiamos los campos undefined antes de enviarlos a Firebase
