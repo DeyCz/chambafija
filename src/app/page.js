@@ -65,7 +65,7 @@ export default function Home() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [showTerms, setShowTerms] = useState(false);
   
-  const anunciosRef = React.useRef(null);
+  const filtrosRef = React.useRef(null);
 
   
 
@@ -75,11 +75,11 @@ export default function Home() {
 
   const irAAnuncios = () => {
     setTimeout(() => {
-      if (anunciosRef.current) {
-        const headerOffset = 120;
+      if (filtrosRef.current) {
+        const headerOffset = 135;
 
         const elementPosition =
-          anunciosRef.current.getBoundingClientRect().top;
+          filtrosRef.current.getBoundingClientRect().top;
 
         const offsetPosition =
           elementPosition + window.pageYOffset - headerOffset;
@@ -401,7 +401,7 @@ export default function Home() {
         </div>
       </section>
 
-      <nav className="max-w-6xl mx-auto px-4 py-8 w-full flex flex-wrap gap-3 items-center justify-center sm:justify-start">
+      <nav ref={filtrosRef} className="max-w-6xl mx-auto px-4 py-8 w-full flex flex-wrap gap-3 items-center justify-center sm:justify-start">
         {['Todos', 'Empleos', 'Estado', 'Anuncios Clasificados','Destacados'].map((filtro) => (
           <button key={filtro} onClick={() => {
             setFilter(filtro);
@@ -415,7 +415,7 @@ export default function Home() {
         ))}
       </nav>
 
-      <main ref={anunciosRef} id="anuncios" className="max-w-6xl mx-auto px-4 pb-24 w-full flex-grow">
+      <main id="anuncios" className="max-w-6xl mx-auto px-4 pb-24 w-full flex-grow">
         {/* INDICADOR DE RESULTADOS */}
         {!loading && searchTerm && (
           <div className="mb-5 bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm flex items-center justify-between gap-3">
