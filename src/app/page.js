@@ -283,16 +283,7 @@ const PublicidadSection = ({ whatsappUrl }) => {
 
   return (
     <section className="w-full mb-7 sm:mb-8">
-      {/* Encabezado pequeño */}
-      <div className="max-w-7xl mx-auto px-4 mb-2 sm:mb-3">
-        <div className="flex items-center justify-between gap-3">
-          
-
-          <span className="hidden sm:block text-[10px] text-slate-400 font-semibold">
-            Publicidad local · ChambaFija
-          </span>
-        </div>
-      </div>
+      
 
       {/* =====================================================
           PUBLICIDADES REALES
