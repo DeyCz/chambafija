@@ -1,20 +1,39 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
-// ==========================================================
-// FORMATO DE FECHAS
-// ==========================================================
+/* ============================================================
+   FORMATO DE FECHAS
+   ============================================================ */
+
+const formatTimeStr = (hora) => {
+  if (!hora) return '11:59 PM';
+
+  const [h, m = '00'] = String(hora).split(':');
+  const hour = parseInt(h, 10);
+
+  if (Number.isNaN(hour)) return '11:59 PM';
+
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const formattedHour = hour % 12 || 12;
+
+  return `${formattedHour}:${m} ${ampm}`;
+};
 
 const formatDateRange = (inicio, fin, hora) => {
   const formatD = (d) => {
     if (!d) return '';
-    return d.split('T')[0].split('-').reverse().join('/');
+
+    const value = String(d).split('T')[0];
+
+    if (!value.includes('-')) return value;
+
+    return value.split('-').reverse().join('/');
   };
 
   const horaFormateada = formatTimeStr(hora);
 
-  if (inicio && inicio !== fin) {
+  if (inicio && fin && inicio !== fin) {
     return (
       <>
         <span className="whitespace-nowrap">
@@ -25,7 +44,9 @@ const formatDateRange = (inicio, fin, hora) => {
         </span>
       </>
     );
-  } else if (fin) {
+  }
+
+  if (fin) {
     return (
       <span className="whitespace-nowrap">
         ⏳ Vence: {formatD(fin)} - {horaFormateada}
@@ -36,21 +57,9 @@ const formatDateRange = (inicio, fin, hora) => {
   return '';
 };
 
-const formatTimeStr = (hora) => {
-  if (!hora) return '11:59 PM';
-
-  const [h, m] = hora.split(':');
-  const hour = parseInt(h, 10);
-
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  const formattedHour = hour % 12 || 12;
-
-  return `${formattedHour}:${m} ${ampm}`;
-};
-
-// ==========================================================
-// CATEGORÍAS DE CLASIFICADOS
-// ==========================================================
+/* ============================================================
+   CATEGORÍAS DE CLASIFICADOS
+   ============================================================ */
 
 const categoriasClasificados = {
   'Locales en alquiler': {
@@ -67,28 +76,28 @@ const categoriasClasificados = {
     borde: '#86EFAC',
   },
 
-  'Vehículos': {
+  Vehículos: {
     icono: '🚗',
     color: '#DC2626',
     fondo: '#FEF2F2',
     borde: '#FCA5A5',
   },
 
-  'Servicios': {
+  Servicios: {
     icono: '🛠️',
     color: '#9333EA',
     fondo: '#FAF5FF',
     borde: '#D8B4FE',
   },
 
-  'Ventas': {
+  Ventas: {
     icono: '🏷️',
     color: '#EA580C',
     fondo: '#FFF7ED',
     borde: '#FDBA74',
   },
 
-  'Otros': {
+  Otros: {
     icono: '📌',
     color: '#64748B',
     fondo: '#F8FAFC',
@@ -98,14 +107,239 @@ const categoriasClasificados = {
 
 const getCategoriaConfig = (categoria) =>
   categoriasClasificados[categoria] ||
-  categoriasClasificados['Otros'];
+  categoriasClasificados.Otros;
 
-// ==========================================================
-// CAMPO PARA CLASIFICADOS
-// ==========================================================
+/* ============================================================
+   PUBLICIDADES
+   ============================================================
+
+   AQUÍ AGREGAS LAS PUBLICIDADES.
+
+   Google Drive:
+   1. Sube la imagen a Drive.
+   2. Compartir.
+   3. "Cualquier persona con el enlace".
+   4. Copia el ID del archivo.
+
+   Ejemplo de enlace:
+   https://drive.google.com/file/d/1ABCDEF123456789/view
+
+   El ID sería:
+   1ABCDEF123456789
+
+   Luego solamente colocas ese ID en driveId.
+
+   whatsapp:
+   número PERUANO SIN +51.
+   Ejemplo:
+   967576214
+
+   ============================================================ */
+
+const publicidades = [
+  {
+    id: 'publicidad-1',
+    driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_1',
+    nombre: 'Publicidad 1',
+    whatsapp: '967576214',
+    mensaje:
+      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
+    activo: true,
+  },
+
+  {
+    id: 'publicidad-2',
+    driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_2',
+    nombre: 'Publicidad 2',
+    whatsapp: '967576214',
+    mensaje:
+      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
+    activo: true,
+  },
+
+  {
+    id: 'publicidad-3',
+    driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_3',
+    nombre: 'Publicidad 3',
+    whatsapp: '967576214',
+    mensaje:
+      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
+    activo: true,
+  },
+
+  {
+    id: 'publicidad-4',
+    driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_4',
+    nombre: 'Publicidad 4',
+    whatsapp: '967576214',
+    mensaje:
+      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
+    activo: true,
+  },
+
+  {
+    id: 'publicidad-5',
+    driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_5',
+    nombre: 'Publicidad 5',
+    whatsapp: '967576214',
+    mensaje:
+      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
+    activo: true,
+  },
+
+  {
+    id: 'publicidad-6',
+    driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_6',
+    nombre: 'Publicidad 6',
+    whatsapp: '967576214',
+    mensaje:
+      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
+    activo: true,
+  },
+];
+
+/* ============================================================
+   COMPONENTE PUBLICIDAD
+   ============================================================ */
+
+const PublicidadCard = ({ publicidad }) => {
+  const [error, setError] = useState(false);
+
+  if (
+    !publicidad ||
+    !publicidad.activo ||
+    !publicidad.driveId ||
+    publicidad.driveId.startsWith('COLOCA_AQUI')
+  ) {
+    return null;
+  }
+
+  if (error) return null;
+
+  const imagenUrl =
+    `https://drive.google.com/thumbnail?id=${encodeURIComponent(
+      publicidad.driveId
+    )}&sz=w1600`;
+
+  const numero = String(publicidad.whatsapp || '').replace(/\D/g, '');
+
+  const whatsappUrl = numero
+    ? `https://wa.me/51${numero}?text=${encodeURIComponent(
+        publicidad.mensaje ||
+          'Hola, vi su publicidad en ChambaFija y quisiera más información.'
+      )}`
+    : '#';
+
+  return (
+    <a
+      href={whatsappUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group block overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+      aria-label={`Publicidad de ${publicidad.nombre}`}
+    >
+      <div className="relative bg-slate-100 flex items-center justify-center min-h-[150px] sm:min-h-[170px] lg:min-h-[180px]">
+        <img
+          src={imagenUrl}
+          alt={publicidad.nombre}
+          loading="lazy"
+          onError={() => setError(true)}
+          className="w-full h-auto max-h-[260px] object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+        />
+
+        <div className="absolute top-2 left-2">
+          <span className="bg-slate-900/80 backdrop-blur-sm text-white text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full">
+            Publicidad
+          </span>
+        </div>
+
+        <div className="absolute bottom-2 right-2">
+          <span className="bg-emerald-600 text-white text-[9px] font-black px-2.5 py-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+            📲 Ver por WhatsApp
+          </span>
+        </div>
+      </div>
+    </a>
+  );
+};
+
+/* ============================================================
+   SECCIÓN PUBLICITARIA
+   ============================================================ */
+
+const PublicidadSection = () => {
+  const anunciosActivos = publicidades.filter(
+    (publicidad) =>
+      publicidad.activo &&
+      publicidad.driveId &&
+      !publicidad.driveId.startsWith('COLOCA_AQUI')
+  );
+
+  if (anunciosActivos.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="mb-8">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0B132B] via-[#1C2541] to-[#0B132B] p-5 sm:p-6 shadow-lg border border-slate-800">
+        {/* Decoración */}
+        <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-emerald-400/10 blur-3xl" />
+        <div className="absolute -bottom-20 -left-10 w-40 h-40 rounded-full bg-indigo-500/10 blur-3xl" />
+
+        <div className="relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+            <div>
+              <div className="inline-flex items-center gap-2 bg-white/10 border border-white/10 rounded-full px-3 py-1 mb-2">
+                <span className="text-xs">📢</span>
+                <span className="text-[9px] sm:text-[10px] font-black text-emerald-300 uppercase tracking-wider">
+                  Espacio publicitario
+                </span>
+              </div>
+
+              <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                Conoce negocios y servicios de Pasco
+              </h2>
+
+              <p className="text-xs sm:text-sm text-slate-300 mt-1">
+                Descubre nuevas opciones y contacta directamente por WhatsApp.
+              </p>
+            </div>
+
+            <span className="text-[10px] text-slate-400 font-semibold">
+              Publicidad local
+            </span>
+          </div>
+
+          {/* 
+             1 columna móvil
+             2 tablet
+             4 PC
+             5 pantallas grandes
+          */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {anunciosActivos.map((publicidad) => (
+              <PublicidadCard
+                key={publicidad.id}
+                publicidad={publicidad}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ============================================================
+   CAMPO CLASIFICADO
+   ============================================================ */
 
 const CampoClasificado = ({ label, valor, icono }) => {
-  if (valor === undefined || valor === null || valor === '') {
+  if (
+    valor === undefined ||
+    valor === null ||
+    valor === ''
+  ) {
     return null;
   }
 
@@ -122,9 +356,54 @@ const CampoClasificado = ({ label, valor, icono }) => {
   );
 };
 
-// ==========================================================
-// COMPONENTE PRINCIPAL
-// ==========================================================
+/* ============================================================
+   TÍTULO DE SECCIÓN
+   ============================================================ */
+
+const SectionTitle = ({
+  icon,
+  title,
+  subtitle,
+  color = '#0B132B',
+}) => {
+  return (
+    <div className="mb-5 mt-10">
+      <div className="flex items-center gap-3">
+        <div
+          className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-sm flex-shrink-0"
+          style={{
+            backgroundColor: `${color}12`,
+          }}
+        >
+          {icon}
+        </div>
+
+        <div className="min-w-0">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
+            {title}
+          </h2>
+
+          {subtitle && (
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              {subtitle}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div
+        className="h-1 w-16 rounded-full mt-3"
+        style={{
+          backgroundColor: color,
+        }}
+      />
+    </div>
+  );
+};
+
+/* ============================================================
+   COMPONENTE PRINCIPAL
+   ============================================================ */
 
 export default function Home() {
   const [jobs, setJobs] = useState([]);
@@ -136,22 +415,35 @@ export default function Home() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [showTerms, setShowTerms] = useState(false);
 
-  // ========================================================
-  // WHATSAPP PUBLICAR ANUNCIO
-  // ========================================================
+  const searchInputRef = useRef(null);
 
-  const mensaje =
-    '¡Hola! ⚡ Quiero publicar un empleo en *Chamba Fija* y encontrar personal al toque 📲🔥';
+  /* ==========================================================
+     WHATSAPP PUBLICAR
+     ========================================================== */
 
   const numeroWhatsApp = '51967576214';
 
+  const mensajePublicar =
+    '¡Hola! ⚡ Quiero publicar un empleo en *Chamba Fija* y encontrar personal al toque 📲🔥';
+
   const whatsappUrl =
     `https://api.whatsapp.com/send?phone=${numeroWhatsApp}` +
-    `&text=${encodeURIComponent(mensaje)}`;
+    `&text=${encodeURIComponent(mensajePublicar)}`;
 
-  // ========================================================
-  // OBTENER ANUNCIOS
-  // ========================================================
+  /* ==========================================================
+     WHATSAPP VIP
+     ========================================================== */
+
+  const mensajeVIP =
+    '¡Hola! ⭐ Quiero destacar mi negocio/anuncio en ChambaFija y quisiera conocer cómo puedo ser VIP. 📲🔥';
+
+  const whatsappVIPUrl =
+    `https://api.whatsapp.com/send?phone=${numeroWhatsApp}` +
+    `&text=${encodeURIComponent(mensajeVIP)}`;
+
+  /* ==========================================================
+     OBTENER ANUNCIOS
+     ========================================================== */
 
   const fetchJobs = async (tipoFiltro) => {
     setLoading(true);
@@ -168,22 +460,29 @@ export default function Home() {
       }
 
       const url =
-        tipoFiltro === 'Todos' || tipoFiltro === 'Destacados'
+        tipoFiltro === 'Todos' ||
+        tipoFiltro === 'Destacados'
           ? '/api/jobs'
           : `/api/jobs${queryVal}`;
 
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        cache: 'no-store',
+      });
 
       const result = await res.json();
 
       if (result.success) {
-        setJobs(result.data);
+        setJobs(Array.isArray(result.data) ? result.data : []);
+      } else {
+        setJobs([]);
       }
     } catch (error) {
       console.error(
         'Error al conectar con el servidor:',
         error
       );
+
+      setJobs([]);
     } finally {
       setLoading(false);
     }
@@ -193,179 +492,346 @@ export default function Home() {
     fetchJobs(filter);
   }, [filter]);
 
-  // ========================================================
-  // FILTRADO
-  // ========================================================
+  /* ==========================================================
+     FILTRADO
+     ========================================================== */
 
-  const filteredJobs = jobs.filter((job) => {
-    // ------------------------------------------------------
-    // ELIMINAR ANUNCIOS VENCIDOS
-    // ------------------------------------------------------
+  const filteredJobs = useMemo(() => {
+    return jobs.filter((job) => {
+      /* ------------------------------------------------------
+         ELIMINAR ANUNCIOS VENCIDOS
+         ------------------------------------------------------ */
 
-    if (job.fechaVencimiento) {
-      const [year, month, day] = job.fechaVencimiento
-        .split('T')[0]
-        .split('-');
+      if (job.fechaVencimiento) {
+        const fechaString = String(
+          job.fechaVencimiento
+        ).split('T')[0];
 
-      let h = 23;
-      let m = 59;
+        const partes = fechaString.split('-');
 
-      if (job.horaVencimiento) {
-        const [hours, minutes] =
-          job.horaVencimiento.split(':');
+        if (partes.length === 3) {
+          const [year, month, day] = partes;
 
-        h = parseInt(hours, 10);
-        m = parseInt(minutes, 10);
+          let h = 23;
+          let m = 59;
+
+          if (job.horaVencimiento) {
+            const [hours, minutes] =
+              String(job.horaVencimiento).split(':');
+
+            const horaNumero = parseInt(hours, 10);
+            const minutoNumero = parseInt(minutes, 10);
+
+            if (!Number.isNaN(horaNumero)) {
+              h = horaNumero;
+            }
+
+            if (!Number.isNaN(minutoNumero)) {
+              m = minutoNumero;
+            }
+          }
+
+          const fechaExp = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            h,
+            m,
+            59
+          );
+
+          if (
+            !Number.isNaN(fechaExp.getTime()) &&
+            new Date() > fechaExp
+          ) {
+            return false;
+          }
+        }
       }
 
-      const fechaExp = new Date(
-        Number(year),
-        Number(month) - 1,
-        Number(day),
-        h,
-        m,
-        59
+      /* ------------------------------------------------------
+         BÚSQUEDA
+         ------------------------------------------------------ */
+
+      const texto = searchTerm
+        .toLowerCase()
+        .trim();
+
+      if (!texto) {
+        if (filter === 'Destacados') {
+          return Boolean(job.esVip);
+        }
+
+        if (filter === 'Empleos') {
+          return job.tipo === 'Privado';
+        }
+
+        if (filter === 'Estado') {
+          return job.tipo === 'Estado';
+        }
+
+        if (filter === 'Anuncios Clasificados') {
+          return job.tipo === 'Clasificado';
+        }
+
+        return true;
+      }
+
+      const camposBusqueda = [
+        job.titulo,
+        job.empresa,
+        job.ubicacion,
+        job.formacion,
+        job.experiencia,
+        job.especializacion,
+        job.categoriaClasificado,
+        job.marca,
+        job.modelo,
+        job.producto,
+        job.tipoServicio,
+        job.tipoLocal,
+        job.tipoVivienda,
+        job.tipoVehiculo,
+        job.marcaProducto,
+        job.estadoProducto,
+      ];
+
+      const matchesSearch = camposBusqueda.some(
+        (campo) =>
+          campo &&
+          String(campo)
+            .toLowerCase()
+            .includes(texto)
       );
 
-      if (new Date() > fechaExp) {
+      if (!matchesSearch) {
         return false;
       }
-    }
 
-    // ------------------------------------------------------
-    // BÚSQUEDA
-    // ------------------------------------------------------
+      /* ------------------------------------------------------
+         FILTROS
+         ------------------------------------------------------ */
 
-    const texto = searchTerm.toLowerCase().trim();
+      if (filter === 'Destacados') {
+        return Boolean(job.esVip);
+      }
 
-    const matchesSearch =
-      (job.titulo || '').toLowerCase().includes(texto) ||
-      (job.empresa || '').toLowerCase().includes(texto) ||
-      (job.ubicacion || '').toLowerCase().includes(texto) ||
-      (job.formacion || '').toLowerCase().includes(texto) ||
-      (job.categoriaClasificado || '')
-        .toLowerCase()
-        .includes(texto) ||
-      (job.marca || '').toLowerCase().includes(texto) ||
-      (job.modelo || '').toLowerCase().includes(texto) ||
-      (job.producto || '').toLowerCase().includes(texto) ||
-      (job.tipoServicio || '')
-        .toLowerCase()
-        .includes(texto);
+      if (filter === 'Empleos') {
+        return job.tipo === 'Privado';
+      }
 
-    // ------------------------------------------------------
-    // FILTROS
-    // ------------------------------------------------------
+      if (filter === 'Estado') {
+        return job.tipo === 'Estado';
+      }
 
-    if (filter === 'Destacados') {
-      return matchesSearch && job.esVip;
-    }
+      if (filter === 'Anuncios Clasificados') {
+        return job.tipo === 'Clasificado';
+      }
 
-    if (filter === 'Empleos') {
-      return matchesSearch && job.tipo === 'Privado';
-    }
+      return true;
+    });
+  }, [jobs, searchTerm, filter]);
 
-    if (filter === 'Estado') {
-      return matchesSearch && job.tipo === 'Estado';
-    }
+  /* ==========================================================
+     ORDENAMIENTO
+     ========================================================== */
 
-    if (filter === 'Anuncios Clasificados') {
-      return matchesSearch && job.tipo === 'Clasificado';
-    }
-
-    return matchesSearch;
-  });
-
-  // ========================================================
-  // ORDENAMIENTO GENERAL
-  // ========================================================
-  //
-  // VIP primero.
-  // Después:
-  // Privado → Estado → Clasificado
-  //
-  // Dentro del mismo tipo:
-  // más reciente primero.
-  // ========================================================
-
-  const sortedJobs = [...filteredJobs].sort((a, b) => {
-    // 1. VIP primero
-    if (a.esVip !== b.esVip) {
-      return a.esVip ? -1 : 1;
-    }
-
-    // 2. Prioridad por tipo
+  const sortedJobs = useMemo(() => {
     const prioridadTipo = {
       Privado: 1,
       Estado: 2,
       Clasificado: 3,
     };
 
-    const prioridadA =
-      prioridadTipo[a.tipo] || 99;
+    const getTimestamp = (job) => {
+      const posiblesFechas = [
+        job.fechaPublicacion,
+        job.createdAt,
+        job.fechaInicio,
+      ];
 
-    const prioridadB =
-      prioridadTipo[b.tipo] || 99;
+      for (const fecha of posiblesFechas) {
+        if (!fecha) continue;
 
-    if (prioridadA !== prioridadB) {
-      return prioridadA - prioridadB;
+        const timestamp = new Date(fecha).getTime();
+
+        if (!Number.isNaN(timestamp)) {
+          return timestamp;
+        }
+      }
+
+      return 0;
+    };
+
+    return [...filteredJobs].sort((a, b) => {
+      /* VIP SIEMPRE PRIMERO */
+      const vipA = Boolean(a.esVip);
+      const vipB = Boolean(b.esVip);
+
+      if (vipA !== vipB) {
+        return vipA ? -1 : 1;
+      }
+
+      /* TIPO */
+      const prioridadA =
+        prioridadTipo[a.tipo] || 99;
+
+      const prioridadB =
+        prioridadTipo[b.tipo] || 99;
+
+      if (prioridadA !== prioridadB) {
+        return prioridadA - prioridadB;
+      }
+
+      /* MÁS RECIENTE */
+      return (
+        getTimestamp(b) -
+        getTimestamp(a)
+      );
+    });
+  }, [filteredJobs]);
+
+  /* ==========================================================
+     AGRUPACIONES
+     ========================================================== */
+
+  const vipJobs = useMemo(
+    () =>
+      sortedJobs.filter(
+        (job) => Boolean(job.esVip)
+      ),
+    [sortedJobs]
+  );
+
+  const privateJobs = useMemo(
+    () =>
+      sortedJobs.filter(
+        (job) =>
+          job.tipo === 'Privado' &&
+          !job.esVip
+      ),
+    [sortedJobs]
+  );
+
+  const estadoJobs = useMemo(
+    () =>
+      sortedJobs.filter(
+        (job) =>
+          job.tipo === 'Estado' &&
+          !job.esVip
+      ),
+    [sortedJobs]
+  );
+
+  const clasificadosJobs = useMemo(
+    () =>
+      sortedJobs.filter(
+        (job) =>
+          job.tipo === 'Clasificado' &&
+          !job.esVip
+      ),
+    [sortedJobs]
+  );
+
+  const categoriasConAnuncios = useMemo(
+    () =>
+      Object.keys(categoriasClasificados).filter(
+        (categoria) =>
+          clasificadosJobs.some(
+            (job) =>
+              (job.categoriaClasificado ||
+                'Otros') === categoria
+          )
+      ),
+    [clasificadosJobs]
+  );
+
+  /* ==========================================================
+     BUSCADOR + DESPLAZAMIENTO
+     ========================================================== */
+
+  const desplazarAResultados = () => {
+    window.setTimeout(() => {
+      const filtros =
+        document.getElementById(
+          'filtros-anuncios'
+        );
+
+      if (!filtros) return;
+
+      const esMobile =
+        window.innerWidth < 640;
+
+      if (esMobile) {
+        const headerOffset = 90;
+
+        const top =
+          filtros.getBoundingClientRect().top +
+          window.scrollY -
+          headerOffset;
+
+        window.scrollTo({
+          top: Math.max(top, 0),
+          behavior: 'smooth',
+        });
+      } else {
+        filtros.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }
+    }, 100);
+  };
+
+  const ejecutarBusqueda = () => {
+    desplazarAResultados();
+  };
+
+  const handleSearchKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      ejecutarBusqueda();
     }
+  };
 
-    // 3. Más reciente primero
-    const fechaA = new Date(
-      a.fechaPublicacion ||
-        a.createdAt ||
-        a.fechaInicio ||
-        0
-    ).getTime();
-
-    const fechaB = new Date(
-      b.fechaPublicacion ||
-        b.createdAt ||
-        b.fechaInicio ||
-        0
-    ).getTime();
-
-    return fechaB - fechaA;
-  });
-
-  // ========================================================
-  // FORMATEAR FECHA DE PUBLICACIÓN
-  // ========================================================
+  /* ==========================================================
+     FORMATEAR FECHA
+     ========================================================== */
 
   const formatearFechaPub = (fechaISO) => {
     if (!fechaISO) {
       return 'Recientemente';
     }
 
-    const opciones = {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    };
+    const fecha = new Date(fechaISO);
 
-    return new Date(fechaISO).toLocaleDateString(
+    if (Number.isNaN(fecha.getTime())) {
+      return 'Recientemente';
+    }
+
+    return fecha.toLocaleDateString(
       'es-PE',
-      opciones
+      {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }
     );
   };
 
-  // ========================================================
-  // DATOS DE CLASIFICADOS
-  // ========================================================
+  /* ==========================================================
+     DATOS CLASIFICADOS
+     ========================================================== */
 
   const renderDatosClasificado = (
     job,
     modo = 'card'
   ) => {
     const categoria =
-      job.categoriaClasificado || 'Otros';
+      job.categoriaClasificado ||
+      'Otros';
 
     const datos = [];
-
-    // ------------------------------------------------------
-    // LOCALES
-    // ------------------------------------------------------
 
     if (categoria === 'Locales en alquiler') {
       datos.push(
@@ -375,28 +841,24 @@ export default function Home() {
           valor={job.tipoLocal}
           icono="🏪"
         />,
-
         <CampoClasificado
           key="area"
           label="Área"
           valor={job.area}
           icono="📐"
         />,
-
         <CampoClasificado
           key="ambientes"
           label="Ambientes"
           valor={job.ambientes}
           icono="🚪"
         />,
-
         <CampoClasificado
           key="banos"
           label="Baños"
           valor={job.banos}
           icono="🚿"
         />,
-
         <CampoClasificado
           key="garantia"
           label="Garantía"
@@ -404,13 +866,9 @@ export default function Home() {
           icono="🔐"
         />
       );
-    }
-
-    // ------------------------------------------------------
-    // VIVIENDAS
-    // ------------------------------------------------------
-
-    else if (categoria === 'Viviendas en alquiler') {
+    } else if (
+      categoria === 'Viviendas en alquiler'
+    ) {
       datos.push(
         <CampoClasificado
           key="tipoVivienda"
@@ -418,49 +876,42 @@ export default function Home() {
           valor={job.tipoVivienda}
           icono="🏠"
         />,
-
         <CampoClasificado
           key="area"
           label="Área"
           valor={job.area}
           icono="📐"
         />,
-
         <CampoClasificado
           key="dormitorios"
           label="Dormitorios"
           valor={job.dormitorios}
           icono="🛏️"
         />,
-
         <CampoClasificado
           key="banos"
           label="Baños"
           valor={job.banos}
           icono="🚿"
         />,
-
         <CampoClasificado
           key="cochera"
           label="Cochera"
           valor={job.cochera}
           icono="🚗"
         />,
-
         <CampoClasificado
           key="amoblado"
           label="Amoblado"
           valor={job.amoblado}
           icono="🛋️"
         />,
-
         <CampoClasificado
           key="serviciosIncluidos"
           label="Servicios incluidos"
           valor={job.serviciosIncluidos}
           icono="💡"
         />,
-
         <CampoClasificado
           key="garantia"
           label="Garantía"
@@ -468,13 +919,7 @@ export default function Home() {
           icono="🔐"
         />
       );
-    }
-
-    // ------------------------------------------------------
-    // VEHÍCULOS
-    // ------------------------------------------------------
-
-    else if (categoria === 'Vehículos') {
+    } else if (categoria === 'Vehículos') {
       datos.push(
         <CampoClasificado
           key="tipoVehiculo"
@@ -482,49 +927,42 @@ export default function Home() {
           valor={job.tipoVehiculo}
           icono="🚗"
         />,
-
         <CampoClasificado
           key="marca"
           label="Marca"
           valor={job.marca}
           icono="🏷️"
         />,
-
         <CampoClasificado
           key="modelo"
           label="Modelo"
           valor={job.modelo}
           icono="🚘"
         />,
-
         <CampoClasificado
           key="anio"
           label="Año"
           valor={job.anio}
           icono="📅"
         />,
-
         <CampoClasificado
           key="kilometraje"
           label="Kilometraje"
           valor={job.kilometraje}
           icono="🛣️"
         />,
-
         <CampoClasificado
           key="combustible"
           label="Combustible"
           valor={job.combustible}
           icono="⛽"
         />,
-
         <CampoClasificado
           key="transmision"
           label="Transmisión"
           valor={job.transmision}
           icono="⚙️"
         />,
-
         <CampoClasificado
           key="colorVehiculo"
           label="Color"
@@ -532,13 +970,7 @@ export default function Home() {
           icono="🎨"
         />
       );
-    }
-
-    // ------------------------------------------------------
-    // SERVICIOS
-    // ------------------------------------------------------
-
-    else if (categoria === 'Servicios') {
+    } else if (categoria === 'Servicios') {
       datos.push(
         <CampoClasificado
           key="tipoServicio"
@@ -546,14 +978,12 @@ export default function Home() {
           valor={job.tipoServicio}
           icono="🛠️"
         />,
-
         <CampoClasificado
           key="modalidadServicio"
           label="Modalidad"
           valor={job.modalidadServicio}
           icono="💻"
         />,
-
         <CampoClasificado
           key="zonaAtencion"
           label="Zona de atención"
@@ -561,13 +991,7 @@ export default function Home() {
           icono="📍"
         />
       );
-    }
-
-    // ------------------------------------------------------
-    // VENTAS
-    // ------------------------------------------------------
-
-    else if (categoria === 'Ventas') {
+    } else if (categoria === 'Ventas') {
       datos.push(
         <CampoClasificado
           key="producto"
@@ -575,21 +999,18 @@ export default function Home() {
           valor={job.producto}
           icono="📦"
         />,
-
         <CampoClasificado
           key="marcaProducto"
           label="Marca"
           valor={job.marcaProducto}
           icono="🏷️"
         />,
-
         <CampoClasificado
           key="estadoProducto"
           label="Estado"
           valor={job.estadoProducto}
           icono="✨"
         />,
-
         <CampoClasificado
           key="cantidad"
           label="Cantidad"
@@ -597,13 +1018,7 @@ export default function Home() {
           icono="🔢"
         />
       );
-    }
-
-    // ------------------------------------------------------
-    // OTROS
-    // ------------------------------------------------------
-
-    else {
+    } else {
       datos.push(
         <CampoClasificado
           key="area"
@@ -633,18 +1048,19 @@ export default function Home() {
     );
   };
 
-  // ========================================================
-  // COMPONENTE TARJETA
-  // ========================================================
+  /* ==========================================================
+     TARJETA DE ANUNCIO
+     ========================================================== */
 
   const JobCard = ({ job }) => {
-    // ------------------------------------------------------
-    // CLASIFICADO
-    // ------------------------------------------------------
+    /* --------------------------------------------------------
+       CLASIFICADOS
+       -------------------------------------------------------- */
 
     if (job.tipo === 'Clasificado') {
       const categoria =
-        job.categoriaClasificado || 'Otros';
+        job.categoriaClasificado ||
+        'Otros';
 
       const config =
         getCategoriaConfig(categoria);
@@ -662,7 +1078,6 @@ export default function Home() {
               : config.fondo,
           }}
         >
-          {/* VIP */}
           {job.esVip && (
             <div className="absolute top-0 right-0 bg-indigo-500 text-white text-[9px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-wider">
               ⭐ VIP
@@ -670,7 +1085,6 @@ export default function Home() {
           )}
 
           <div>
-            {/* CATEGORÍA */}
             <div className="mb-3">
               <span
                 className="text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wide"
@@ -684,12 +1098,10 @@ export default function Home() {
               </span>
             </div>
 
-            {/* TÍTULO */}
             <h3 className="text-lg sm:text-xl font-black text-slate-900 mb-4 leading-tight">
               {job.titulo}
             </h3>
 
-            {/* INFORMACIÓN */}
             <div
               className="bg-white/80 p-4 rounded-xl border mb-4"
               style={{
@@ -699,13 +1111,19 @@ export default function Home() {
               <div className="grid grid-cols-2 gap-3">
                 <CampoClasificado
                   label="Ubicación"
-                  valor={job.ubicacion}
+                  valor={
+                    job.ubicacion ||
+                    'Pasco'
+                  }
                   icono="📍"
                 />
 
                 <CampoClasificado
                   label="Precio"
-                  valor={job.sueldo || 'A tratar'}
+                  valor={
+                    job.sueldo ||
+                    'A tratar'
+                  }
                   icono="💰"
                 />
               </div>
@@ -716,25 +1134,31 @@ export default function Home() {
                   borderColor: config.borde,
                 }}
               >
-                {renderDatosClasificado(job)}
+                {renderDatosClasificado(
+                  job
+                )}
               </div>
             </div>
 
-            {/* DESCRIPCIÓN */}
-            <p className="text-xs text-slate-600 font-medium mb-3 line-clamp-3">
-              {job.descripcion}
-            </p>
+            {job.descripcion && (
+              <p className="text-xs text-slate-600 font-medium mb-3 line-clamp-3">
+                {job.descripcion}
+              </p>
+            )}
 
-            {/* FECHA */}
             <p className="text-[10px] text-slate-400 font-bold mb-4">
               📅 Publicado:{' '}
-              {formatearFechaPub(job.fechaInicio)}
+              {formatearFechaPub(
+                job.fechaInicio ||
+                  job.fechaPublicacion
+              )}
             </p>
           </div>
 
-          {/* BOTÓN */}
           <button
-            onClick={() => setSelectedJob(job)}
+            onClick={() =>
+              setSelectedJob(job)
+            }
             className="w-full text-white text-xs font-black py-3 rounded-xl transition-all shadow-md hover:-translate-y-0.5"
             style={{
               backgroundColor: config.color,
@@ -746,9 +1170,9 @@ export default function Home() {
       );
     }
 
-    // ------------------------------------------------------
-    // EMPLEO / ESTADO
-    // ------------------------------------------------------
+    /* --------------------------------------------------------
+       EMPLEO / ESTADO
+       -------------------------------------------------------- */
 
     return (
       <div
@@ -759,13 +1183,12 @@ export default function Home() {
         }`}
       >
         <div>
-          {/* CABECERA */}
           <div className="flex justify-between items-start mb-3 gap-2">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
               {job.logo ? (
                 <img
                   src={job.logo}
-                  alt={job.empresa}
+                  alt={job.empresa || 'Empresa'}
                   className="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-sm flex-shrink-0"
                 />
               ) : (
@@ -776,7 +1199,7 @@ export default function Home() {
                 </div>
               )}
 
-              <div>
+              <div className="min-w-0">
                 <span
                   className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
                     job.tipo === 'Estado'
@@ -789,14 +1212,14 @@ export default function Home() {
                     : '🏪 Empleo Local'}
                 </span>
 
-                <p className="text-xs text-slate-500 font-bold mt-0.5">
-                  {job.empresa}
+                <p className="text-xs text-slate-500 font-bold mt-0.5 truncate">
+                  {job.empresa ||
+                    'Empresa'}
                 </p>
               </div>
             </div>
 
-            {/* LADO DERECHO */}
-            <div className="flex flex-col items-end gap-1">
+            <div className="flex flex-col items-end gap-1 flex-shrink-0">
               {job.esVip && (
                 <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">
                   ⭐ VIP
@@ -816,33 +1239,32 @@ export default function Home() {
             </div>
           </div>
 
-          {/* TÍTULO */}
           <h3 className="text-sm sm:text-base font-black text-slate-900 mb-1 leading-snug">
             {job.titulo}
           </h3>
 
-          {/* UBICACIÓN */}
           <p className="text-xs text-slate-600 font-semibold mb-3 flex items-center gap-1">
             <span>📍</span>
 
             <span className="truncate">
-              {job.ubicacion || 'Pasco'}
+              {job.ubicacion ||
+                'Pasco'}
             </span>
           </p>
 
-          {/* INFORMACIÓN */}
           <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-2 mb-3">
-            <div className="flex justify-between items-center text-xs">
+            <div className="flex justify-between items-center text-xs gap-2">
               <span className="text-slate-500 font-bold">
                 Remuneración:
               </span>
 
-              <span className="font-black text-emerald-600">
-                {job.sueldo || 'A tratar'}
+              <span className="font-black text-emerald-600 text-right">
+                {job.sueldo ||
+                  'A tratar'}
               </span>
             </div>
 
-            <div className="flex justify-between items-center text-xs">
+            <div className="flex justify-between items-center text-xs gap-2">
               <span className="text-slate-500 font-bold">
                 Modalidad:
               </span>
@@ -854,7 +1276,7 @@ export default function Home() {
             </div>
 
             {job.vacantes && (
-              <div className="flex justify-between items-center text-xs">
+              <div className="flex justify-between items-center text-xs gap-2">
                 <span className="text-slate-500 font-bold">
                   Vacantes / Plazas:
                 </span>
@@ -867,9 +1289,10 @@ export default function Home() {
           </div>
         </div>
 
-        {/* BOTÓN */}
         <button
-          onClick={() => setSelectedJob(job)}
+          onClick={() =>
+            setSelectedJob(job)
+          }
           className="w-full bg-[#0B132B] hover:bg-slate-800 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-sm"
         >
           {job.tipo === 'Estado'
@@ -880,54 +1303,9 @@ export default function Home() {
     );
   };
 
-  // ========================================================
-  // TÍTULO DE SECCIÓN
-  // ========================================================
-
-  const SectionTitle = ({
-    icon,
-    title,
-    subtitle,
-    color = '#0B132B',
-  }) => {
-    return (
-      <div className="mb-5 mt-10">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-11 h-11 rounded-xl flex items-center justify-center text-xl shadow-sm"
-            style={{
-              backgroundColor: `${color}12`,
-            }}
-          >
-            {icon}
-          </div>
-
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
-              {title}
-            </h2>
-
-            {subtitle && (
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                {subtitle}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div
-          className="h-1 w-16 rounded-full mt-3"
-          style={{
-            backgroundColor: color,
-          }}
-        />
-      </div>
-    );
-  };
-
-  // ========================================================
-  // SECCIÓN DE TARJETAS
-  // ========================================================
+  /* ==========================================================
+     GRID
+     ========================================================== */
 
   const CardsGrid = ({ items }) => {
     if (!items || items.length === 0) {
@@ -946,118 +1324,86 @@ export default function Home() {
     );
   };
 
-  // ========================================================
-  // AGRUPACIÓN DE ANUNCIOS
-  // ========================================================
-
-  const vipJobs = sortedJobs.filter(
-    (job) => job.esVip
-  );
-
-  const privateJobs = sortedJobs.filter(
-    (job) =>
-      job.tipo === 'Privado' &&
-      !job.esVip
-  );
-
-  const estadoJobs = sortedJobs.filter(
-    (job) =>
-      job.tipo === 'Estado' &&
-      !job.esVip
-  );
-
-  const clasificadosJobs = sortedJobs.filter(
-    (job) =>
-      job.tipo === 'Clasificado' &&
-      !job.esVip
-  );
-
-  // ========================================================
-  // CATEGORÍAS DE CLASIFICADOS
-  // ========================================================
-
-  const categoriasConAnuncios =
-    Object.keys(categoriasClasificados).filter(
-      (categoria) =>
-        clasificadosJobs.some(
-          (job) =>
-            (job.categoriaClasificado ||
-              'Otros') === categoria
-        )
-    );
-
-  // ========================================================
-  // RENDER
-  // ========================================================
+  /* ==========================================================
+     RENDER
+     ========================================================== */
 
   return (
     <div className="bg-[#F8FAFC] text-slate-900 min-h-screen flex flex-col justify-between font-sans selection:bg-emerald-600 selection:text-white">
-
-      {/* ====================================================
+      {/* ======================================================
           HEADER
-      ==================================================== */}
+          ====================================================== */}
 
       <header className="bg-[#0B132B] text-white sticky top-0 z-40 shadow-xl border-b border-slate-800">
         <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-
+          {/* LOGO */}
           <div className="flex items-center justify-between w-full sm:w-auto">
-            <div className="flex items-center justify-between w-full sm:w-auto">
+            <a
+              href="/"
+              className="flex items-center gap-2 group cursor-pointer"
+            >
+              <img
+                src="/logo.png"
+                alt="Chamba Fija Pasco"
+                className="h-9 sm:h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+              />
+            </a>
 
-              <a
-                href="/"
-                className="flex items-center gap-2 group cursor-pointer"
-              >
-                <img
-                  src="/logo.png"
-                  alt="Chamba Fija Pasco"
-                  className="h-9 sm:h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
-                />
-              </a>
-
-            </div>
-
-            <span className="text-[10px] bg-slate-800/90 text-orange-400 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full ml-1 border border-orange-500/30 animate-pulse font-semibold whitespace-nowrap">
+            <span className="text-[10px] bg-slate-800/90 text-orange-400 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full ml-2 border border-orange-500/30 animate-pulse font-semibold whitespace-nowrap">
               Pasco 🏔️
             </span>
           </div>
 
           {/* BUSCADOR */}
-
           <div className="w-full sm:w-[420px] relative">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
               🔍
             </span>
 
             <input
+              ref={searchInputRef}
               type="text"
               value={searchTerm}
               onChange={(e) =>
-                setSearchTerm(e.target.value)
+                setSearchTerm(
+                  e.target.value
+                )
+              }
+              onKeyDown={
+                handleSearchKeyDown
               }
               placeholder="Buscar empleo, local, vehículo..."
-              className="w-full pl-11 pr-4 py-3 text-sm rounded-2xl bg-slate-900 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#06D6A0] transition-all shadow-inner"
+              className="w-full pl-11 pr-12 py-3 text-sm rounded-2xl bg-slate-900 border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#06D6A0] transition-all shadow-inner"
             />
+
+            {/* BOTÓN BUSCAR */}
+            <button
+              type="button"
+              onClick={ejecutarBusqueda}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl bg-[#06D6A0] text-slate-950 flex items-center justify-center hover:bg-emerald-400 active:scale-95 transition-all"
+              aria-label="Buscar"
+            >
+              🔎
+            </button>
           </div>
 
           {/* PUBLICAR */}
-
           <div className="w-full sm:w-auto flex justify-end">
             <a
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto text-center bg-gradient-to-r from-[#06D6A0] to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 text-slate-950 hover:text-white text-xs font-black px-6 py-3.5 rounded-2xl transition-all duration-300 shadow-lg shadow-emerald-600/20 hover:-translate-y-0.5 active:translate-y-0"
+              className="w-full sm:w-auto text-center bg-gradient-to-r from-[#06D6A0] to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 text-slate-950 hover:text-white text-xs font-black px-6 py-3.5 rounded-2xl transition-all duration-300 shadow-lg shadow-emerald-600/20 hover:-translate-y-0.5"
             >
               💬 Publicar Anuncio
             </a>
           </div>
-
         </div>
       </header>
 
-      {/* ====================================================
+      {/* ======================================================
           HERO
-      ==================================================== */}
+          ====================================================== */}
 
       <section
         className="relative bg-cover bg-[center_bottom_55%] overflow-hidden bg-gradient-to-br from-[#0B132B] via-[#1C2541] to-[#0B132B] text-white py-14 px-4 text-center shadow-xl"
@@ -1069,7 +1415,6 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(6,214,160,0.1)_0,transparent_50%)] pointer-events-none" />
 
         <div className="max-w-3xl mx-auto relative z-10 space-y-4">
-
           <span className="bg-slate-800/90 text-orange-400 text-xs font-bold px-4 py-1.5 rounded-full border border-orange-500/30 inline-flex items-center gap-1.5 shadow-sm backdrop-blur-md animate-pulse">
             ⚡ Empleos, convocatorias y clasificados al instante.
           </span>
@@ -1085,17 +1430,16 @@ export default function Home() {
             Conectando negocios locales, procesos del Estado,
             y anuncios clasificados de forma directa y sin intermediarios.
           </p>
-
         </div>
       </section>
 
-      {/* ====================================================
+      {/* ======================================================
           FILTROS
-      ==================================================== */}
+          ====================================================== */}
 
       <nav
         id="filtros-anuncios"
-        className="max-w-6xl mx-auto px-4 py-8 w-full flex flex-wrap gap-3 items-center justify-center sm:justify-start"
+        className="max-w-6xl mx-auto px-4 py-8 w-full flex flex-wrap gap-3 items-center justify-center sm:justify-start scroll-mt-24"
       >
         {[
           'Todos',
@@ -1106,7 +1450,23 @@ export default function Home() {
         ].map((filtro) => (
           <button
             key={filtro}
-            onClick={() => setFilter(filtro)}
+            onClick={() => {
+              setFilter(filtro);
+
+              window.setTimeout(() => {
+                const filtros =
+                  document.getElementById(
+                    'filtros-anuncios'
+                  );
+
+                if (filtros) {
+                  filtros.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                  });
+                }
+              }, 50);
+            }}
             className={`text-xs px-6 py-3 rounded-2xl font-black transition-all duration-300 shadow-xs ${
               filter === filtro
                 ? 'bg-[#0B132B] text-white shadow-md shadow-slate-900/20 scale-105'
@@ -1119,23 +1479,30 @@ export default function Home() {
               ? '💼 Empleos'
               : filtro === 'Estado'
               ? '🏛️ Estado'
-              : filtro === 'Anuncios Clasificados'
+              : filtro ===
+                'Anuncios Clasificados'
               ? '📢 Clasificados'
               : '⭐ Destacados'}
           </button>
         ))}
       </nav>
 
-      {/* ====================================================
+      {/* ======================================================
           CONTENIDO
-      ==================================================== */}
+          ====================================================== */}
 
-      <main className="max-w-6xl mx-auto px-4 pb-24 w-full flex-grow">
+      <main
+        id="resultados-anuncios"
+        className="max-w-6xl mx-auto px-4 pb-24 w-full flex-grow scroll-mt-24"
+      >
+        {/* ====================================================
+            PUBLICIDAD
+            ==================================================== */}
+
+        {!loading && <PublicidadSection />}
 
         {loading ? (
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
             {[1, 2, 3].map((n) => (
               <div
                 key={n}
@@ -1150,17 +1517,9 @@ export default function Home() {
                 <div className="w-full h-11 bg-slate-200 rounded-2xl" />
               </div>
             ))}
-
           </div>
-
         ) : sortedJobs.length === 0 ? (
-
-          /* =================================================
-             SIN RESULTADOS
-             ================================================= */
-
           <div className="py-24 text-center text-slate-500 space-y-4">
-
             <div className="text-5xl">
               🔎
             </div>
@@ -1177,25 +1536,24 @@ export default function Home() {
               onClick={() => {
                 setSearchTerm('');
                 setFilter('Todos');
+
+                window.setTimeout(() => {
+                  desplazarAResultados();
+                }, 100);
               }}
               className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-black shadow-md"
             >
               Restablecer filtros
             </button>
-
           </div>
-
         ) : (
-
           <div>
-
             {/* =================================================
-                FILTRO: TODOS
+                TODOS
                 ================================================= */}
 
             {filter === 'Todos' && (
               <>
-
                 {/* VIP */}
                 {vipJobs.length > 0 && (
                   <section>
@@ -1209,6 +1567,28 @@ export default function Home() {
                     <CardsGrid
                       items={vipJobs}
                     />
+
+                    {/* CTA VIP */}
+                    <div className="mt-5 rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="text-center sm:text-left">
+                        <p className="text-sm font-black text-slate-900">
+                          ⭐ ¿Quieres que tu negocio destaque?
+                        </p>
+
+                        <p className="text-xs text-slate-500 mt-1">
+                          Haz que más personas encuentren tu negocio en ChambaFija.
+                        </p>
+                      </div>
+
+                      <a
+                        href={whatsappVIPUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full sm:w-auto text-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-5 py-3 rounded-xl shadow-md transition-all hover:-translate-y-0.5"
+                      >
+                        📲 Quiero ser VIP
+                      </a>
+                    </div>
                   </section>
                 )}
 
@@ -1247,7 +1627,6 @@ export default function Home() {
                 {/* CLASIFICADOS */}
                 {categoriasConAnuncios.length > 0 && (
                   <section>
-
                     <SectionTitle
                       icon="📢"
                       title="Anuncios Clasificados"
@@ -1257,7 +1636,6 @@ export default function Home() {
 
                     {categoriasConAnuncios.map(
                       (categoria) => {
-
                         const config =
                           getCategoriaConfig(
                             categoria
@@ -1276,15 +1654,14 @@ export default function Home() {
                             key={categoria}
                             className="mb-10"
                           >
-
                             <div className="flex items-center gap-3 mb-4">
-
                               <div
                                 className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
                                 style={{
                                   backgroundColor:
                                     config.fondo,
-                                  border: `1px solid ${config.borde}`,
+                                  border:
+                                    `1px solid ${config.borde}`,
                                 }}
                               >
                                 {config.icono}
@@ -1302,13 +1679,15 @@ export default function Home() {
                                 </h3>
 
                                 <p className="text-[10px] text-slate-400 font-medium">
-                                  {anunciosCategoria.length}{' '}
-                                  {anunciosCategoria.length === 1
+                                  {
+                                    anunciosCategoria.length
+                                  }{' '}
+                                  {anunciosCategoria.length ===
+                                  1
                                     ? 'anuncio'
                                     : 'anuncios'}
                                 </p>
                               </div>
-
                             </div>
 
                             <CardsGrid
@@ -1316,20 +1695,17 @@ export default function Home() {
                                 anunciosCategoria
                               }
                             />
-
                           </div>
                         );
                       }
                     )}
-
                   </section>
                 )}
-
               </>
             )}
 
             {/* =================================================
-                FILTRO DESTACADOS
+                DESTACADOS
                 ================================================= */}
 
             {filter === 'Destacados' && (
@@ -1339,20 +1715,41 @@ export default function Home() {
                     <SectionTitle
                       icon="⭐"
                       title="Anuncios Destacados"
-                      subtitle="Todos los anuncios VIP"
+                      subtitle="🚀 Dale mayor visibilidad a tu negocio en ChambaFija"
                       color="#6366F1"
                     />
 
                     <CardsGrid
                       items={vipJobs}
                     />
+
+                    <div className="mt-5 rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="text-center sm:text-left">
+                        <p className="text-sm font-black text-slate-900">
+                          ⭐ Haz que tu negocio aparezca entre los destacados
+                        </p>
+
+                        <p className="text-xs text-slate-500 mt-1">
+                          Aumenta la visibilidad de tu anuncio y llega a más personas.
+                        </p>
+                      </div>
+
+                      <a
+                        href={whatsappVIPUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full sm:w-auto text-center bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black px-5 py-3 rounded-xl shadow-md transition-all"
+                      >
+                        📲 Quiero ser VIP
+                      </a>
+                    </div>
                   </>
                 )}
               </>
             )}
 
             {/* =================================================
-                FILTRO EMPLEOS
+                EMPLEOS
                 ================================================= */}
 
             {filter === 'Empleos' && (
@@ -1375,7 +1772,7 @@ export default function Home() {
             )}
 
             {/* =================================================
-                FILTRO ESTADO
+                ESTADO
                 ================================================= */}
 
             {filter === 'Estado' && (
@@ -1398,10 +1795,11 @@ export default function Home() {
             )}
 
             {/* =================================================
-                FILTRO CLASIFICADOS
+                CLASIFICADOS
                 ================================================= */}
 
-            {filter === 'Anuncios Clasificados' && (
+            {filter ===
+              'Anuncios Clasificados' && (
               <>
                 <SectionTitle
                   icon="📢"
@@ -1412,7 +1810,6 @@ export default function Home() {
 
                 {categoriasConAnuncios.map(
                   (categoria) => {
-
                     const config =
                       getCategoriaConfig(
                         categoria
@@ -1427,7 +1824,8 @@ export default function Home() {
                       );
 
                     if (
-                      anunciosCategoria.length === 0
+                      anunciosCategoria.length ===
+                      0
                     ) {
                       return null;
                     }
@@ -1437,15 +1835,14 @@ export default function Home() {
                         key={categoria}
                         className="mb-10"
                       >
-
                         <div className="flex items-center gap-3 mb-4">
-
                           <div
                             className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
                             style={{
                               backgroundColor:
                                 config.fondo,
-                              border: `1px solid ${config.borde}`,
+                              border:
+                                `1px solid ${config.borde}`,
                             }}
                           >
                             {config.icono}
@@ -1463,13 +1860,15 @@ export default function Home() {
                             </h3>
 
                             <p className="text-[10px] text-slate-400 font-medium">
-                              {anunciosCategoria.length}{' '}
-                              {anunciosCategoria.length === 1
+                              {
+                                anunciosCategoria.length
+                              }{' '}
+                              {anunciosCategoria.length ===
+                              1
                                 ? 'anuncio'
                                 : 'anuncios'}
                             </p>
                           </div>
-
                         </div>
 
                         <CardsGrid
@@ -1477,30 +1876,33 @@ export default function Home() {
                             anunciosCategoria
                           }
                         />
-
                       </div>
                     );
                   }
                 )}
               </>
             )}
-
           </div>
         )}
-
       </main>
 
-      {/* ====================================================
+      {/* ======================================================
           MODAL DETALLE
-      ==================================================== */}
+          ====================================================== */}
 
       {selectedJob && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4">
-
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={(event) => {
+            if (
+              event.target === event.currentTarget
+            ) {
+              setSelectedJob(null);
+            }
+          }}
+        >
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 relative max-h-[90vh] flex flex-col">
-
             {/* CERRAR */}
-
             <button
               onClick={() =>
                 setSelectedJob(null)
@@ -1511,10 +1913,10 @@ export default function Home() {
             </button>
 
             {/* TIPO */}
-
             {(() => {
               const config =
-                selectedJob.tipo === 'Clasificado'
+                selectedJob.tipo ===
+                'Clasificado'
                   ? getCategoriaConfig(
                       selectedJob.categoriaClasificado ||
                         'Otros'
@@ -1523,9 +1925,10 @@ export default function Home() {
 
               return (
                 <span
-                  className="inline-block text-[10px] font-black px-3.5 py-1.5 rounded-xl mb-3 self-start"
+                  className="inline-block text-[10px] font-black px-3.5 py-1.5 rounded-xl mb-3 self-start pr-12"
                   style={
-                    selectedJob.tipo === 'Clasificado'
+                    selectedJob.tipo ===
+                    'Clasificado'
                       ? {
                           backgroundColor:
                             config.fondo,
@@ -1540,13 +1943,11 @@ export default function Home() {
                             'Estado'
                               ? '#F1F5F9'
                               : '#ECFDF5',
-
                           color:
                             selectedJob.tipo ===
                             'Estado'
                               ? '#1E293B'
                               : '#047857',
-
                           border:
                             `1px solid ${
                               selectedJob.tipo ===
@@ -1557,6 +1958,9 @@ export default function Home() {
                         }
                   }
                 >
+                  {selectedJob.esVip &&
+                    '⭐ VIP · '}
+
                   {selectedJob.tipo === 'Estado'
                     ? 'Convocatoria Oficial del Estado'
                     : selectedJob.tipo ===
@@ -1571,38 +1975,33 @@ export default function Home() {
             })()}
 
             {/* TÍTULO */}
-
-            <h3 className="text-xl sm:text-2xl font-black text-slate-900 mb-1 leading-tight">
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 mb-1 leading-tight pr-8">
               {selectedJob.tipo ===
               'Clasificado'
                 ? selectedJob.titulo
-                : `${selectedJob.empresa}: ${selectedJob.titulo}`}
+                : `${selectedJob.empresa || 'Empresa'}: ${
+                    selectedJob.titulo
+                  }`}
             </h3>
 
             {/* UBICACIÓN */}
-
             <p className="text-xs text-slate-500 font-semibold mb-6 flex items-center gap-1">
-              📍 {selectedJob.ubicacion}
+              📍{' '}
+              {selectedJob.ubicacion ||
+                'Pasco'}
             </p>
 
             {/* CONTENIDO */}
-
             <div className="overflow-y-auto pr-2 space-y-4 mb-6 text-xs text-slate-700">
-
-              {/* ==========================================
-                  ESTADO
-                  ========================================== */}
-
+              {/* ESTADO */}
               {selectedJob.tipo === 'Estado' ? (
                 <>
                   <div className="bg-slate-50 rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs">
-
                     <div className="bg-[#0B132B] text-white font-black px-4 py-3">
                       Requisitos del Puesto
                     </div>
 
                     <div className="p-4 space-y-2.5 font-medium">
-
                       <p>
                         <strong>
                           Número de vacantes:
@@ -1640,23 +2039,22 @@ export default function Home() {
                           {selectedJob.especializacion}
                         </p>
                       )}
-
                     </div>
                   </div>
 
-                  <div className="bg-slate-50 rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs">
-
+                  <div className="bg-slate-50 rounded-2xl border border-slate-200/80 overflow-hidden">
                     <div className="bg-[#0B132B] text-white font-black px-4 py-3">
                       Condiciones del Contrato
                     </div>
 
                     <div className="p-4 space-y-2.5 font-medium">
-
                       <p>
                         <strong>
                           Lugar de prestación:
                         </strong>{' '}
-                        {selectedJob.empresa}
+                        {selectedJob.empresa ||
+                          selectedJob.ubicacion ||
+                          'Pasco'}
                       </p>
 
                       <p>
@@ -1666,26 +2064,23 @@ export default function Home() {
 
                         <span className="text-emerald-600 font-black">
                           {selectedJob.sueldo
-                            ? selectedJob.sueldo
-                                .toString()
-                                .startsWith('S/')
+                            ? String(
+                                selectedJob.sueldo
+                              ).startsWith('S/')
                               ? selectedJob.sueldo
                               : `S/ ${selectedJob.sueldo}`
                             : 'A tratar'}
                         </span>
                       </p>
-
                     </div>
                   </div>
 
-                  <div className="bg-slate-50 rounded-2xl border border-slate-200/80 overflow-hidden shadow-2xs">
-
+                  <div className="bg-slate-50 rounded-2xl border border-slate-200/80 overflow-hidden">
                     <div className="bg-[#0B132B] text-white font-black px-4 py-3">
                       ¿Cómo postular?
                     </div>
 
                     <div className="p-4 space-y-2.5 font-medium">
-
                       <p>
                         <strong>
                           Plazo límite:
@@ -1710,22 +2105,18 @@ export default function Home() {
                         {selectedJob.comoPostular ||
                           'Presentación de expediente según bases oficiales.'}
                       </p>
-
                     </div>
                   </div>
 
                   <div className="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden">
-
                     <div className="bg-[#0B132B] text-white font-black px-4 py-3">
                       Enlaces Oficiales y Bases del Concurso
                     </div>
 
                     <div className="p-4 space-y-2.5 font-medium">
-
                       {selectedJob.enlaceBases && (
                         <p>
                           👉{' '}
-
                           <a
                             href={
                               selectedJob.enlaceBases
@@ -1740,12 +2131,14 @@ export default function Home() {
                       )}
 
                       {selectedJob.enlacesExtras &&
+                        Array.isArray(
+                          selectedJob.enlacesExtras
+                        ) &&
                         selectedJob.enlacesExtras.map(
                           (link, idx) =>
-                            link.url && (
+                            link?.url && (
                               <p key={idx}>
                                 👉{' '}
-
                                 <a
                                   href={link.url}
                                   target="_blank"
@@ -1761,24 +2154,19 @@ export default function Home() {
 
                       {!selectedJob.enlaceBases &&
                         (!selectedJob.enlacesExtras ||
-                          selectedJob.enlacesExtras
-                            .length === 0) && (
+                          selectedJob
+                            .enlacesExtras
+                            .length ===
+                            0) && (
                           <p className="text-slate-400 italic">
                             No hay enlaces externos registrados para este proceso.
                           </p>
                         )}
-
                     </div>
                   </div>
                 </>
-
               ) : selectedJob.tipo ===
                 'Clasificado' ? (
-
-                /* ==========================================
-                   CLASIFICADO
-                   ========================================== */
-
                 (() => {
                   const categoria =
                     selectedJob.categoriaClasificado ||
@@ -1799,7 +2187,6 @@ export default function Home() {
                           config.borde,
                       }}
                     >
-
                       <div
                         className="rounded-xl p-4 bg-white/80 border"
                         style={{
@@ -1807,9 +2194,7 @@ export default function Home() {
                             config.borde,
                         }}
                       >
-
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
                           <div>
                             <span
                               className="block text-[10px] uppercase font-bold mb-1"
@@ -1851,16 +2236,15 @@ export default function Home() {
 
                             <span className="font-bold text-slate-800 text-sm">
                               {formatearFechaPub(
-                                selectedJob.fechaInicio
+                                selectedJob.fechaInicio ||
+                                  selectedJob.fechaPublicacion
                               )}
                             </span>
                           </div>
-
                         </div>
                       </div>
 
                       <div>
-
                         <h4
                           className="font-black mb-3"
                           style={{
@@ -1888,11 +2272,9 @@ export default function Home() {
                             </p>
                           )}
                         </div>
-
                       </div>
 
                       <div>
-
                         <h4
                           className="font-bold mb-2"
                           style={{
@@ -1904,86 +2286,66 @@ export default function Home() {
                         </h4>
 
                         <p className="text-slate-700 leading-relaxed whitespace-pre-line text-sm">
-                          {selectedJob.descripcion}
+                          {selectedJob.descripcion ||
+                            'Sin descripción adicional.'}
                         </p>
-
                       </div>
-
                     </div>
                   );
                 })()
-
               ) : (
-
-                /* ==========================================
-                   EMPLEO PRIVADO
-                   ========================================== */
-
+                /* EMPLEO PRIVADO */
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
-
-                  <div className="flex justify-between border-b border-slate-200 pb-2">
-
+                  <div className="flex justify-between border-b border-slate-200 pb-2 gap-4">
                     <span className="text-slate-500 font-bold">
                       Remuneración:
                     </span>
 
-                    <span className="font-extrabold text-emerald-600">
+                    <span className="font-extrabold text-emerald-600 text-right">
                       {selectedJob.sueldo ||
                         'A tratar'}
                     </span>
-
                   </div>
 
-                  <div className="flex justify-between border-b border-slate-200 pb-2">
-
+                  <div className="flex justify-between border-b border-slate-200 pb-2 gap-4">
                     <span className="text-slate-500 font-bold">
                       Modalidad:
                     </span>
 
-                    <span className="font-bold text-slate-800">
+                    <span className="font-bold text-slate-800 text-right">
                       {selectedJob.modalidad ||
                         'No especificada'}
                     </span>
-
                   </div>
 
                   {selectedJob.experiencia && (
                     <div className="border-b border-slate-200 pb-2">
-
                       <h4 className="font-bold text-slate-800 mb-1">
                         Experiencia Requerida:
                       </h4>
 
-                      <p className="text-slate-600 leading-relaxed">
+                      <p className="text-slate-600 leading-relaxed whitespace-pre-line">
                         {selectedJob.experiencia}
                       </p>
-
                     </div>
                   )}
 
                   <div>
-
                     <h4 className="font-bold text-slate-800 mb-1">
                       Descripción del Puesto:
                     </h4>
 
                     <p className="text-slate-600 leading-relaxed whitespace-pre-line">
-                      {selectedJob.descripcion}
+                      {selectedJob.descripcion ||
+                        'Sin descripción adicional.'}
                     </p>
-
                   </div>
-
                 </div>
               )}
-
             </div>
 
-            {/* =================================================
-                BOTONES MODAL
-                ================================================= */}
-
-            <div className="flex gap-3 pt-4 border-t border-slate-100">
-
+            {/* BOTONES */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100">
               <button
                 onClick={() =>
                   setSelectedJob(null)
@@ -1995,24 +2357,24 @@ export default function Home() {
 
               {selectedJob.tipo ===
               'Estado' ? (
-
-                <a
-                  href={
-                    selectedJob.enlaceBases
-                  }
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1 text-center bg-[#0B132B] hover:bg-slate-800 text-white text-xs font-black py-3.5 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2"
-                >
-                  📄 Descargar Bases Oficiales
-                </a>
-
+                selectedJob.enlaceBases ? (
+                  <a
+                    href={
+                      selectedJob.enlaceBases
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 text-center bg-[#0B132B] hover:bg-slate-800 text-white text-xs font-black py-3.5 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2"
+                  >
+                    📄 Descargar Bases Oficiales
+                  </a>
+                ) : null
               ) : (
-
                 <div className="flex-1 flex flex-col sm:flex-row gap-2 w-full">
-
                   {selectedJob.contacto &&
-                    selectedJob.contacto
+                    String(
+                      selectedJob.contacto
+                    )
                       .split(',')
                       .map((c) =>
                         c.trim()
@@ -2029,9 +2391,9 @@ export default function Home() {
                             href={`https://wa.me/51${num.replace(
                               /\D/g,
                               ''
-                            )}?text=Hola,%20vi%20el%20anuncio%20de%20${encodeURIComponent(
-                              selectedJob.titulo
-                            )}%20en%20ChambaFija`}
+                            )}?text=${encodeURIComponent(
+                              `Hola, vi el anuncio de ${selectedJob.titulo} en ChambaFija`
+                            )}`}
                             target="_blank"
                             rel="noreferrer"
                             className="w-full flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center text-center gap-1"
@@ -2047,24 +2409,25 @@ export default function Home() {
                         )
                       )}
 
+                  {!selectedJob.contacto && (
+                    <span className="flex-1 text-center bg-slate-100 text-slate-400 text-xs font-bold py-3.5 rounded-xl">
+                      No hay contacto registrado
+                    </span>
+                  )}
                 </div>
               )}
-
             </div>
-
           </div>
         </div>
       )}
 
-      {/* ====================================================
+      {/* ======================================================
           TÉRMINOS
-      ==================================================== */}
+          ====================================================== */}
 
       {showTerms && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 relative max-h-[85vh] flex flex-col">
-
             <button
               onClick={() =>
                 setShowTerms(false)
@@ -2074,12 +2437,11 @@ export default function Home() {
               ✕
             </button>
 
-            <h3 className="text-xl font-black text-slate-900 mb-4">
+            <h3 className="text-xl font-black text-slate-900 mb-4 pr-12">
               📜 Términos, Condiciones y Descargo de Responsabilidad
             </h3>
 
             <div className="overflow-y-auto space-y-4 text-xs text-slate-600 pr-2 mb-6 leading-relaxed font-medium">
-
               <p>
                 <strong>
                   1. Naturaleza del Servicio:
@@ -2093,7 +2455,7 @@ export default function Home() {
 
               <p>
                 <strong>
-                  2. Exoneración de Responsabilidad (Disclaimer):
+                  2. Exoneración de Responsabilidad:
                 </strong>{' '}
                 No participamos ni intervenimos en procesos de selección. Las ofertas privadas son responsabilidad exclusiva de los anunciantes. Las convocatorias estatales se enlazan solo con fines informativos desde fuentes oficiales.
               </p>
@@ -2109,6 +2471,12 @@ export default function Home() {
                 de los postulantes. Las postulaciones se realizan de forma directa mediante enlaces externos o WhatsApp proporcionados por los empleadores.
               </p>
 
+              <p>
+                <strong>
+                  4. Publicidad:
+                </strong>{' '}
+                Los espacios publicitarios mostrados en ChambaFija corresponden a anuncios de terceros. ChambaFija actúa como medio de difusión y no garantiza los productos, servicios, precios o condiciones ofrecidas por los anunciantes.
+              </p>
             </div>
 
             <button
@@ -2119,21 +2487,17 @@ export default function Home() {
             >
               Entendido y Cerrar
             </button>
-
           </div>
         </div>
       )}
 
-      {/* ====================================================
+      {/* ======================================================
           FOOTER
-      ==================================================== */}
+          ====================================================== */}
 
       <footer className="bg-[#0F172A] text-slate-400 text-xs px-4 py-8 text-center border-t border-slate-800 mt-auto">
-
         <div className="max-w-4xl mx-auto space-y-6">
-
           <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700 max-w-lg mx-auto">
-
             <h4 className="text-white text-base font-extrabold mb-2">
               🔔 Recibe alertas de empleo diarias en tu celular
             </h4>
@@ -2143,9 +2507,7 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-
               {/* WHATSAPP */}
-
               <a
                 href="https://whatsapp.com/channel/0029Vb8NSHbDJ6H4RX6Zqj25"
                 target="_blank"
@@ -2164,7 +2526,6 @@ export default function Home() {
               </a>
 
               {/* TELEGRAM */}
-
               <a
                 href="https://t.me/Chamba_Fija"
                 target="_blank"
@@ -2181,12 +2542,10 @@ export default function Home() {
 
                 Canal de Telegram
               </a>
-
             </div>
           </div>
 
           <div className="space-y-3">
-
             <p className="font-black text-white text-sm">
               ChambaFija - Pasco
             </p>
@@ -2209,12 +2568,9 @@ export default function Home() {
             <p className="text-[11px] text-slate-500 pt-2 opacity-75">
               © 2026 ChambaFija. Todos los derechos reservados.
             </p>
-
           </div>
-
         </div>
       </footer>
-
     </div>
   );
 }
