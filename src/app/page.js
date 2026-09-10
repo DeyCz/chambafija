@@ -1212,9 +1212,8 @@ export default function Home() {
                     : '🏪 Empleo Local'}
                 </span>
 
-                <p className="text-xs text-slate-500 font-bold mt-0.5 truncate">
-                  {job.empresa ||
-                    'Empresa'}
+                <p className="text-xs text-slate-500 font-bold mt-0.5 whitespace-normal break-words leading-tight">
+                  {job.empresa || 'Empresa'}
                 </p>
               </div>
             </div>
