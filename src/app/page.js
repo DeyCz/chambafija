@@ -453,6 +453,13 @@ export default function Home() {
      WHATSAPP PUBLICAR
      ========================================================== */
 
+     const mensajePublicidad =
+      '¡Hola! 📢 Quiero anunciar mi negocio en ChambaFija y quisiera conocer los espacios publicitarios disponibles.';
+
+    const whatsappPublicidadUrl =
+      `https://api.whatsapp.com/send?phone=${numeroWhatsApp}` +
+      `&text=${encodeURIComponent(mensajePublicidad)}`;
+
   const numeroWhatsApp = '51967576214';
 
   const mensajePublicar =
@@ -1470,9 +1477,10 @@ export default function Home() {
 
         {!loading && (
           <PublicidadSection
-            whatsappUrl={whatsappUrl}
+            whatsappUrl={whatsappPublicidadUrl}
           />
         )}
+        
 
       {/* ======================================================
           FILTROS
