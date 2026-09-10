@@ -286,13 +286,7 @@ const PublicidadSection = ({ whatsappUrl }) => {
       {/* Encabezado pequeño */}
       <div className="max-w-7xl mx-auto px-4 mb-2 sm:mb-3">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm">📢</span>
-
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-500">
-              Espacio publicitario
-            </span>
-          </div>
+          
 
           <span className="hidden sm:block text-[10px] text-slate-400 font-semibold">
             Publicidad local · ChambaFija
