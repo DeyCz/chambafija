@@ -219,7 +219,7 @@ const PublicidadCard = ({ publicidad }) => {
   const imagenUrl =
     `https://drive.google.com/thumbnail?id=${encodeURIComponent(
       publicidad.driveId
-    )}&sz=w1600`;
+    )}&sz=w2000`;
 
   const numero = String(publicidad.whatsapp || '').replace(/\D/g, '');
 
@@ -235,41 +235,41 @@ const PublicidadCard = ({ publicidad }) => {
       href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
       aria-label={`Publicidad de ${publicidad.nombre}`}
+      className="group relative block w-full overflow-hidden bg-slate-100"
     >
-      <div className="relative bg-slate-100 flex items-center justify-center min-h-[150px] sm:min-h-[170px] lg:min-h-[180px]">
+      {/* Imagen tipo banner */}
+      <div className="relative w-full h-[120px] sm:h-[160px] md:h-[190px] lg:h-[220px]">
         <img
           src={imagenUrl}
           alt={publicidad.nombre}
           loading="lazy"
           onError={() => setError(true)}
-          className="w-full h-auto max-h-[260px] object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.015]"
         />
 
-        <div className="absolute top-2 left-2">
-          <span className="bg-slate-900/80 backdrop-blur-sm text-white text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-full">
-            Publicidad
+        {/* Degradado inferior */}
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
+
+        {/* Etiqueta */}
+        <div className="absolute top-3 left-3">
+          <span className="inline-flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-sm text-white text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full shadow-lg">
+            📢 Publicidad
           </span>
         </div>
 
-        <div className="absolute bottom-2 right-2">
-          <span className="bg-emerald-600 text-white text-[9px] font-black px-2.5 py-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
-            📲 Ver por WhatsApp
-          </span>
-        </div>
+        {/* WhatsApp */}
+        {numero && (
+          <div className="absolute bottom-3 right-3">
+            <span className="inline-flex items-center gap-1.5 bg-emerald-500 text-white text-[10px] sm:text-xs font-black px-3 py-2 rounded-full shadow-lg transition-all duration-300 group-hover:bg-emerald-400 group-hover:scale-105">
+              📲 Contactar
+            </span>
+          </div>
+        )}
       </div>
     </a>
   );
 };
-
-/* ============================================================
-   SECCIÓN PUBLICITARIA
-   ============================================================ */
-
-/* ============================================================
-   SECCIÓN PUBLICITARIA
-   ============================================================ */
 
 const PublicidadSection = ({ whatsappUrl }) => {
   const anunciosActivos = publicidades.filter(
@@ -282,113 +282,82 @@ const PublicidadSection = ({ whatsappUrl }) => {
   const hayPublicidad = anunciosActivos.length > 0;
 
   return (
-    <section className="mb-8">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0B132B] via-[#1C2541] to-[#0B132B] p-5 sm:p-6 shadow-lg border border-slate-800">
-        {/* ====================================================
-            DECORACIÓN
-            ==================================================== */}
+    <section className="w-full mb-7 sm:mb-8">
+      {/* Encabezado pequeño */}
+      <div className="max-w-7xl mx-auto px-4 mb-2 sm:mb-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">📢</span>
 
-        <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-emerald-400/10 blur-3xl pointer-events-none" />
-
-        <div className="absolute -bottom-20 -left-10 w-40 h-40 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
-
-        <div className="relative z-10">
-
-          {/* ==================================================
-              ENCABEZADO
-              ================================================== */}
-
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
-
-            <div>
-              <div className="inline-flex items-center gap-2 bg-white/10 border border-white/10 rounded-full px-3 py-1 mb-2">
-                <span className="text-xs">
-                  📢
-                </span>
-
-                <span className="text-[9px] sm:text-[10px] font-black text-emerald-300 uppercase tracking-wider">
-                  Espacio publicitario
-                </span>
-              </div>
-
-              <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-                {hayPublicidad
-                  ? 'Conoce negocios y servicios de Pasco'
-                  : 'Haz crecer tu negocio en Pasco'}
-              </h2>
-
-              <p className="text-xs sm:text-sm text-slate-300 mt-1">
-                {hayPublicidad
-                  ? 'Descubre nuevas opciones y contacta directamente por WhatsApp.'
-                  : 'Este espacio está disponible para negocios, servicios y emprendimientos locales.'}
-              </p>
-            </div>
-
-            <span className="text-[10px] text-slate-400 font-semibold">
-              Publicidad local
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-500">
+              Espacio publicitario
             </span>
           </div>
 
-          {/* ==================================================
-              PUBLICIDADES REALES
-              ================================================== */}
+          <span className="hidden sm:block text-[10px] text-slate-400 font-semibold">
+            Publicidad local · ChambaFija
+          </span>
+        </div>
+      </div>
 
-          {hayPublicidad ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {anunciosActivos.map((publicidad) => (
-                <PublicidadCard
-                  key={publicidad.id}
-                  publicidad={publicidad}
-                />
-              ))}
-            </div>
-          ) : (
-
-            /* ==================================================
-               ESPACIO VACÍO / PRÓXIMA PUBLICIDAD
-               ================================================== */
-
-            <div className="relative overflow-hidden rounded-2xl border border-dashed border-emerald-400/30 bg-white/[0.04] px-5 py-8 sm:py-10 text-center">
+      {/* =====================================================
+          PUBLICIDADES REALES
+          ===================================================== */}
+      {hayPublicidad ? (
+        <div className="w-full">
+          {anunciosActivos.map((publicidad) => (
+            <PublicidadCard
+              key={publicidad.id}
+              publicidad={publicidad}
+            />
+          ))}
+        </div>
+      ) : (
+        /* =====================================================
+           ESPACIO DISPONIBLE
+           ===================================================== */
+        <div className="w-full bg-gradient-to-r from-[#0B132B] via-[#16203D] to-[#0B132B] border-y border-slate-800">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="relative flex flex-col sm:flex-row items-center justify-between gap-5 py-7 sm:py-8 md:py-9">
 
               {/* Decoración */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-emerald-400/10 blur-3xl rounded-full pointer-events-none" />
+              <div className="absolute -left-20 -top-20 w-48 h-48 rounded-full bg-emerald-400/10 blur-3xl pointer-events-none" />
 
-              <div className="relative z-10 max-w-xl mx-auto">
-
-                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-emerald-400/10 border border-emerald-400/20 flex items-center justify-center text-2xl">
+              <div className="relative z-10 flex items-center gap-4 sm:gap-5 text-center sm:text-left">
+                
+                <div className="hidden sm:flex shrink-0 w-14 h-14 rounded-2xl bg-emerald-400/10 border border-emerald-400/20 items-center justify-center text-2xl">
                   📢
                 </div>
 
-                <h3 className="text-lg sm:text-xl font-black text-white mb-2">
-                  Este espacio puede ser tuyo
-                </h3>
+                <div>
+                  <p className="text-emerald-300 text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-1">
+                    Publicidad local
+                  </p>
 
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-md mx-auto">
-                  Promociona tu negocio, servicio, producto o emprendimiento
-                  y llega a más personas en Pasco a través de ChambaFija.
-                </p>
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white leading-tight">
+                    Haz que tu negocio llegue a más personas en Pasco
+                  </h2>
 
-                <div className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3">
-
-                  <a
-                    href={whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#06D6A0] hover:bg-emerald-400 text-slate-950 text-xs font-black px-5 py-3 rounded-xl shadow-lg transition-all hover:-translate-y-0.5"
-                  >
-                    📲 Quiero anunciar aquí
-                  </a>
-
-                  <span className="text-[10px] text-slate-500 font-medium">
-                    Publicidad local · ChambaFija
-                  </span>
-
+                  <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl">
+                    Anuncia tu negocio, servicio, producto o emprendimiento
+                    en ChambaFija.
+                  </p>
                 </div>
               </div>
+
+              {/* CTA */}
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative z-10 shrink-0 inline-flex items-center justify-center gap-2 bg-emerald-400 hover:bg-emerald-300 text-[#0B132B] font-black text-xs sm:text-sm px-5 sm:px-6 py-3 rounded-xl shadow-lg transition-all duration-300 hover:-translate-y-0.5"
+              >
+                📲 Quiero anunciar
+              </a>
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
     </section>
   );
 };
@@ -1549,15 +1518,7 @@ export default function Home() {
         ))}
       </nav>
 
-      {/* ======================================================
-          CONTENIDO
-          ====================================================== */}
-
-      <main
-        id="resultados-anuncios"
-        className="max-w-6xl mx-auto px-4 pb-24 w-full flex-grow scroll-mt-24"
-      >
-        {/* ====================================================
+      {/* ====================================================
             PUBLICIDAD
             ==================================================== */}
 
@@ -1566,6 +1527,16 @@ export default function Home() {
             whatsappUrl={whatsappUrl}
           />
         )}
+
+      {/* ======================================================
+          CONTENIDO
+          ====================================================== */}
+
+      <main
+        id="resultados-anuncios"
+        className="max-w-6xl mx-auto px-4 pb-24 w-full flex-grow scroll-mt-24"
+      >
+        
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
