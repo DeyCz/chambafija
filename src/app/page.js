@@ -449,16 +449,7 @@ export default function Home() {
 
   const searchInputRef = useRef(null);
 
-  /* ==========================================================
-     WHATSAPP PUBLICAR
-     ========================================================== */
 
-     const mensajePublicidad =
-      '¡Hola! 📢 Quiero anunciar mi negocio en ChambaFija y quisiera conocer los espacios publicitarios disponibles.';
-
-    const whatsappPublicidadUrl =
-      `https://api.whatsapp.com/send?phone=${numeroWhatsApp}` +
-      `&text=${encodeURIComponent(mensajePublicidad)}`;
 
   const numeroWhatsApp = '51967576214';
 
@@ -468,6 +459,17 @@ export default function Home() {
   const whatsappUrl =
     `https://api.whatsapp.com/send?phone=${numeroWhatsApp}` +
     `&text=${encodeURIComponent(mensajePublicar)}`;
+
+    // ============================================================
+// WHATSAPP PARA PUBLICIDAD
+// ============================================================
+
+const mensajePublicidad =
+  '¡Hola! 📢 Quiero anunciar mi negocio en ChambaFija y quisiera conocer los espacios publicitarios disponibles.';
+
+const whatsappPublicidadUrl =
+  `https://api.whatsapp.com/send?phone=${numeroWhatsApp}` +
+  `&text=${encodeURIComponent(mensajePublicidad)}`;
 
   /* ==========================================================
      WHATSAPP VIP
