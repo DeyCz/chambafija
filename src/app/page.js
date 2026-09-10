@@ -267,7 +267,11 @@ const PublicidadCard = ({ publicidad }) => {
    SECCIÓN PUBLICITARIA
    ============================================================ */
 
-const PublicidadSection = () => {
+/* ============================================================
+   SECCIÓN PUBLICITARIA
+   ============================================================ */
+
+const PublicidadSection = ({ whatsappUrl }) => {
   const anunciosActivos = publicidades.filter(
     (publicidad) =>
       publicidad.activo &&
@@ -275,33 +279,48 @@ const PublicidadSection = () => {
       !publicidad.driveId.startsWith('COLOCA_AQUI')
   );
 
-  if (anunciosActivos.length === 0) {
-    return null;
-  }
+  const hayPublicidad = anunciosActivos.length > 0;
 
   return (
     <section className="mb-8">
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0B132B] via-[#1C2541] to-[#0B132B] p-5 sm:p-6 shadow-lg border border-slate-800">
-        {/* Decoración */}
-        <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-emerald-400/10 blur-3xl" />
-        <div className="absolute -bottom-20 -left-10 w-40 h-40 rounded-full bg-indigo-500/10 blur-3xl" />
+        {/* ====================================================
+            DECORACIÓN
+            ==================================================== */}
+
+        <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-emerald-400/10 blur-3xl pointer-events-none" />
+
+        <div className="absolute -bottom-20 -left-10 w-40 h-40 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
 
         <div className="relative z-10">
+
+          {/* ==================================================
+              ENCABEZADO
+              ================================================== */}
+
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
+
             <div>
               <div className="inline-flex items-center gap-2 bg-white/10 border border-white/10 rounded-full px-3 py-1 mb-2">
-                <span className="text-xs">📢</span>
+                <span className="text-xs">
+                  📢
+                </span>
+
                 <span className="text-[9px] sm:text-[10px] font-black text-emerald-300 uppercase tracking-wider">
                   Espacio publicitario
                 </span>
               </div>
 
               <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-                Conoce negocios y servicios de Pasco
+                {hayPublicidad
+                  ? 'Conoce negocios y servicios de Pasco'
+                  : 'Haz crecer tu negocio en Pasco'}
               </h2>
 
               <p className="text-xs sm:text-sm text-slate-300 mt-1">
-                Descubre nuevas opciones y contacta directamente por WhatsApp.
+                {hayPublicidad
+                  ? 'Descubre nuevas opciones y contacta directamente por WhatsApp.'
+                  : 'Este espacio está disponible para negocios, servicios y emprendimientos locales.'}
               </p>
             </div>
 
@@ -310,20 +329,64 @@ const PublicidadSection = () => {
             </span>
           </div>
 
-          {/* 
-             1 columna móvil
-             2 tablet
-             4 PC
-             5 pantallas grandes
-          */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {anunciosActivos.map((publicidad) => (
-              <PublicidadCard
-                key={publicidad.id}
-                publicidad={publicidad}
-              />
-            ))}
-          </div>
+          {/* ==================================================
+              PUBLICIDADES REALES
+              ================================================== */}
+
+          {hayPublicidad ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {anunciosActivos.map((publicidad) => (
+                <PublicidadCard
+                  key={publicidad.id}
+                  publicidad={publicidad}
+                />
+              ))}
+            </div>
+          ) : (
+
+            /* ==================================================
+               ESPACIO VACÍO / PRÓXIMA PUBLICIDAD
+               ================================================== */
+
+            <div className="relative overflow-hidden rounded-2xl border border-dashed border-emerald-400/30 bg-white/[0.04] px-5 py-8 sm:py-10 text-center">
+
+              {/* Decoración */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-emerald-400/10 blur-3xl rounded-full pointer-events-none" />
+
+              <div className="relative z-10 max-w-xl mx-auto">
+
+                <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-emerald-400/10 border border-emerald-400/20 flex items-center justify-center text-2xl">
+                  📢
+                </div>
+
+                <h3 className="text-lg sm:text-xl font-black text-white mb-2">
+                  Este espacio puede ser tuyo
+                </h3>
+
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-md mx-auto">
+                  Promociona tu negocio, servicio, producto o emprendimiento
+                  y llega a más personas en Pasco a través de ChambaFija.
+                </p>
+
+                <div className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3">
+
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#06D6A0] hover:bg-emerald-400 text-slate-950 text-xs font-black px-5 py-3 rounded-xl shadow-lg transition-all hover:-translate-y-0.5"
+                  >
+                    📲 Quiero anunciar aquí
+                  </a>
+
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    Publicidad local · ChambaFija
+                  </span>
+
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </section>
@@ -1498,7 +1561,11 @@ export default function Home() {
             PUBLICIDAD
             ==================================================== */}
 
-        {!loading && <PublicidadSection />}
+        {!loading && (
+          <PublicidadSection
+            whatsappUrl={whatsappUrl}
+          />
+        )}
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
