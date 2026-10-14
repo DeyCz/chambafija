@@ -540,8 +540,16 @@ export default function AdminDashboard() {
                   
                 <div style={{ ...styles.field, backgroundColor: '#F8FAFC', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
                   <label style={styles.label}>Modalidad de Trabajo</label>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
-                    {['Tiempo Completo', 'Medio Tiempo', 'CAS', 'Por Horas', 'Fines de Semana', 'Prácticas'].map(mod => (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}> 
+                      {[
+                        'Tiempo Completo',
+                        'Medio Tiempo',
+                        'CAS',
+                        'Por Horas',
+                        'Fines de Semana',
+                        'Prácticas',
+                        'Sistema 14x7'
+                      ].map(mod => (
                       <label key={mod} style={{ fontSize: '11px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#0B132B' }}>
                         <input
                           type="checkbox"
