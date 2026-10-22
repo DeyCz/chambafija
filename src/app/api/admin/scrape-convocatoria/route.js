@@ -61,17 +61,91 @@ function findDate(text, labels) {
   return "";
 }
 
+function findPostulationDates(text) {
+  const months = {
+    enero: "01",
+    febrero: "02",
+    marzo: "03",
+    abril: "04",
+    mayo: "05",
+    junio: "06",
+    julio: "07",
+    agosto: "08",
+    septiembre: "09",
+    setiembre: "09",
+    octubre: "10",
+    noviembre: "11",
+    diciembre: "12",
+  };
+
+  // Ejemplo: "21 y 22 de octubre de 2026"
+  const range = text.match(
+    /plazo para postular\s*[:\-]?\s*(\d{1,2})\s*(?:y|al|a|-)\s*(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\s+(?:de\s+)?(\d{4})/i
+  );
+
+  if (range) {
+    const [, inicio, cierre, mes, anio] = range;
+
+    return {
+      fechaInicio: `${anio}-${months[mes.toLowerCase()]}-${inicio.padStart(2, "0")}`,
+      fechaCierre: `${anio}-${months[mes.toLowerCase()]}-${cierre.padStart(2, "0")}`,
+    };
+  }
+
+  // Alternativa para páginas que solo muestran una fecha límite.
+  return {
+    fechaInicio: findDate(text, [
+      "fecha de inicio",
+      "inicio de postulación",
+      "inicio de postulacion",
+      "inscripciones desde",
+    ]),
+    fechaCierre: findDate(text, [
+      "plazo para postular",
+      "fecha de cierre",
+      "fecha límite",
+      "fecha limite",
+      "vigente hasta",
+      "cierre de postulación",
+      "cierre de postulacion",
+    ]),
+  };
+}
+
 function findTime(text) {
-  const match = text.match(/(?:hora\s*(?:l[ií]mite|de cierre|de postulaci[oó]n)|hasta las?)\s*[:\-]?\s*(\d{1,2}:\d{2}\s*(?:a\.?\s*m\.?|p\.?\s*m\.?)?)/i);
-  if (!match) return "";
-  const value = match[1].toLowerCase().replace(/\s/g, "").replace(/\./g, "");
-  const parsed = value.match(/^(\d{1,2}):(\d{2})(am|pm)?$/);
-  if (!parsed) return "";
-  let hour = Number(parsed[1]);
-  const suffix = parsed[3];
-  if (suffix === "pm" && hour < 12) hour += 12;
-  if (suffix === "am" && hour === 12) hour = 0;
-  return `${String(hour).padStart(2, "0")}:${parsed[2]}`;
+  const normalized = text.replace(/\s+/g, " ");
+
+  const index = normalized.search(
+    /plazo para postular|horario establecido|hora límite|hora limite/i
+  );
+
+  const area =
+    index >= 0
+      ? normalized.slice(index, index + 600)
+      : normalized;
+
+  const regex =
+    /(\d{1,2}:\d{2})\s*(a\.?\s*m\.?|p\.?\s*m\.?|am|pm)?/gi;
+
+  const matches = [...area.matchAll(regex)];
+
+  if (!matches.length) return "";
+
+  // Si hay un rango de horas, toma la última como hora de cierre.
+  const last = matches[matches.length - 1];
+  const hora = Number(last[1].split(":")[0]);
+  const minutos = last[1].split(":")[1];
+
+  const sufijo = (last[2] || "").toLowerCase().replace(/\./g, "").replace(/\s/g, "");
+
+  let hora24 = hora;
+
+  if (sufijo === "pm" && hora < 12) hora24 += 12;
+  if (sufijo === "am" && hora === 12) hora24 = 0;
+
+  if (hora24 > 23 || Number(minutos) > 59) return "";
+
+  return `${String(hora24).padStart(2, "0")}:${minutos}`;
 }
 
 export async function POST(request) {
@@ -137,15 +211,27 @@ export async function POST(request) {
       || text.match(/(S\/\.?\s?[\d,]+(?:\.\d{2})?)/i);
     const vacantesMatch = text.match(/(?:n[uú]mero de vacantes|vacantes|plazas)\s*[:\-]?\s*(\d{1,4})/i);
 
-    const entidad = findSection($, ["entidad", "entidad convocante", "institución", "institucion", "empresa"]);
+    const entidad =
+    findSection($, [
+      "entidad",
+      "entidad convocante",
+      "institución",
+      "institucion",
+      "empresa",
+    ]) ||
+    clean(
+      title.match(/convocatoria\s+(.+)/i)?.[1] ||
+      title.match(/^(.+?)\s*[>|»]/)?.[1] ||
+      ""
+    );
     const ubicacion = findSection($, ["ubicación", "ubicacion", "lugar de prestación", "lugar de labores", "localidad"]);
     const formacion = findSection($, ["formación académica", "formacion academica", "requisitos mínimos", "requisitos minimos", "perfil del puesto", "requisitos"]);
     const experiencia = findSection($, ["experiencia", "experiencia requerida", "experiencia específica", "experiencia especifica"]);
     const especializacion = findSection($, ["cursos", "especialización", "especializacion", "capacitación", "capacitacion"]);
     const comoPostular = findSection($, ["cómo postular", "como postular", "postulación", "postulacion", "proceso de selección", "proceso de seleccion"]);
 
-    const fechaInicio = findDate(text, ["fecha de inicio", "inicio de postulaci[oó]n", "desde el", "inscripciones desde"]);
-    const fechaCierre = findDate(text, ["fecha de cierre", "fecha l[ií]mite", "cierre de postulaci[oó]n", "hasta el", "postulaci[oó]n hasta"]);
+    const { fechaInicio, fechaCierre } =
+          findPostulationDates(text);
 
     const data = {
       empresa: entidad || "",
