@@ -10,6 +10,12 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
 
+  // Importador manual de convocatorias desde convocatoriasdetrabajo.com
+  const [scrapeUrl, setScrapeUrl] = useState('');
+  const [scrapeLoading, setScrapeLoading] = useState(false);
+  const [scrapeResult, setScrapeResult] = useState(null);
+  const [scrapeError, setScrapeError] = useState('');
+
   const [formData, setFormData] = useState({
     tipo: 'Estado',
     titulo: '',
@@ -94,6 +100,75 @@ export default function AdminDashboard() {
       ...formData,
       [name]: type === 'checkbox' ? checked : value
     });
+  };
+
+  const importarConvocatoria = async () => {
+    setScrapeError('');
+    setScrapeResult(null);
+    if (!scrapeUrl.trim()) {
+      setScrapeError('Pega primero el enlace de la convocatoria.');
+      return;
+    }
+    setScrapeLoading(true);
+    try {
+      const response = await fetch('/api/admin/scrape-convocatoria', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: scrapeUrl.trim() })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.mensaje || 'No se pudo importar la convocatoria.');
+      }
+      setScrapeResult(result);
+    } catch (error) {
+      setScrapeError(error.message || 'Ocurrió un error al importar.');
+    } finally {
+      setScrapeLoading(false);
+    }
+  };
+
+  const pasarImportacionAlFormulario = () => {
+    if (!scrapeResult?.data) return;
+    const d = scrapeResult.data;
+    const modalidadRaw = String(d.modalidad || '').toLowerCase();
+    let modalidad = '';
+    if (modalidadRaw.includes('728')) modalidad = '728';
+    else if (modalidadRaw.includes('276')) modalidad = '276';
+    else if (modalidadRaw.includes('práct') || modalidadRaw.includes('pract')) modalidad = 'Prácticas';
+    else if (modalidadRaw.includes('locación') || modalidadRaw.includes('locacion')) modalidad = 'Locación';
+    else if (modalidadRaw.includes('cas')) modalidad = 'CAS';
+
+    const ubicacion = d.ubicacion || 'Pasco';
+    setActiveTab('estado');
+    setEditingId(null);
+    setCustomLocation(!standardLocations.includes(ubicacion));
+    setFormData(prev => ({
+      ...prev,
+      tipo: 'Estado',
+      empresa: d.empresa || prev.empresa,
+      modalidad: modalidad || prev.modalidad || 'CAS',
+      titulo: d.titulo || prev.titulo,
+      ubicacion,
+      vacantes: d.vacantes || prev.vacantes || '1',
+      sueldo: d.sueldo || prev.sueldo,
+      fechaInicio: d.fechaInicio || prev.fechaInicio,
+      fechaVencimiento: d.fechaVencimiento || prev.fechaVencimiento,
+      horaVencimiento: d.horaVencimiento || prev.horaVencimiento,
+      formacion: d.formacion || prev.formacion,
+      experiencia: d.experiencia || prev.experiencia,
+      especializacion: d.especializacion || prev.especializacion,
+      comoPostular: d.comoPostular || prev.comoPostular,
+      enlaceBases: d.enlaceBases || prev.enlaceBases,
+      enlacesExtras: Array.isArray(d.enlacesExtras) && d.enlacesExtras.length
+        ? d.enlacesExtras
+        : prev.enlacesExtras,
+      descripcion: d.descripcion || prev.descripcion
+    }));
+    setScrapeError('');
+    window.setTimeout(() => {
+      document.getElementById('formulario-convocatoria')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const handleExtraLinkChange = (index, field, value) => {
@@ -400,7 +475,59 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      <div style={styles.mainGrid}>
+      {activeTab === 'estado' && (
+        <div style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '14px', padding: '18px', margin: '18px 0' }}>
+          <h3 style={{ margin: '0 0 8px', color: '#0B132B', fontSize: '18px' }}>🌐 Importar convocatoria desde una URL</h3>
+          <p style={{ margin: '0 0 12px', color: '#475569', fontSize: '14px' }}>
+            Pega el enlace de detalle. La información se extrae como borrador y no se publica automáticamente.
+          </p>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <input
+              type="url"
+              value={scrapeUrl}
+              onChange={(e) => setScrapeUrl(e.target.value)}
+              placeholder="https://www.convocatoriasdetrabajo.com/oportunidad-laboral-...html"
+              style={{ ...styles.input, flex: '1 1 360px', minWidth: '220px' }}
+            />
+            <button type="button" onClick={importarConvocatoria} disabled={scrapeLoading}
+              style={{ ...styles.btnPrimary, opacity: scrapeLoading ? 0.65 : 1, cursor: scrapeLoading ? 'wait' : 'pointer' }}>
+              {scrapeLoading ? '⏳ Analizando...' : '🔎 Extraer datos'}
+            </button>
+          </div>
+          {scrapeError && <p style={{ color: '#B91C1C', margin: '10px 0 0', fontSize: '14px' }}>{scrapeError}</p>}
+          {scrapeResult && (
+            <div style={{ marginTop: '14px', padding: '14px', background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '10px' }}>
+              <p style={{ margin: '0 0 8px', color: '#166534', fontWeight: 700 }}>✅ Extracción completada. Revisa los datos antes de guardar.</p>
+              <p style={{ margin: '0 0 10px', color: '#475569', fontSize: '13px' }}>{scrapeResult.advertencia}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '8px', marginBottom: '12px' }}>
+                {[
+                  ['Entidad', scrapeResult.data?.empresa],
+                  ['Puesto', scrapeResult.data?.titulo],
+                  ['Modalidad', scrapeResult.data?.modalidad],
+                  ['Ubicación', scrapeResult.data?.ubicacion],
+                  ['Vacantes', scrapeResult.data?.vacantes],
+                  ['Remuneración', scrapeResult.data?.sueldo],
+                  ['Inicio', scrapeResult.data?.fechaInicio],
+                  ['Cierre', scrapeResult.data?.fechaVencimiento],
+                  ['Hora límite', scrapeResult.data?.horaVencimiento]
+                ].map(([label, value]) => (
+                  <div key={label} style={{ background: '#F8FAFC', padding: '8px', borderRadius: '6px', fontSize: '13px', overflowWrap: 'anywhere' }}>
+                    <strong>{label}:</strong> {value || 'No detectado'}
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={pasarImportacionAlFormulario} style={{ ...styles.btnPrimary, background: '#06D6A0', color: '#0B132B' }}>
+                ⬇️ Pasar datos al formulario
+              </button>
+              <p style={{ margin: '10px 0 0', color: '#64748B', fontSize: '12px' }}>
+                Los datos pasarán al formulario para que puedas corregirlos. No se guardará ni publicará nada hasta que pulses tu botón habitual de guardar.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div id="formulario-convocatoria" style={styles.mainGrid}>
         <div style={styles.card}>
           <div style={styles.cardHeader}>
             <h2 style={styles.cardTitle}>
