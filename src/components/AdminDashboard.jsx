@@ -15,6 +15,9 @@ export default function AdminDashboard() {
   const [scrapeLoading, setScrapeLoading] = useState(false);
   const [scrapeResult, setScrapeResult] = useState(null);
   const [scrapeError, setScrapeError] = useState('');
+  
+  // NUEVO ESTADO: Controla si vemos los activos o los vencidos
+  const [mostrarVencidos, setMostrarVencidos] = useState(false);
 
   const [formData, setFormData] = useState({
     tipo: 'Estado',
@@ -92,6 +95,7 @@ export default function AdminDashboard() {
     if (activeTab === 'clasificados') nuevoTipo = 'Clasificado';
     setFormData(prev => ({ ...prev, tipo: nuevoTipo }));
     fetchJobs();
+    setMostrarVencidos(false); // Resetear a activos cuando cambias de pestaña
   }, [activeTab]);
 
   const handleChange = (e) => {
@@ -212,13 +216,6 @@ export default function AdminDashboard() {
       const method = editingId ? 'PUT' : 'POST';
       const url = editingId ? `${API_URL}/${editingId}` : API_URL;
 
-      console.log('📅 FECHAS QUE SE ENVIARÁN:', {
-        fechaInicio: datosAEnviar.fechaInicio,
-        fechaVencimiento: datosAEnviar.fechaVencimiento,
-        horaVencimiento: datosAEnviar.horaVencimiento,
-        fechaPublicacion: datosAEnviar.fechaPublicacion
-      });
-
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -230,6 +227,8 @@ export default function AdminDashboard() {
         alert(editingId ? '¡Actualizado correctamente!' : '¡Publicado con éxito!');
         resetForm();
         fetchJobs();
+        // Si estábamos editando un vencido para reactivarlo, volvemos a la vista de activos
+        if (editingId) setMostrarVencidos(false); 
       } else {
         alert('Error: ' + result.mensaje);
       }
@@ -282,7 +281,7 @@ export default function AdminDashboard() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Estás seguro de eliminar este registro?')) return;
+    if (!window.confirm('¿Estás seguro de eliminar este registro de forma definitiva?')) return;
     try {
       await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
       fetchJobs();
@@ -329,7 +328,7 @@ export default function AdminDashboard() {
     });
   };
 
-  // Configuración dinámica de Clasificados: cada categoría tiene campos y color propios.
+  // Configuración dinámica de Clasificados
   const categoriasClasificados = {
     'Locales en alquiler': { icono: '🏪', color: '#2563EB', fondo: '#EFF6FF', borde: '#93C5FD', titulo: 'Información del Local', campos: ['tipoLocal','area','ambientes','banos','garantia','precio'] },
     'Viviendas en alquiler': { icono: '🏠', color: '#16A34A', fondo: '#F0FDF4', borde: '#86EFAC', titulo: 'Información de la Vivienda', campos: ['tipoVivienda','dormitorios','banos','area','cochera','amoblado','serviciosIncluidos','garantia','precio'] },
@@ -428,22 +427,25 @@ export default function AdminDashboard() {
     </div>
   );
 
-  // Filtrar internamente considerando la Fecha y Hora Exacta
-  const activeJobsList = jobs.filter(job => {
-    if (!job.fechaVencimiento) return true;
-    const [year, month, day] = job.fechaVencimiento.split('T')[0].split('-');
-    
-    // Por defecto es a las 11:59 PM (23:59:59) si no se especifica hora
-    let h = 23, m = 59;
-    if (job.horaVencimiento) {
-      const [hours, minutes] = job.horaVencimiento.split(':');
-      h = parseInt(hours, 10);
-      m = parseInt(minutes, 10);
+  // NUEVO: Evaluación de todos los trabajos para clasificarlos como Vencidos o Activos
+  const processedJobs = jobs.map(job => {
+    let isExpired = false;
+    if (job.fechaVencimiento) {
+      const [year, month, day] = job.fechaVencimiento.split('T')[0].split('-');
+      let h = 23, m = 59;
+      if (job.horaVencimiento) {
+        const [hours, minutes] = job.horaVencimiento.split(':');
+        h = parseInt(hours, 10);
+        m = parseInt(minutes, 10);
+      }
+      const fechaExp = new Date(Number(year), Number(month) - 1, Number(day), h, m, 59);
+      isExpired = new Date() > fechaExp;
     }
-    
-    const fechaExp = new Date(Number(year), Number(month) - 1, Number(day), h, m, 59);
-    return new Date() <= fechaExp;
+    return { ...job, isExpired };
   });
+
+  // Mostramos activos o vencidos dependiendo del estado del botón
+  const displayJobsList = processedJobs.filter(job => mostrarVencidos ? job.isExpired : !job.isExpired);
 
   return (
     <div style={styles.wrapper}>
@@ -784,33 +786,77 @@ export default function AdminDashboard() {
 
         <div style={styles.card}>
           <div style={styles.listHeader}>
-            <h2 style={styles.cardTitle}>📋 Registros Activos</h2>
-            <span style={styles.counterBadge}>{activeJobsList.length} ofertas</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={styles.cardTitle}>{mostrarVencidos ? '🗄️ Historial (Vencidos)' : '📋 Registros Activos'}</h2>
+              <span style={styles.counterBadge}>{displayJobsList.length}</span>
+            </div>
+            
+            {/* BOTÓN PARA ALTERNAR ENTRE ACTIVOS Y VENCIDOS */}
+            <button 
+              type="button" 
+              onClick={() => setMostrarVencidos(!mostrarVencidos)}
+              style={{
+                ...styles.btnManual,
+                backgroundColor: mostrarVencidos ? '#0B132B' : '#FEF2F2',
+                color: mostrarVencidos ? '#FFFFFF' : '#991B1B',
+                border: 'none',
+                padding: '6px 12px'
+              }}
+            >
+              {mostrarVencidos ? '👀 Volver a Activos' : '🗑️ Ver Vencidos'}
+            </button>
           </div>
 
           <div style={styles.scrollList}>
-            {activeJobsList.map((job) => (
-              <div key={job._id} style={styles.itemCard}>
-                <div>
-                  <span style={{...styles.tagModality, backgroundColor: job.tipo === 'Clasificado' ? (categoriasClasificados[job.categoriaClasificado]?.color || '#4F46E5') : '#0B132B'}}>{job.tipo === 'Clasificado' ? `${categoriasClasificados[job.categoriaClasificado]?.icono || '📌'} ${job.categoriaClasificado}` : job.tipo}</span>
-                  <h3 style={styles.itemTitle}>{job.titulo}</h3>
-                  <p style={styles.itemMeta}><strong>{job.tipo === 'Clasificado' ? 'Clasificado' : job.empresa}</strong> • 📍 {job.ubicacion}</p>
+            {displayJobsList.length === 0 && (
+               <p style={{textAlign: 'center', color: '#64748B', fontSize: '13px', padding: '20px 0'}}>
+                 No hay anuncios {mostrarVencidos ? 'vencidos' : 'activos'} aquí.
+               </p>
+            )}
+            
+            {displayJobsList.map((job) => (
+              <div key={job._id} style={{ ...styles.itemCard, opacity: job.isExpired ? 0.75 : 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <span style={{...styles.tagModality, backgroundColor: job.tipo === 'Clasificado' ? (categoriasClasificados[job.categoriaClasificado]?.color || '#4F46E5') : '#0B132B'}}>
+                      {job.tipo === 'Clasificado' ? `${categoriasClasificados[job.categoriaClasificado]?.icono || '📌'} ${job.categoriaClasificado}` : job.tipo}
+                    </span>
+                    <h3 style={styles.itemTitle}>{job.titulo}</h3>
+                    <p style={styles.itemMeta}><strong>{job.tipo === 'Clasificado' ? 'Clasificado' : job.empresa}</strong> • 📍 {job.ubicacion}</p>
+                  </div>
+                  {/* ETIQUETA VISUAL DE VENCIDO */}
+                  {job.isExpired && (
+                    <span style={{ fontSize: '10px', fontWeight: '900', color: '#991B1B', backgroundColor: '#FEF2F2', padding: '4px 8px', borderRadius: '6px', border: '1px solid #FCA5A5' }}>
+                      🔴 VENCIDO
+                    </span>
+                  )}
                 </div>
+                
                 <div style={styles.itemFooterRow}>
                   <span style={styles.itemSalary}>{job.sueldo || 'A tratar'}</span>
                   <div style={styles.itemButtons}>
+                    {/* El botón de compartir solo aparece si el anuncio está activo */}
+                    {!job.isExpired && (
+                      <button 
+                        onClick={() => {
+                          const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://chambafija.vercel.app';
+                          const url = `${baseUrl}/oferta/${job._id}`;
+                          const text = `🚨 *Nueva Oferta*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
+                          window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+                        }} 
+                        style={{...styles.btnEdit, backgroundColor: '#06D6A0', color: '#0B132B', borderColor: '#059669', fontWeight: '900'}}
+                      >
+                        📲 Compartir
+                      </button>
+                    )}
+                    
                     <button 
-                      onClick={() => {
-                        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://chambafija.vercel.app';
-                        const url = `${baseUrl}/oferta/${job._id}`;
-                        const text = `🚨 *Nueva Oferta*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
-                        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-                      }} 
-                      style={{...styles.btnEdit, backgroundColor: '#06D6A0', color: '#0B132B', borderColor: '#059669', fontWeight: '900'}}
+                      onClick={() => handleEdit(job)} 
+                      style={{...styles.btnEdit, borderColor: job.isExpired ? '#94A3B8' : '#CBD5E1', backgroundColor: job.isExpired ? '#F8FAFC' : '#FFFFFF'}}
                     >
-                      📲 Compartir
+                      {job.isExpired ? 'Renovar (Editar)' : 'Editar'}
                     </button>
-                    <button onClick={() => handleEdit(job)} style={styles.btnEdit}>Editar</button>
+                    
                     <button onClick={() => handleDelete(job._id)} style={styles.btnDelete}>Eliminar</button>
                   </div>
                 </div>
