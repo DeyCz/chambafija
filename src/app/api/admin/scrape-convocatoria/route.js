@@ -2,353 +2,402 @@
 import { NextResponse } from "next/server";
 import * as cheerio from "cheerio";
 
-const HOSTS = new Set([
+const HOSTS_PERMITIDOS = new Set([
   "convocatoriasdetrabajo.com",
   "www.convocatoriasdetrabajo.com",
 ]);
 
-function clean(value = "") {
-  return String(value)
+const MESES = {
+  enero: "01", febrero: "02", marzo: "03", abril: "04",
+  mayo: "05", junio: "06", julio: "07", agosto: "08",
+  septiembre: "09", setiembre: "09", octubre: "10",
+  noviembre: "11", diciembre: "12",
+  ene: "01", feb: "02", mar: "03", abr: "04",
+  may: "05", jun: "06", jul: "07", ago: "08",
+  sep: "09", set: "09", oct: "10", nov: "11", dic: "12",
+};
+
+function limpiar(valor = "") {
+  return String(valor)
     .replace(/\u00a0/g, " ")
     .replace(/\r/g, "")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n\s*\n+/g, "\n")
+    .replace(/[\t ]+/g, " ")
+    .replace(/\s+\n/g, "\n")
+    .replace(/\n\s+/g, "\n")
     .trim();
 }
 
-function normalize(value = "") {
-  return clean(value)
+function normalizar(valor = "") {
+  return limpiar(valor)
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
+    .replace(/[¿?¡!]/g, "")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
-// Extrae únicamente el nombre de la entidad después de "Convocatoria".
-function extractEntity(title = "") {
-  let name = clean(title).replace(
-    /^.*?\bconvocatoria\b\s*/i,
-    ""
-  );
+// Lee el DOM conservando la separación de párrafos, encabezados y viñetas.
+function obtenerLineas($) {
+  const bloque = $("body").get(0);
 
-  // Quita prefijos genéricos que no son parte de la entidad.
-  name = name.replace(
-    /^(?:laboral|de trabajo|de personal)\s+/i,
-    ""
-  );
-
-  // El puesto y los datos de la convocatoria suelen empezar
-  // después de CAS, número, código o un guion separador.
-  const stop = name.search(
-    /\bCAS\b|\bD\.?\s*L\.?\s*(?:728|276)\b|\bC[ÓO]DIGO\b|\bN[°º.]?\s*\d|\bNRO\.?\b|\bN[ÚU]MERO\b|\s[-–—:]\s/i
-  );
-
-  if (stop >= 0) name = name.slice(0, stop);
-
-  name = name
-    .replace(/[|,;:–—-]+$/g, "")
-    .trim();
-
-  // Capitalización legible, preservando siglas conocidas.
-  const acronyms = new Set([
-    "UGEL", "DIRESA", "DRE", "GORE", "SUNAT", "ONPE",
-    "INEI", "ESSALUD", "RENIEC", "MINSA", "MIDIS",
-    "OSCE", "SUNAFIL", "SENASA", "SUTRAN", "INPE",
+  const etiquetasBloque = new Set([
+    "address", "article", "blockquote", "dd", "div", "dl", "dt",
+    "figcaption", "figure", "h1", "h2", "h3", "h4", "h5", "h6",
+    "li", "main", "ol", "p", "section", "table", "tbody", "td",
+    "tfoot", "th", "thead", "tr", "ul",
   ]);
 
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .map(word => {
-      const key = word.replace(/[^a-záéíóúñü]/gi, "").toUpperCase();
-      if (acronyms.has(key)) return word.toUpperCase();
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-    })
-    .join(" ");
-}
+  function recorrer(nodo) {
+    if (!nodo) return "";
 
-const SECTION_LABELS = [
-  "formacion academica",
-  "experiencia requerida",
-  "experiencia especifica",
-  "experiencia laboral",
-  "cursos y/o programas de especializacion requeridos",
-  "cursos y programas de especializacion",
-  "programas de especializacion requeridos",
-  "cursos de especializacion",
-  "especializacion requerida",
-  "especializacion",
-  "cursos",
-  "capacitacion",
-  "diplomados",
-  "conocimientos requeridos",
-  "conocimientos tecnicos",
-  "como postular",
-  "postulacion",
-  "proceso de seleccion",
-  "indicaciones para postular",
-  "presentacion de documentos",
-  "cronograma",
-  "requisitos minimos",
-];
+    if (nodo.type === "text") return nodo.data || "";
 
-function isSectionHeading(value) {
-  const text = normalize(value).replace(/[:.\-–—]+$/g, "");
-  return SECTION_LABELS.some(label =>
-    text === label ||
-    text.startsWith(label + ":") ||
-    text.startsWith(label + " ")
-  );
-}
+    if (nodo.type !== "tag" && nodo.type !== "root") return "";
 
-// Busca una sección por su encabezado y recupera su contenido.
-function extractSection($, labels) {
-  const wanted = labels.map(normalize);
-  const selectors = "h1,h2,h3,h4,h5,strong,b,p,li,td,th";
-  let result = "";
+    const tag = (nodo.name || "").toLowerCase();
 
-  $(selectors).each((_, element) => {
-    if (result) return;
-
-    const node = $(element);
-    const raw = clean(node.text());
-
-    if (!raw || raw.length > 1000) return;
-
-    const normalized = normalize(raw);
-    const matched = wanted.find(label =>
-      normalized === label ||
-      normalized.startsWith(label + ":") ||
-      normalized.startsWith(label + " ") ||
-      normalized.startsWith(label + "-")
-    );
-
-    if (!matched) return;
-
-    // Si el encabezado y el contenido están en el mismo elemento.
-    const escaped = matched.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const inline = raw.replace(
-      new RegExp("^" + escaped + "\\s*[:.\\-–—]?\\s*", "i"),
-      ""
-    ).trim();
-
-    if (inline && normalize(inline) !== matched && inline.length > 2) {
-      result = inline;
-      return;
+    if ([
+      "script", "style", "noscript", "nav",
+      "footer", "iframe", "form", "aside",
+    ].includes(tag)) {
+      return "";
     }
 
-    // Busca contenido posterior dentro del mismo bloque.
-    const parent = node.parent();
-    const parentText = clean(parent.text());
+    if (tag === "br" || tag === "hr") return "\n";
 
-    if (parentText && parentText !== raw && parentText.length < 5000) {
-      const index = parentText.toLowerCase().indexOf(raw.toLowerCase());
+    const esBloque = etiquetasBloque.has(tag);
+    let salida = esBloque ? "\n" : "";
 
-      if (index >= 0) {
-        const remainder = parentText.slice(index + raw.length)
-          .replace(/^[\s:.\-–—]+/, "")
-          .trim();
+    if (tag === "li") salida += "• ";
 
-        if (remainder && remainder.length > 2) {
-          result = remainder;
-          return;
-        }
-      }
+    for (const hijo of nodo.children || []) {
+      salida += recorrer(hijo);
     }
 
-    // Busca elementos hermanos siguientes.
-    const chunks = [];
-    let next = node.next();
-    let count = 0;
+    if (esBloque) salida += "\n";
 
-    while (next.length && count < 20) {
-      if (next.is("h1,h2,h3,h4,h5")) break;
+    return salida;
+  }
 
-      const nextText = clean(next.text());
-
-      if (nextText && isSectionHeading(nextText)) break;
-
-      if (
-        nextText &&
-        nextText !== raw &&
-        !chunks.includes(nextText) &&
-        nextText.length < 2500
-      ) {
-        chunks.push(nextText);
-      }
-
-      next = next.next();
-      count++;
-    }
-
-    if (chunks.length) {
-      result = clean(chunks.join("\n"));
-    }
-  });
-
-  return clean(result);
-}
-
-function extractFromLabels(text, labels) {
-  const lines = text
+  return recorrer(bloque)
+    .replace(/\u00a0/g, " ")
     .split("\n")
-    .map(clean)
-    .filter(Boolean);
+    .map(limpiar)
+    .filter(Boolean)
+    .filter(linea => !/^publicidad$/i.test(normalizar(linea)));
+}
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = normalize(lines[i]);
+function esCorte(linea, etiquetas = []) {
+  const actual = normalizar(linea)
+    .replace(/^[•*\-–—\s]+/, "");
 
-    const label = labels.find(item =>
-      line === normalize(item) ||
-      line.startsWith(normalize(item) + ":")
-    );
-
-    if (!label) continue;
-
-    const inline = lines[i]
-      .replace(
-        new RegExp(
-          "^" + label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") +
-          "\\s*[:.\\-–—]?\\s*",
-          "i"
-        ),
-        ""
-      )
+  return etiquetas.some(etiqueta => {
+    const objetivo = normalizar(etiqueta)
+      .replace(/[:?¿]/g, "")
       .trim();
 
-    if (inline && normalize(inline) !== normalize(label)) {
-      return inline;
+    return (
+      actual === objetivo ||
+      actual.startsWith(`${objetivo}:`) ||
+      actual.startsWith(`${objetivo} `)
+    );
+  });
+}
+
+// Extrae exclusivamente el contenido posterior a un encabezado.
+// También funciona si el HTML ha dividido el encabezado entre varios elementos.
+function extraerSeccion(lineas, etiqueta, detenerEn = []) {
+  const objetivo = normalizar(etiqueta)
+    .replace(/[:?¿]/g, "")
+    .trim();
+
+  let inicio = -1;
+  let primeraParte = "";
+  let ultimaLineaEncabezado = -1;
+
+  for (let i = 0; i < lineas.length && inicio < 0; i++) {
+    for (
+      let cantidad = 1;
+      cantidad <= 3 && i + cantidad <= lineas.length;
+      cantidad++
+    ) {
+      const combinado = lineas.slice(i, i + cantidad).join(" ");
+      const combinadoNorm = normalizar(combinado)
+        .replace(/^[•*\-–—\s]+/, "");
+
+      if (!combinadoNorm.startsWith(`${objetivo}:`)) continue;
+
+      const dosPuntos = combinado.indexOf(":");
+
+      primeraParte = dosPuntos >= 0
+        ? limpiar(combinado.slice(dosPuntos + 1))
+        : "";
+
+      inicio = i;
+      ultimaLineaEncabezado = i + cantidad - 1;
+      break;
+    }
+  }
+
+  if (inicio < 0) return "";
+
+  const partes = [];
+
+  if (primeraParte) partes.push(primeraParte);
+
+  for (
+    let i = ultimaLineaEncabezado + 1;
+    i < lineas.length;
+    i++
+  ) {
+    const linea = limpiar(lineas[i]);
+
+    if (!linea) continue;
+
+    if (esCorte(linea, detenerEn)) break;
+
+    const normal = normalizar(linea)
+      .replace(/^[•*\-–—\s]+/, "");
+
+    if (/^(publicidad|recomendaciones para postular|descarga aqui las bases|resultados de la convocatoria|te sugerimos|convocatorias destacadas)$/.test(normal)) {
+      break;
     }
 
-    const following = [];
+    partes.push(linea.replace(/^[•*\-–—]\s*/, ""));
+  }
 
-    for (let j = i + 1; j < lines.length && j <= i + 15; j++) {
-      if (isSectionHeading(lines[j])) break;
+  return limpiar(partes.join("\n"));
+}
 
-      following.push(lines[j]);
-    }
+// Entidad: toma solo el nombre después de "Convocatoria".
+function extraerEntidad($) {
+  const h1 = limpiar($("h1").first().text());
+  const titulo = limpiar($("title").text());
+  const origen = h1 || titulo;
 
-    if (following.length) return clean(following.join("\n"));
+  const match = origen.match(
+    /\bconvocatoria\s+(.+?)(?:\s*[>|»]\s*|$)/i
+  );
+
+  return match ? limpiar(match[1]) : "";
+}
+
+// Puesto: busca el encabezado CAS independiente, no el H1 principal.
+function extraerTituloPuesto($, lineas) {
+  const encabezados = $("h1,h2,h3,h4,h5")
+    .map((_, el) => limpiar($(el).text()))
+    .get();
+
+  const candidatos = [...encabezados, ...lineas];
+
+  for (const lineaOriginal of candidatos) {
+    const linea = limpiar(lineaOriginal);
+
+    const match = linea.match(
+      /\bCAS\s*N\s*[°º.]?\s*(\d{1,4})\s*(?:[-–—]\s*C[ÓO]DIGO\s*[\w/-]+)?\s*[:：-]\s*(.+)$/i
+    );
+
+    if (!match) continue;
+
+    let puesto = limpiar(match[2]);
+
+    puesto = puesto.split(
+      /\s+(?:Compartir en|Claves del puesto|Requisitos para el puesto|1 plaza|\d+ plaza\(s\))/i
+    )[0];
+
+    puesto = puesto.replace(/[|>].*$/, "").trim();
+
+    if (!puesto) continue;
+
+    const numero = String(Number(match[1])).padStart(3, "0");
+
+    return `CAS N ${numero} ${puesto}`
+      .toLocaleUpperCase("es-PE");
   }
 
   return "";
 }
 
-function extractDates(text) {
-  const months = {
-    enero: "01",
-    febrero: "02",
-    marzo: "03",
-    abril: "04",
-    mayo: "05",
-    junio: "06",
-    julio: "07",
-    agosto: "08",
-    septiembre: "09",
-    setiembre: "09",
-    octubre: "10",
-    noviembre: "11",
-    diciembre: "12",
-  };
+// Normaliza importes con punto o coma decimal.
+function normalizarImporte(valor) {
+  let numero = String(valor || "").replace(/[^\d.,]/g, "");
 
-  const normalized = normalize(text);
+  if (!numero) return "";
 
-  // Ejemplo: "del 21 al 22 de octubre de 2026".
-  const range = normalized.match(
-    /(?:plazo para postular|presentacion de postulaciones|registro de postulacion|cronograma)[\s\S]{0,180}?(\d{1,2})\s*(?:y|al|a|hasta el|[-–])\s*(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\s+(?:de\s+)?(\d{4})/i
+  const coma = numero.lastIndexOf(",");
+  const punto = numero.lastIndexOf(".");
+
+  if (coma >= 0 && punto >= 0) {
+    if (coma > punto) {
+      numero = numero.replace(/\./g, "").replace(",", ".");
+    } else {
+      numero = numero.replace(/,/g, "");
+    }
+  } else if (coma >= 0) {
+    const decimales = numero.length - coma - 1;
+
+    numero = decimales === 2
+      ? numero.replace(/\./g, "").replace(",", ".")
+      : numero.replace(/,/g, "");
+  } else if (punto >= 0) {
+    const decimales = numero.length - punto - 1;
+
+    if (decimales === 3) {
+      numero = numero.replace(/\./g, "");
+    }
+  }
+
+  const cantidad = Number(numero);
+
+  if (!Number.isFinite(cantidad)) return "";
+
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(cantidad);
+}
+
+function extraerRemuneracion(lineas) {
+  const detalle = lineas.find(linea =>
+    /remuneraci[oó]n\s*:\s*S\s*\/?\s*\.?\s*[\d.,]+/i.test(linea)
   );
 
-  if (range) {
-    const [, first, last, month, year] = range;
+  const resumen = lineas.find(linea =>
+    /S\s*\/?\s*\.?\s*[\d.,]+\s+remuneraci[oó]n/i.test(linea)
+  );
 
+  const fuente = detalle || resumen;
+
+  if (!fuente) return "";
+
+  const match = fuente.match(
+    /S\s*\/?\s*\.?\s*([\d.,]+)/i
+  );
+
+  const importe = match
+    ? normalizarImporte(match[1])
+    : "";
+
+  return importe ? `S/ ${importe}` : "";
+}
+
+function fechaISO(dia, mesTexto, anio) {
+  const mes = MESES[
+    normalizar(mesTexto).replace(/\.$/, "")
+  ];
+
+  if (!mes) return "";
+
+  const d = Number(dia);
+  const y = Number(anio);
+
+  if (d < 1 || d > 31 || y < 2000) return "";
+
+  return `${y}-${mes}-${String(d).padStart(2, "0")}`;
+}
+
+// Reconoce rangos entre meses distintos, como 30 de octubre y 02 de noviembre.
+function extraerFechas(lineas) {
+  const texto = lineas.join(" ").replace(/\s+/g, " ");
+
+  const rangoDosMeses = texto.match(
+    /plazo\s+para\s+postular\s*:?\s*(?:el\s+)?(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\s+y\s+(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\s+de\s+(\d{4})/i
+  );
+
+  if (rangoDosMeses) {
     return {
-      fechaInicio: `${year}-${months[month]}-${first.padStart(2, "0")}`,
-      fechaCierre: `${year}-${months[month]}-${last.padStart(2, "0")}`,
+      fechaInicio: fechaISO(
+        rangoDosMeses[1],
+        rangoDosMeses[2],
+        rangoDosMeses[5]
+      ),
+      fechaVencimiento: fechaISO(
+        rangoDosMeses[3],
+        rangoDosMeses[4],
+        rangoDosMeses[5]
+      ),
     };
   }
 
-  function singleDate(labels) {
-    const labelPattern = labels.join("|");
-    const match = text.match(
-      new RegExp(
-        "(?:" + labelPattern + ")[^\\n\\r]{0,180}?(\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4}|\\d{1,2}\\s+de\\s+[a-záéíóú]+\\s+de\\s+\\d{4})",
-        "i"
-      )
-    );
+  const rangoMismoMes = texto.match(
+    /plazo\s+para\s+postular\s*:?\s*(?:del\s+|el\s+)?(\d{1,2})\s*(?:al|a|y|hasta el|[-–])\s*(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\s+de\s+(\d{4})/i
+  );
 
-    if (!match) return "";
+  if (rangoMismoMes) {
+    return {
+      fechaInicio: fechaISO(
+        rangoMismoMes[1],
+        rangoMismoMes[3],
+        rangoMismoMes[4]
+      ),
+      fechaVencimiento: fechaISO(
+        rangoMismoMes[2],
+        rangoMismoMes[3],
+        rangoMismoMes[4]
+      ),
+    };
+  }
 
-    const raw = match[1];
-    const numeric = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
+  const corta = texto.match(
+    /(\d{1,2})\s+(ene|feb|mar|abr|may|jun|jul|ago|sep|set|oct|nov|dic)\.?\s+(\d{4})\s+plazo\s+para\s+postular/i
+  );
 
-    if (numeric) {
-      const [, day, month, yearRaw] = numeric;
-      const year = yearRaw.length === 2 ? "20" + yearRaw : yearRaw;
-
-      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-    }
-
-    const word = normalize(raw).match(
-      /^(\d{1,2})\s+de\s+([a-záéíóú]+)\s+de\s+(\d{4})$/
-    );
-
-    if (word && months[word[2]]) {
-      return `${word[3]}-${months[word[2]]}-${word[1].padStart(2, "0")}`;
-    }
-
-    return "";
+  if (corta) {
+    return {
+      fechaInicio: "",
+      fechaVencimiento: fechaISO(
+        corta[1],
+        corta[2],
+        corta[3]
+      ),
+    };
   }
 
   return {
-    fechaInicio: singleDate([
-      "inicio de postulacion",
-      "fecha de inicio",
-      "inscripciones desde",
-      "fecha inicial",
-    ]),
-    fechaCierre: singleDate([
-      "fecha de cierre",
-      "fecha limite",
-      "cierre de postulacion",
-      "hasta el",
-      "plazo para postular",
-    ]),
+    fechaInicio: "",
+    fechaVencimiento: "",
   };
 }
 
-function extractTime(text) {
-  const relevant = text.match(
-    /(?:hora limite|hora de cierre|plazo para postular|hasta las|hasta la hora|horario de postulacion)[\s\S]{0,300}/i
-  );
+// Obtiene la última hora del horario de atención como hora límite.
+function extraerHora(textoComoPostular) {
+  const encontrados = [
+    ...String(textoComoPostular || "").matchAll(
+      /(\d{1,2}):(\d{2})\s*(a\.?\s*m\.?|p\.?\s*m\.?|am|pm)/gi
+    ),
+  ];
 
-  const area = relevant ? relevant[0] : text;
-  const matches = [...area.matchAll(
-    /(\d{1,2}):(\d{2})\s*(a\.?\s*m\.?|p\.?\s*m\.?|am|pm)?/gi
-  )];
+  if (!encontrados.length) return "";
 
-  if (!matches.length) return "";
+  const ultimo = encontrados[encontrados.length - 1];
 
-  const last = matches[matches.length - 1];
-  let hour = Number(last[1]);
-  const minute = Number(last[2]);
-  const suffix = (last[3] || "").toLowerCase().replace(/[.\s]/g, "");
+  let hora = Number(ultimo[1]);
+  const minuto = Number(ultimo[2]);
 
-  if (suffix === "pm" && hour < 12) hour += 12;
-  if (suffix === "am" && hour === 12) hour = 0;
+  const sufijo = ultimo[3]
+    .toLowerCase()
+    .replace(/[.\s]/g, "");
 
-  if (hour > 23 || minute > 59) return "";
+  if (sufijo === "pm" && hora < 12) hora += 12;
+  if (sufijo === "am" && hora === 12) hora = 0;
 
-  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  if (hora > 23 || minuto > 59) return "";
+
+  return `${String(hora).padStart(2, "0")}:${String(minuto).padStart(2, "0")}`;
 }
 
 export async function POST(request) {
   try {
     const body = await request.json();
-    const rawUrl = String(body?.url || "").trim();
+    const urlTexto = String(body?.url || "").trim();
 
-    if (!rawUrl) {
+    if (!urlTexto) {
       return NextResponse.json(
-        { success: false, mensaje: "Pega el enlace de una convocatoria." },
+        {
+          success: false,
+          mensaje: "Pega el enlace de la convocatoria.",
+        },
         { status: 400 }
       );
     }
@@ -356,228 +405,213 @@ export async function POST(request) {
     let url;
 
     try {
-      url = new URL(rawUrl);
+      url = new URL(urlTexto);
     } catch {
       return NextResponse.json(
-        { success: false, mensaje: "La URL no es válida." },
+        {
+          success: false,
+          mensaje: "El enlace ingresado no es válido.",
+        },
         { status: 400 }
       );
     }
 
-    if (url.protocol !== "https:" || !HOSTS.has(url.hostname.toLowerCase())) {
+    if (
+      url.protocol !== "https:" ||
+      !HOSTS_PERMITIDOS.has(url.hostname.toLowerCase())
+    ) {
       return NextResponse.json(
-        { success: false, mensaje: "Solo se permiten enlaces HTTPS de convocatoriasdetrabajo.com." },
+        {
+          success: false,
+          mensaje: "Solo se permiten enlaces HTTPS de convocatoriasdetrabajo.com.",
+        },
         { status: 400 }
       );
     }
 
-    const response = await fetch(url.toString(), {
+    const respuesta = await fetch(url.toString(), {
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; ChambaFijaImporter/1.0)",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125 Safari/537.36",
         "Accept-Language": "es-PE,es;q=0.9",
       },
-      signal: AbortSignal.timeout(20000),
       cache: "no-store",
+      signal: AbortSignal.timeout(20000),
     });
 
-    if (!response.ok) {
+    if (!respuesta.ok) {
       return NextResponse.json(
-        { success: false, mensaje: `La página respondió con estado ${response.status}.` },
+        {
+          success: false,
+          mensaje: `La página de origen respondió ${respuesta.status}.`,
+        },
         { status: 502 }
       );
     }
 
-    const html = await response.text();
+    const html = await respuesta.text();
 
     if (html.length > 5000000) {
       return NextResponse.json(
-        { success: false, mensaje: "La página recibida es demasiado grande." },
+        {
+          success: false,
+          mensaje: "La página es demasiado grande para analizarla.",
+        },
         { status: 413 }
       );
     }
 
     const $ = cheerio.load(html);
 
-    $("script,style,noscript,nav,footer,header,iframe,form").remove();
+    $("script, style, noscript, nav, footer, iframe, form, aside").remove();
 
-    const title = clean($("h1").first().text() || $("title").text());
+    const lineas = obtenerLineas($);
 
-    // Conserva saltos de línea para identificar apartados.
-    const text = clean(
-      $("body").text().replace(/\r/g, "").replace(/[ \t]+/g, " ")
+    const entidad = extraerEntidad($);
+    const titulo = extraerTituloPuesto($, lineas);
+
+    const modalidadTexto = [
+      limpiar($("title").text()),
+      limpiar($("h1").first().text()),
+      ...lineas.slice(0, 100),
+    ].join(" ");
+
+    const modalidadMatch = modalidadTexto.match(
+      /\b(CAS|D\.?\s*L\.?\s*728|D\.?\s*L\.?\s*276|Pr[áa]cticas|Locaci[oó]n de servicios|Servicio Civil)\b/i
     );
 
-    const entidad = extractEntity(title);
-
-    const modalidadMatch = text.match(
-      /\b(CAS|D\.?\s*L\.?\s*728|D\.?\s*L\.?\s*276|prácticas preprofesionales|prácticas profesionales|prácticas|locación de servicios)\b/i
+    const vacantesLinea = lineas.find(linea =>
+      /n[uú]mero de vacantes/i.test(linea)
     );
 
-    const sueldoMatch =
-      text.match(
-        /(?:remuneraci[oó]n|sueldo|retribuci[oó]n|ingreso mensual)[^\n]{0,100}?(S\/?\.?\s?[\d,]+(?:\.\d{2})?)/i
-      ) ||
-      text.match(/(S\/?\.?\s?[\d,]+(?:\.\d{2})?)/i);
+    const vacantes =
+      vacantesLinea?.match(/\b(\d{1,4})\b/)?.[1] ||
+      lineas.find(linea => /plaza\(s\)\s*vacante/i.test(linea))
+        ?.match(/\b(\d{1,4})\b/)?.[1] ||
+      "";
 
-    const vacantesMatch = text.match(
-      /(?:n[uú]mero de vacantes|vacantes|plazas)\s*[:\-]?\s*(\d{1,4})/i
-    );
-
-    const ubicacion =
-      extractSection($, [
-        "ubicación",
-        "ubicacion",
-        "lugar de prestación",
-        "lugar de labores",
-        "departamento",
-        "localidad",
-      ]) || "Pasco";
-
-    const formacion =
-      extractSection($, [
-        "formación académica",
-        "formacion academica",
-        "nivel educativo",
-        "formación",
-        "formacion",
-      ]) ||
-      extractFromLabels(text, [
-        "Formación académica",
-        "Formación",
-        "Nivel educativo",
-      ]);
-
-    const experiencia =
-      extractSection($, [
-        "experiencia requerida",
-        "experiencia específica",
-        "experiencia especifica",
-        "experiencia laboral",
-        "experiencia",
-      ]) ||
-      extractFromLabels(text, [
-        "Experiencia requerida",
-        "Experiencia específica",
-        "Experiencia laboral",
+    // FORMACIÓN: termina cuando comienza Experiencia.
+    const formacion = extraerSeccion(
+      lineas,
+      "Formación Académica",
+      [
         "Experiencia",
-      ]);
-
-    const especializacion =
-      extractSection($, [
-        "cursos y/o programas de especialización requeridos",
-        "cursos y/o programas de especializacion requeridos",
-        "cursos y programas de especialización",
-        "cursos y programas de especializacion",
-        "programas de especialización requeridos",
-        "programas de especializacion requeridos",
-        "cursos de especialización",
-        "cursos de especializacion",
-        "especialización requerida",
-        "especializacion requerida",
-        "cursos y capacitaciones",
-        "cursos",
-        "especialización",
-        "especializacion",
-        "capacitación",
-        "capacitacion",
-        "diplomados",
-        "conocimientos requeridos",
-        "conocimientos técnicos",
-        "conocimientos tecnicos",
-      ]) ||
-      extractFromLabels(text, [
-        "Cursos y/o programas de especialización requeridos",
-        "Cursos y programas de especialización",
-        "Programas de especialización requeridos",
-        "Cursos de especialización",
-        "Especialización requerida",
-        "Cursos",
-        "Capacitación",
-        "Diplomados",
-        "Conocimientos requeridos",
-        "Conocimientos técnicos",
-      ]);
-
-    const comoPostular =
-      extractSection($, [
-        "cómo postular",
-        "como postular",
-        "indicaciones para postular",
-        "instrucciones para postular",
-        "postulación",
-        "postulacion",
-        "proceso de selección",
-        "proceso de seleccion",
-        "presentación de documentos",
-        "presentacion de documentos",
-        "envío de documentos",
-        "envio de documentos",
-      ]) ||
-      extractFromLabels(text, [
+        "Cursos y/o programas de especialización",
+        "Condiciones del contrato",
         "Cómo postular",
-        "Como postular",
-        "Indicaciones para postular",
-        "Instrucciones para postular",
-        "Proceso de selección",
-        "Presentación de documentos",
-        "Envío de documentos",
-      ]);
+      ]
+    );
 
-    const { fechaInicio, fechaCierre } = extractDates(text);
+    // EXPERIENCIA: termina antes del encabezado de Cursos.
+    const experiencia = extraerSeccion(
+      lineas,
+      "Experiencia",
+      [
+        "Cursos y/o programas de especialización",
+        "Nota",
+        "Condiciones del contrato",
+        "Cómo postular",
+        "Recomendaciones para postular",
+      ]
+    );
+
+    // CURSOS: inicia exactamente después del título indicado.
+    const especializacion = extraerSeccion(
+      lineas,
+      "Cursos y/o programas de especialización",
+      [
+        "Nota",
+        "Condiciones del contrato",
+        "Cómo postular",
+        "Recomendaciones para postular",
+        "Descarga aquí las Bases",
+        "Resultados de la convocatoria",
+      ]
+    );
+
+    // POSTULACIÓN: busca el rótulo específico con dos puntos.
+    // No toma el encabezado general ni el plazo de postulación.
+    const comoPostular = extraerSeccion(
+      lineas,
+      "Cómo Postular",
+      [
+        "Recomendaciones para postular",
+        "Descarga aquí las Bases",
+        "Resultados de la convocatoria",
+        "Te sugerimos",
+        "Convocatorias destacadas",
+      ]
+    );
+
+    const fechas = extraerFechas(lineas);
+    const remuneracion = extraerRemuneracion(lineas);
+    const horaVencimiento = extraerHora(comoPostular);
 
     const data = {
       empresa: entidad || "",
+      titulo: titulo || "",
       modalidad: modalidadMatch
-        ? modalidadMatch[1].replace(/\s+/g, " ").toUpperCase()
+        ? modalidadMatch[1].replace(/\s+/g, " ").trim()
         : "",
-      titulo: title,
-      ubicacion,
-      vacantes: vacantesMatch ? vacantesMatch[1] : "",
-      sueldo: sueldoMatch ? sueldoMatch[1].replace(/\s+/g, " ").trim() : "",
-      fechaInicio,
-      fechaVencimiento: fechaCierre,
-      horaVencimiento: extractTime(text),
-      formacion: formacion || "",
-      experiencia: experiencia || "",
-      especializacion: especializacion || "",
-      comoPostular: comoPostular || "",
 
-      // Los enlaces se completan manualmente en el panel.
+      // La ubicación se completa manualmente.
+      ubicacion: "",
+
+      vacantes,
+      sueldo: remuneracion,
+      fechaInicio: fechas.fechaInicio,
+      fechaVencimiento: fechas.fechaVencimiento,
+      horaVencimiento,
+
+      formacion,
+      experiencia,
+      especializacion,
+      comoPostular,
+
+      // Los enlaces oficiales se agregan manualmente.
       enlaceBases: "",
       enlacesExtras: [],
       descripcion: "",
     };
 
-    const camposEncontrados = Object.entries(data).filter(([key, value]) => {
-      if (
-        ["enlaceBases", "enlacesExtras", "descripcion"].includes(key)
-      ) {
-        return false;
-      }
+    const camposClave = [
+      "empresa",
+      "titulo",
+      "modalidad",
+      "vacantes",
+      "sueldo",
+      "fechaVencimiento",
+      "formacion",
+      "experiencia",
+      "especializacion",
+      "comoPostular",
+    ];
 
-      return typeof value === "string"
-        ? Boolean(value)
-        : Array.isArray(value) && value.length > 0;
-    }).length;
+    const faltantes = camposClave.filter(
+      campo => !data[campo]
+    );
 
     return NextResponse.json({
       success: true,
       data,
-      advertencia:
-        camposEncontrados < 6
-          ? "Se extrajeron pocos campos. Revisa manualmente la convocatoria y las bases oficiales."
-          : "Extracción completada. Verifica fechas, requisitos, cursos y procedimiento de postulación antes de guardar.",
+      advertencia: faltantes.length
+        ? `Revisa los campos no detectados: ${faltantes.join(", ")}.`
+        : "Extracción completada. Revisa los datos antes de guardar.",
+      camposDetectados: camposClave.length - faltantes.length,
+      totalCamposClave: camposClave.length,
     });
+
   } catch (error) {
-    console.error("Error en importador de convocatorias:", error);
+    console.error(
+      "Error en /api/admin/scrape-convocatoria:",
+      error
+    );
 
     return NextResponse.json(
       {
         success: false,
-        mensaje:
-          error?.name === "TimeoutError"
-            ? "La página tardó demasiado en responder."
-            : "No se pudo analizar la página. Comprueba la URL e inténtalo de nuevo.",
+        mensaje: error?.name === "TimeoutError"
+          ? "La página demoró demasiado en responder. Inténtalo nuevamente."
+          : "No se pudo analizar la convocatoria. Comprueba el enlace e inténtalo nuevamente.",
       },
       { status: 500 }
     );
