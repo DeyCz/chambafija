@@ -151,16 +151,11 @@ export default function AdminDashboard() {
     else if (modalidadRaw.includes('locación') || modalidadRaw.includes('locacion')) modalidad = 'Locación';
     else if (modalidadRaw.includes('cas')) modalidad = 'CAS';
 
-    // La ubicación detectada puede ser "Pasco" u otra localidad que no
-    // esté en el selector; en ese caso activamos el campo de escritura manual.
-    const ubicacion = String(d.ubicacion || '').trim();
-    const ubicacionEnLista = standardLocations.some(
-      loc => loc.toLocaleLowerCase('es-PE') === ubicacion.toLocaleLowerCase('es-PE')
-    );
-
+    // La ubicación no se extrae de esta fuente. Se deja vacía
+    // y se habilita el campo manual para que se complete correctamente.
     setActiveTab('estado');
     setEditingId(null);
-    setCustomLocation(!ubicacionEnLista);
+    setCustomLocation(true);
 
     setFormData(prev => ({
       ...prev,
@@ -168,7 +163,7 @@ export default function AdminDashboard() {
       empresa: d.empresa || '',
       modalidad: modalidad || 'CAS',
       titulo: d.titulo || '',
-      ubicacion: ubicacion || '',
+      ubicacion: '',
       vacantes: d.vacantes || '1',
       sueldo: d.sueldo || '',
       fechaInicio: d.fechaInicio || '',
@@ -561,7 +556,6 @@ export default function AdminDashboard() {
                   ['Entidad pública', scrapeResult.data?.empresa, '#EFF6FF', '#1D4ED8', '#BFDBFE'],
                   ['Puesto', scrapeResult.data?.titulo, '#ECFDF5', '#047857', '#A7F3D0'],
                   ['Modalidad', scrapeResult.data?.modalidad, '#F5F3FF', '#6D28D9', '#DDD6FE'],
-                  ['Ubicación', scrapeResult.data?.ubicacion, '#FFF7ED', '#C2410C', '#FED7AA'],
                   ['Vacantes', scrapeResult.data?.vacantes, '#FDF2F8', '#BE185D', '#FBCFE8'],
                   ['Remuneración', scrapeResult.data?.sueldo, '#ECFEFF', '#0E7490', '#A5F3FC'],
                   ['Fecha de inicio', scrapeResult.data?.fechaInicio, '#F0FDF4', '#15803D', '#BBF7D0'],
