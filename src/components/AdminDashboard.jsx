@@ -33,7 +33,6 @@ export default function AdminDashboard() {
     formacion: '',
     experiencia: '',
     especializacion: '',
-    lugarPrestacion: '',
     comoPostular: '',
     enlaceBases: '',
     enlacesExtras: [{ titulo: '', url: '' }],
@@ -170,7 +169,6 @@ export default function AdminDashboard() {
       modalidad: modalidad || 'CAS',
       titulo: d.titulo || '',
       ubicacion: ubicacion || '',
-      lugarPrestacion: d.lugarPrestacion || '',
       vacantes: d.vacantes || '1',
       sueldo: d.sueldo || '',
       fechaInicio: d.fechaInicio || '',
@@ -277,7 +275,6 @@ export default function AdminDashboard() {
       formacion: job.formacion || '',
       experiencia: job.experiencia || '',
       especializacion: job.especializacion || '',
-      lugarPrestacion: job.lugarPrestacion || '',
       comoPostular: job.comoPostular || '',
       enlaceBases: job.enlaceBases || '',
       enlacesExtras: job.enlacesExtras && job.enlacesExtras.length > 0 ? job.enlacesExtras : [{ titulo: '', url: '' }],
@@ -325,7 +322,6 @@ export default function AdminDashboard() {
       formacion: '',
       experiencia: '',
       especializacion: '',
-      lugarPrestacion: '',
       comoPostular: '',
       enlaceBases: '',
       enlacesExtras: [{ titulo: '', url: '' }],
@@ -566,7 +562,6 @@ export default function AdminDashboard() {
                   ['Puesto', scrapeResult.data?.titulo, '#ECFDF5', '#047857', '#A7F3D0'],
                   ['Modalidad', scrapeResult.data?.modalidad, '#F5F3FF', '#6D28D9', '#DDD6FE'],
                   ['Ubicación', scrapeResult.data?.ubicacion, '#FFF7ED', '#C2410C', '#FED7AA'],
-                  ['Lugar de prestación', scrapeResult.data?.lugarPrestacion, '#F0FDFA', '#0F766E', '#99F6E4'],
                   ['Vacantes', scrapeResult.data?.vacantes, '#FDF2F8', '#BE185D', '#FBCFE8'],
                   ['Remuneración', scrapeResult.data?.sueldo, '#ECFEFF', '#0E7490', '#A5F3FC'],
                   ['Fecha de inicio', scrapeResult.data?.fechaInicio, '#F0FDF4', '#15803D', '#BBF7D0'],
@@ -686,18 +681,6 @@ export default function AdminDashboard() {
                     <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Asistente Administrativo I" style={styles.input} required />
                   </div>
                   {renderLocationField()}
-                </div>
-
-                <div style={styles.field}>
-                  <label style={styles.label}>Lugar de prestación del servicio</label>
-                  <input
-                    type="text"
-                    name="lugarPrestacion"
-                    value={formData.lugarPrestacion}
-                    onChange={handleChange}
-                    placeholder="Ej. Oficina de Administración Distrital"
-                    style={styles.input}
-                  />
                 </div>
 
                 <div style={styles.row}>
