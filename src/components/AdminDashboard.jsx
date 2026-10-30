@@ -120,10 +120,19 @@ export default function AdminDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: scrapeUrl.trim() })
       });
-      const result = await response.json();
-      if (!response.ok || !result.success) {
-        throw new Error(result.mensaje || 'No se pudo importar la convocatoria.');
+      let result = null;
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(
+          `El servidor respondió ${response.status}, pero no envió JSON. Verifica que la API esté desplegada en producción.`
+        );
       }
+
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.mensaje || `No se pudo importar la convocatoria (HTTP ${response.status}).`);
+      }
+
       setScrapeResult(result);
     } catch (error) {
       setScrapeError(error.message || 'Ocurrió un error al importar.');
@@ -143,31 +152,40 @@ export default function AdminDashboard() {
     else if (modalidadRaw.includes('locación') || modalidadRaw.includes('locacion')) modalidad = 'Locación';
     else if (modalidadRaw.includes('cas')) modalidad = 'CAS';
 
-    const ubicacion = d.ubicacion || 'Pasco';
+    // La ubicación detectada puede ser "Pasco" u otra localidad que no
+    // esté en el selector; en ese caso activamos el campo de escritura manual.
+    const ubicacion = String(d.ubicacion || '').trim();
+    const ubicacionEnLista = standardLocations.some(
+      loc => loc.toLocaleLowerCase('es-PE') === ubicacion.toLocaleLowerCase('es-PE')
+    );
+
     setActiveTab('estado');
     setEditingId(null);
-    setCustomLocation(!standardLocations.includes(ubicacion));
+    setCustomLocation(!ubicacionEnLista);
+
     setFormData(prev => ({
       ...prev,
       tipo: 'Estado',
-      empresa: d.empresa || prev.empresa,
-      modalidad: modalidad || prev.modalidad || 'CAS',
-      titulo: d.titulo || prev.titulo,
-      ubicacion,
-      vacantes: d.vacantes || prev.vacantes || '1',
-      sueldo: d.sueldo || prev.sueldo,
-      fechaInicio: d.fechaInicio || prev.fechaInicio,
-      fechaVencimiento: d.fechaVencimiento || prev.fechaVencimiento,
-      horaVencimiento: d.horaVencimiento || prev.horaVencimiento,
-      formacion: d.formacion || prev.formacion,
-      experiencia: d.experiencia || prev.experiencia,
-      especializacion: d.especializacion || prev.especializacion,
-      comoPostular: d.comoPostular || prev.comoPostular,
-      enlaceBases: d.enlaceBases || prev.enlaceBases,
-      enlacesExtras: Array.isArray(d.enlacesExtras) && d.enlacesExtras.length
-        ? d.enlacesExtras
-        : prev.enlacesExtras,
-      descripcion: d.descripcion || prev.descripcion
+      empresa: d.empresa || '',
+      modalidad: modalidad || 'CAS',
+      titulo: d.titulo || '',
+      ubicacion: ubicacion || '',
+      lugarPrestacion: d.lugarPrestacion || '',
+      vacantes: d.vacantes || '1',
+      sueldo: d.sueldo || '',
+      fechaInicio: d.fechaInicio || '',
+      fechaVencimiento: d.fechaVencimiento || '',
+      horaVencimiento: d.horaVencimiento || '',
+      formacion: d.formacion || '',
+      experiencia: d.experiencia || '',
+      especializacion: d.especializacion || '',
+      comoPostular: d.comoPostular || '',
+
+      // Los enlaces siempre se completan manualmente. También limpiamos
+      // cualquier enlace que hubiera quedado de una convocatoria anterior.
+      enlaceBases: '',
+      enlacesExtras: [{ titulo: '', url: '' }],
+      descripcion: d.descripcion || ''
     }));
     setScrapeError('');
     window.setTimeout(() => {
@@ -498,31 +516,132 @@ export default function AdminDashboard() {
           </div>
           {scrapeError && <p style={{ color: '#B91C1C', margin: '10px 0 0', fontSize: '14px' }}>{scrapeError}</p>}
           {scrapeResult && (
-            <div style={{ marginTop: '14px', padding: '14px', background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '10px' }}>
-              <p style={{ margin: '0 0 8px', color: '#166534', fontWeight: 700 }}>✅ Extracción completada. Revisa los datos antes de guardar.</p>
-              <p style={{ margin: '0 0 10px', color: '#475569', fontSize: '13px' }}>{scrapeResult.advertencia}</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '8px', marginBottom: '12px' }}>
+            <div style={{
+              marginTop: '16px',
+              padding: '16px',
+              background: 'linear-gradient(135deg, #FFFFFF 0%, #F0FDFA 100%)',
+              border: '1px solid #99F6E4',
+              borderTop: '5px solid #06B6A4',
+              borderRadius: '14px',
+              boxShadow: '0 8px 24px rgba(11, 19, 43, 0.08)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                <p style={{ margin: 0, color: '#065F46', fontWeight: 900, fontSize: '15px' }}>
+                  ✅ Extracción completada
+                </p>
+                <span style={{
+                  background: '#D1FAE5',
+                  color: '#065F46',
+                  border: '1px solid #6EE7B7',
+                  borderRadius: '999px',
+                  padding: '5px 10px',
+                  fontSize: '11px',
+                  fontWeight: 900
+                }}>
+                  {scrapeResult.camposDetectados ?? 'Datos'}{scrapeResult.totalCamposClave ? ` / ${scrapeResult.totalCamposClave} campos clave` : ' detectados'}
+                </span>
+              </div>
+
+              <p style={{
+                margin: '0 0 14px',
+                padding: '9px 11px',
+                color: '#7C2D12',
+                background: '#FFF7ED',
+                border: '1px solid #FDBA74',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 700
+              }}>
+                ⚠️ {scrapeResult.advertencia || 'Revisa fechas, remuneración, requisitos y procedimiento antes de guardar.'}
+              </p>
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))',
+                gap: '9px',
+                marginBottom: '12px'
+              }}>
                 {[
-                  ['Entidad', scrapeResult.data?.empresa],
-                  ['Puesto', scrapeResult.data?.titulo],
-                  ['Modalidad', scrapeResult.data?.modalidad],
-                  ['Ubicación', scrapeResult.data?.ubicacion],
-                  ['Vacantes', scrapeResult.data?.vacantes],
-                  ['Remuneración', scrapeResult.data?.sueldo],
-                  ['Inicio', scrapeResult.data?.fechaInicio],
-                  ['Cierre', scrapeResult.data?.fechaVencimiento],
-                  ['Hora límite', scrapeResult.data?.horaVencimiento]
-                ].map(([label, value]) => (
-                  <div key={label} style={{ background: '#F8FAFC', padding: '8px', borderRadius: '6px', fontSize: '13px', overflowWrap: 'anywhere' }}>
-                    <strong>{label}:</strong> {value || 'No detectado'}
+                  ['Entidad pública', scrapeResult.data?.empresa, '#EFF6FF', '#1D4ED8', '#BFDBFE'],
+                  ['Puesto', scrapeResult.data?.titulo, '#ECFDF5', '#047857', '#A7F3D0'],
+                  ['Modalidad', scrapeResult.data?.modalidad, '#F5F3FF', '#6D28D9', '#DDD6FE'],
+                  ['Ubicación', scrapeResult.data?.ubicacion, '#FFF7ED', '#C2410C', '#FED7AA'],
+                  ['Lugar de prestación', scrapeResult.data?.lugarPrestacion, '#F0FDFA', '#0F766E', '#99F6E4'],
+                  ['Vacantes', scrapeResult.data?.vacantes, '#FDF2F8', '#BE185D', '#FBCFE8'],
+                  ['Remuneración', scrapeResult.data?.sueldo, '#ECFEFF', '#0E7490', '#A5F3FC'],
+                  ['Fecha de inicio', scrapeResult.data?.fechaInicio, '#F0FDF4', '#15803D', '#BBF7D0'],
+                  ['Fecha de cierre', scrapeResult.data?.fechaVencimiento, '#FEF2F2', '#B91C1C', '#FECACA'],
+                  ['Hora límite', scrapeResult.data?.horaVencimiento, '#F8FAFC', '#334155', '#CBD5E1']
+                ].map(([label, value, fondo, color, borde]) => (
+                  <div key={label} style={{
+                    background: fondo,
+                    border: `1px solid ${borde}`,
+                    borderLeft: `4px solid ${color}`,
+                    padding: '10px 11px',
+                    borderRadius: '9px',
+                    minWidth: 0
+                  }}>
+                    <div style={{ color, fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.35px', marginBottom: '5px' }}>
+                      {label}
+                    </div>
+                    <div style={{ color: '#0B132B', fontSize: '13px', fontWeight: 800, lineHeight: 1.4, overflowWrap: 'anywhere' }}>
+                      {value || 'No detectado'}
+                    </div>
                   </div>
                 ))}
               </div>
-              <button type="button" onClick={pasarImportacionAlFormulario} style={{ ...styles.btnPrimary, background: '#06D6A0', color: '#0B132B' }}>
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+                gap: '9px',
+                marginBottom: '14px'
+              }}>
+                {[
+                  ['Formación académica', scrapeResult.data?.formacion, '#EFF6FF', '#1D4ED8', '#BFDBFE'],
+                  ['Experiencia requerida', scrapeResult.data?.experiencia, '#F5F3FF', '#6D28D9', '#DDD6FE'],
+                  ['Cursos / especialización', scrapeResult.data?.especializacion, '#ECFDF5', '#047857', '#A7F3D0'],
+                  ['¿Cómo postular?', scrapeResult.data?.comoPostular, '#FFF7ED', '#C2410C', '#FED7AA']
+                ].map(([label, value, fondo, color, borde]) => (
+                  <div key={label} style={{
+                    background: fondo,
+                    border: `1px solid ${borde}`,
+                    borderRadius: '10px',
+                    padding: '11px',
+                    minWidth: 0
+                  }}>
+                    <div style={{ color, fontSize: '11px', fontWeight: 900, marginBottom: '7px' }}>
+                      {label}
+                    </div>
+                    <div style={{
+                      color: '#0B132B',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      lineHeight: 1.55,
+                      whiteSpace: 'pre-wrap',
+                      overflowWrap: 'anywhere',
+                      maxHeight: '190px',
+                      overflowY: 'auto'
+                    }}>
+                      {value || 'No detectado. Completar manualmente.'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button type="button" onClick={pasarImportacionAlFormulario} style={{
+                ...styles.btnPrimary,
+                flex: '1 1 100%',
+                background: 'linear-gradient(90deg, #06D6A0 0%, #34D399 100%)',
+                color: '#052E2B',
+                border: '1px solid #059669',
+                boxShadow: '0 4px 12px rgba(5, 150, 105, 0.18)'
+              }}>
                 ⬇️ Pasar datos al formulario
               </button>
-              <p style={{ margin: '10px 0 0', color: '#64748B', fontSize: '12px' }}>
-                Los datos pasarán al formulario para que puedas corregirlos. No se guardará ni publicará nada hasta que pulses tu botón habitual de guardar.
+
+              <p style={{ margin: '10px 0 0', color: '#334155', fontSize: '12px', fontWeight: 600, lineHeight: 1.5 }}>
+                Los datos pasarán al formulario para que puedas corregirlos. Los enlaces oficiales quedan vacíos para que los agregues manualmente. No se guardará ni publicará nada hasta que pulses tu botón habitual de guardar.
               </p>
             </div>
           )}
@@ -567,6 +686,18 @@ export default function AdminDashboard() {
                     <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Asistente Administrativo I" style={styles.input} required />
                   </div>
                   {renderLocationField()}
+                </div>
+
+                <div style={styles.field}>
+                  <label style={styles.label}>Lugar de prestación del servicio</label>
+                  <input
+                    type="text"
+                    name="lugarPrestacion"
+                    value={formData.lugarPrestacion}
+                    onChange={handleChange}
+                    placeholder="Ej. Oficina de Administración Distrital"
+                    style={styles.input}
+                  />
                 </div>
 
                 <div style={styles.row}>
