@@ -106,7 +106,7 @@ function esCorte(linea, etiquetas = []) {
 }
 
 // Extrae exclusivamente el contenido posterior a un encabezado.
-// Ahora agrupa líneas continuas para evitar que los emojis rompan un mismo párrafo.
+// Agrupa líneas continuas y ahora IGNORA líneas con "CLIC AQUÍ", "POSTULA AQUÍ", etc.
 function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
   const objetivo = normalizar(etiqueta).replace(/[:?¿]/g, "").trim();
   let inicio = -1;
@@ -131,7 +131,13 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
   if (inicio < 0) return "";
 
   const partesAgrupadas = [];
-  let parrafoActual = primeraParte ? `${icono} ${primeraParte}` : "";
+  
+  // OMITIR: Si la primera parte en la misma línea del título es un link tipo "clic aquí"
+  const primeraParteNorm = normalizar(primeraParte);
+  let parrafoActual = "";
+  if (primeraParte && !primeraParteNorm.includes("clic aqui") && !primeraParteNorm.includes("postula aqui") && !primeraParteNorm.includes("ingresa aqui")) {
+    parrafoActual = `${icono} ${primeraParte}`;
+  }
 
   for (let i = ultimaLineaEncabezado + 1; i < lineas.length; i++) {
     const linea = limpiar(lineas[i]);
@@ -140,8 +146,15 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
     if (esCorte(linea, detenerEn)) break;
 
     const normal = normalizar(linea).replace(/^[•*\-–—\s]+/, "");
+    
+    // Filtro estándar de cortes del sistema
     if (/^(publicidad|recomendaciones para postular|descarga aqui las bases|resultados de la convocatoria|te sugerimos|convocatorias destacadas)$/.test(normal)) {
       break;
+    }
+
+    // NUEVO FILTRO: Ignorar líneas basura de postulación en la web original
+    if (normal.includes("clic aqui") || normal.includes("postula aqui") || normal.includes("ingresa aqui") || normal.includes("inscribete aqui")) {
+      continue; // Salta esta línea y pasa a la siguiente
     }
 
     // Comprobamos si la línea actual inicia con una viñeta clásica o guion
@@ -168,6 +181,7 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
 
   return limpiar(partesAgrupadas.join("\n"));
 }
+
 
 // Entidad: toma solo el nombre limpio, ignorando "Convocatoria" y cortando en separadores
 function extraerEntidad($) {
