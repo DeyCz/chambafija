@@ -106,8 +106,8 @@ function esCorte(linea, etiquetas = []) {
 }
 
 // Extrae exclusivamente el contenido posterior a un encabezado.
-// Agrupa líneas continuas y ahora IGNORA líneas con "CLIC AQUÍ", "POSTULA AQUÍ", etc.
-function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
+// Agrupa líneas continuas y extrae el texto puro de los enlaces en "¿Cómo postular?".
+function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅", $ = null) { // Nota: Agregamos $ como parámetro opcional
   const objetivo = normalizar(etiqueta).replace(/[:?¿]/g, "").trim();
   let inicio = -1;
   let primeraParte = "";
@@ -131,16 +131,10 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
   if (inicio < 0) return "";
 
   const partesAgrupadas = [];
-  
-  // OMITIR: Si la primera parte en la misma línea del título es un link tipo "clic aquí"
-  const primeraParteNorm = normalizar(primeraParte);
-  let parrafoActual = "";
-  if (primeraParte && !primeraParteNorm.includes("clic aqui") && !primeraParteNorm.includes("postula aqui") && !primeraParteNorm.includes("ingresa aqui")) {
-    parrafoActual = `${icono} ${primeraParte}`;
-  }
+  let parrafoActual = primeraParte ? `${icono} ${primeraParte}` : "";
 
   for (let i = ultimaLineaEncabezado + 1; i < lineas.length; i++) {
-    const linea = limpiar(lineas[i]);
+    let linea = limpiar(lineas[i]);
     if (!linea) continue;
     
     if (esCorte(linea, detenerEn)) break;
@@ -152,9 +146,17 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
       break;
     }
 
-    // NUEVO FILTRO: Ignorar líneas basura de postulación en la web original
-    if (normal.includes("clic aqui") || normal.includes("postula aqui") || normal.includes("ingresa aqui") || normal.includes("inscribete aqui")) {
-      continue; // Salta esta línea y pasa a la siguiente
+    // NUEVA LÓGICA PARA ENLACES (Requiere pasar $ desde la función POST)
+    if ($ && objetivo.includes("como postular")) {
+        // Busca si el texto original de la línea está dentro de un tag <a>
+        const elementoA = $(`a:contains('${linea}')`);
+        if(elementoA.length > 0) {
+             // Si es un enlace, limpia el texto de frases comunes de enlaces, manteniendo la instrucción.
+             let textoLimpioEnlace = linea.replace(/clic aqu[íi]/gi, "").replace(/postula aqu[íi]/gi, "").replace(/ingresa aqu[íi]/gi, "").trim();
+             // Si después de limpiar el texto queda vacío (porque solo decía "CLIC AQUÍ"), ignoramos la línea.
+             if(!textoLimpioEnlace) continue;
+             linea = textoLimpioEnlace;
+        }
     }
 
     // Comprobamos si la línea actual inicia con una viñeta clásica o guion
@@ -162,26 +164,21 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
     const lineaLimpia = linea.replace(/^[•*\-–—.]\s*/, "");
 
     if (esNuevaVineta || parrafoActual === "") {
-      // Si hay un párrafo previo en construcción, lo guardamos antes de iniciar uno nuevo
       if (parrafoActual) {
         partesAgrupadas.push(parrafoActual);
       }
       parrafoActual = `${icono} ${lineaLimpia}`;
     } else {
-      // Si NO es una nueva viñeta, asumimos que es continuación del texto anterior
-      // y lo unimos con un espacio en lugar de forzar un nuevo emoji.
       parrafoActual += ` ${lineaLimpia}`;
     }
   }
 
-  // Guardamos el último párrafo procesado
   if (parrafoActual) {
     partesAgrupadas.push(parrafoActual);
   }
 
   return limpiar(partesAgrupadas.join("\n"));
 }
-
 
 // Entidad: toma solo el nombre limpio, ignorando "Convocatoria" y cortando en separadores
 function extraerEntidad($) {
@@ -630,7 +627,8 @@ export async function POST(request) {
         "Te sugerimos",
         "Convocatorias destacadas",
       ],
-      "📌" // Emoji para ¿Cómo postular?
+      "📌",
+      $ // ¡Importante pasar $ aquí!
     );
 
 
