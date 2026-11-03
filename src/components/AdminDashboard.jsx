@@ -933,7 +933,7 @@ export default function AdminDashboard() {
 
             <div style={styles.field}>
               <label style={styles.label}>Descripción / Notas</label>
-              <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} style={styles.textarea} required />
+              <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} style={styles.textarea} />
             </div>
 
             <div style={styles.vipContainer}>
