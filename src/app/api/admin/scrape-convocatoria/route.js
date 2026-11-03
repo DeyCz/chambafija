@@ -106,8 +106,8 @@ function esCorte(linea, etiquetas = []) {
 }
 
 // Extrae exclusivamente el contenido posterior a un encabezado.
-// Agrupa líneas continuas y extrae el texto puro de los enlaces en "¿Cómo postular?".
-function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅", $ = null) { // Nota: Agregamos $ como parámetro opcional
+// Agrupa líneas continuas y limpia frases invasivas ("CLIC AQUÍ", "POSTULA AQUÍ").
+function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
   const objetivo = normalizar(etiqueta).replace(/[:?¿]/g, "").trim();
   let inicio = -1;
   let primeraParte = "";
@@ -146,17 +146,16 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅", $ = nul
       break;
     }
 
-    // NUEVA LÓGICA PARA ENLACES (Requiere pasar $ desde la función POST)
-    if ($ && objetivo.includes("como postular")) {
-        // Busca si el texto original de la línea está dentro de un tag <a>
-        const elementoA = $(`a:contains('${linea}')`);
-        if(elementoA.length > 0) {
-             // Si es un enlace, limpia el texto de frases comunes de enlaces, manteniendo la instrucción.
-             let textoLimpioEnlace = linea.replace(/clic aqu[íi]/gi, "").replace(/postula aqu[íi]/gi, "").replace(/ingresa aqu[íi]/gi, "").trim();
-             // Si después de limpiar el texto queda vacío (porque solo decía "CLIC AQUÍ"), ignoramos la línea.
-             if(!textoLimpioEnlace) continue;
-             linea = textoLimpioEnlace;
-        }
+    // LIMPIEZA QUIRÚRGICA DE FRASES DE ACCIÓN ("CLIC AQUÍ", etc.)
+    if (objetivo.includes("como postular")) {
+      // 1. Borramos las frases exactas (insensible a mayúsculas)
+      linea = linea.replace(/\b(clic|postula|ingresa|inscr[íi]bete)\s+aqu[íi]\b/gi, "").trim();
+      
+      // 2. Borramos textos residuales que suelen quedar solos al final (ej. "En el link convocatorias CAS:")
+      linea = linea.replace(/(?:en el )?(?:link|enlace).*?[:\-]\s*$/gi, "").trim();
+      
+      // Si la línea quedó completamente vacía tras la limpieza, la saltamos
+      if (!linea) continue;
     }
 
     // Comprobamos si la línea actual inicia con una viñeta clásica o guion
@@ -179,6 +178,8 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅", $ = nul
 
   return limpiar(partesAgrupadas.join("\n"));
 }
+
+
 
 // Entidad: toma solo el nombre limpio, ignorando "Convocatoria" y cortando en separadores
 function extraerEntidad($) {
@@ -616,7 +617,6 @@ export async function POST(request) {
       "📚" // Emoji para Cursos / Especialización
     );
 
-    // POSTULACIÓN: busca el rótulo específico con dos puntos.
     const comoPostular = extraerSeccion(
       lineas,
       "Cómo Postular",
@@ -627,8 +627,7 @@ export async function POST(request) {
         "Te sugerimos",
         "Convocatorias destacadas",
       ],
-      "📌",
-      $ // ¡Importante pasar $ aquí!
+      "📌"
     );
 
 
