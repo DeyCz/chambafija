@@ -106,34 +106,22 @@ function esCorte(linea, etiquetas = []) {
 }
 
 // Extrae exclusivamente el contenido posterior a un encabezado.
-// También funciona si el HTML ha dividido el encabezado entre varios elementos.
-function extraerSeccion(lineas, etiqueta, detenerEn = []) {
-  const objetivo = normalizar(etiqueta)
-    .replace(/[:?¿]/g, "")
-    .trim();
-
+// Ahora soporta inyección de emojis (icono) en lugar de viñetas.
+function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
+  const objetivo = normalizar(etiqueta).replace(/[:?¿]/g, "").trim();
   let inicio = -1;
   let primeraParte = "";
   let ultimaLineaEncabezado = -1;
 
   for (let i = 0; i < lineas.length && inicio < 0; i++) {
-    for (
-      let cantidad = 1;
-      cantidad <= 3 && i + cantidad <= lineas.length;
-      cantidad++
-    ) {
+    for (let cantidad = 1; cantidad <= 3 && i + cantidad <= lineas.length; cantidad++) {
       const combinado = lineas.slice(i, i + cantidad).join(" ");
-      const combinadoNorm = normalizar(combinado)
-        .replace(/^[•*\-–—\s]+/, "");
+      const combinadoNorm = normalizar(combinado).replace(/^[•*\-–—\s]+/, "");
 
       if (!combinadoNorm.startsWith(`${objetivo}:`)) continue;
 
       const dosPuntos = combinado.indexOf(":");
-
-      primeraParte = dosPuntos >= 0
-        ? limpiar(combinado.slice(dosPuntos + 1))
-        : "";
-
+      primeraParte = dosPuntos >= 0 ? limpiar(combinado.slice(dosPuntos + 1)) : "";
       inicio = i;
       ultimaLineaEncabezado = i + cantidad - 1;
       break;
@@ -144,43 +132,43 @@ function extraerSeccion(lineas, etiqueta, detenerEn = []) {
 
   const partes = [];
 
-  if (primeraParte) partes.push(primeraParte);
+  if (primeraParte) partes.push(`${icono} ${primeraParte}`);
 
-  for (
-    let i = ultimaLineaEncabezado + 1;
-    i < lineas.length;
-    i++
-  ) {
+  for (let i = ultimaLineaEncabezado + 1; i < lineas.length; i++) {
     const linea = limpiar(lineas[i]);
-
     if (!linea) continue;
-
     if (esCorte(linea, detenerEn)) break;
 
-    const normal = normalizar(linea)
-      .replace(/^[•*\-–—\s]+/, "");
-
+    const normal = normalizar(linea).replace(/^[•*\-–—\s]+/, "");
     if (/^(publicidad|recomendaciones para postular|descarga aqui las bases|resultados de la convocatoria|te sugerimos|convocatorias destacadas)$/.test(normal)) {
       break;
     }
 
-    partes.push(linea.replace(/^[•*\-–—]\s*/, ""));
+    // Reemplaza viñetas originales (puntos, guiones) e inserta el emoji asignado
+    const lineaLimpia = linea.replace(/^[•*\-–—.]\s*/, "");
+    partes.push(`${icono} ${lineaLimpia}`);
   }
 
   return limpiar(partes.join("\n"));
 }
 
-// Entidad: toma solo el nombre después de "Convocatoria".
+// Entidad: toma solo el nombre limpio, ignorando "Convocatoria" y cortando en separadores
 function extraerEntidad($) {
   const h1 = limpiar($("h1").first().text());
   const titulo = limpiar($("title").text());
   const origen = h1 || titulo;
 
-  const match = origen.match(
-    /\bconvocatoria\s+(.+?)(?:\s*[>|»]\s*|$)/i
-  );
+  // Busca "Convocatoria", omite palabras de conexión y captura hasta encontrar un separador (: - | ») o número
+  const match = origen.match(/convocatoria\s+(?:de\s+(?:trabajo|pr[áa]cticas|empleo)\s+)?(?:en\s+la\s+|en\s+el\s+|en\s+)?(.+?)(?:[:\-|>»]|\d{4}|$)/i);
 
-  return match ? limpiar(match[1]) : "";
+  if (match) {
+    let entidad = limpiar(match[1]);
+    // Limpiar si se colaron palabras innecesarias al final
+    entidad = entidad.split(/\s+(?:para|n[°º]|cas)\s+/i)[0];
+    return limpiar(entidad);
+  }
+
+  return "";
 }
 
 // Puesto: busca el encabezado CAS independiente, no el H1 principal.
@@ -498,7 +486,8 @@ export async function POST(request) {
         "Cursos y/o programas de especialización",
         "Condiciones del contrato",
         "Cómo postular",
-      ]
+      ],
+      "🎓" // Emoji para Formación Académica
     );
 
     // EXPERIENCIA: termina antes del encabezado de Cursos.
@@ -511,7 +500,8 @@ export async function POST(request) {
         "Condiciones del contrato",
         "Cómo postular",
         "Recomendaciones para postular",
-      ]
+      ],
+      "💼" // Emoji para Experiencia Requerida
     );
 
     // CURSOS: inicia exactamente después del título indicado.
@@ -525,11 +515,11 @@ export async function POST(request) {
         "Recomendaciones para postular",
         "Descarga aquí las Bases",
         "Resultados de la convocatoria",
-      ]
+      ],
+      "📚" // Emoji para Cursos / Especialización
     );
 
     // POSTULACIÓN: busca el rótulo específico con dos puntos.
-    // No toma el encabezado general ni el plazo de postulación.
     const comoPostular = extraerSeccion(
       lineas,
       "Cómo Postular",
@@ -539,9 +529,11 @@ export async function POST(request) {
         "Resultados de la convocatoria",
         "Te sugerimos",
         "Convocatorias destacadas",
-      ]
+      ],
+      "📌" // Emoji para ¿Cómo postular?
     );
 
+    
     const fechas = extraerFechas(lineas);
     const remuneracion = extraerRemuneracion(lineas);
     const horaVencimiento = extraerHora(comoPostular);
