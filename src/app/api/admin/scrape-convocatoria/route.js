@@ -376,59 +376,65 @@ function extraerHora(textoComoPostular) {
 }
 
 
-// Extrae los enlaces ÚNICAMENTE de la sección "Descarga aquí las Bases"
-// y limpia el texto para quitar el prefijo "Descarga aquí "
-function extraerEnlaces($, lineas) {
+// Extrae los enlaces estrictamente del espacio "Descarga aquí las Bases"
+// y recorta los prefijos para dejar los títulos completamente limpios.
+function extraerEnlaces($) {
   let enlaceBases = "";
   const enlacesExtras = [];
   const urlsVistas = new Set();
+  let enSeccionBases = false;
 
-  // 1. Encontrar dónde empieza la sección de descargas
-  let indexInicioDescargas = -1;
-  for (let i = 0; i < lineas.length; i++) {
-    const lineaNorm = normalizar(lineas[i]).replace(/^[•*\-–—\s]+/, "");
-    if (lineaNorm.includes("descarga aqui las bases") || lineaNorm.includes("descargar bases")) {
-      indexInicioDescargas = i;
-      break;
-    }
-  }
-
-  // Si no encuentra la sección, devuelve vacío
-  if (indexInicioDescargas === -1) return { enlaceBases, enlacesExtras };
-
-  // 2. Extraer todos los enlaces de la página y buscar cuáles coinciden con esa sección
-  $("a").each((_, el) => {
-    let tituloOriginal = limpiar($(el).text());
-    let href = $(el).attr("href");
-
-    if (!href || href.startsWith("javascript:") || href.startsWith("#") || href.includes("facebook.com") || href.includes("whatsapp")) {
-      return;
-    }
-
-    if (urlsVistas.has(href)) return;
-
-    const tituloNorm = normalizar(tituloOriginal);
-
-    // Solo procesamos los enlaces cuyo texto indique que son descargas de la convocatoria
-    if (
-      tituloNorm.includes("bases") || 
-      tituloNorm.includes("cronograma") || 
-      tituloNorm.includes("declaracion") ||
-      tituloNorm.includes("anexo") ||
-      tituloNorm.includes("comunicado") ||
-      tituloNorm.includes("resultado")
-    ) {
+  // Recorremos la estructura leyendo de arriba a abajo
+  $('h1, h2, h3, h4, h5, h6, p, strong, b, div, a').each((_, el) => {
+    const tag = el.name.toLowerCase();
+    
+    // Si no es enlace, verificamos si es un título que abre o cierra la sección
+    if (tag !== 'a') {
+      const texto = normalizar($(el).text());
       
-      // Limpiar el prefijo "Descarga aquí " o "Descargar " (insensible a mayúsculas)
-      let tituloLimpio = tituloOriginal.replace(/^(?:Descarga aqu[íi]\s+|Descargar\s+)/i, "").trim();
+      // La restricción de longitud (< 100) evita que lea bloques gigantes de texto a la vez
+      if (texto.length < 100) {
+        if (texto.includes("descarga aqui las bases") || texto.includes("descargar bases")) {
+          enSeccionBases = true; // ¡Se enciende la recolección!
+        } 
+        else if (enSeccionBases && (
+          texto.includes("resultados de la") || 
+          texto.includes("te sugerimos") || 
+          texto.includes("recomendaciones para") || 
+          texto.includes("convocatorias destacadas")
+        )) {
+          enSeccionBases = false; // ¡Se apaga la recolección!
+        }
+      }
+    } 
+    // Si ES un enlace y estamos DENTRO de la sección permitida
+    else if (tag === 'a' && enSeccionBases) {
+      const href = $(el).attr("href");
+      
+      // Ignorar links vacíos, de redes sociales o anclas
+      if (!href || href.startsWith("javascript:") || href.startsWith("#") || href.includes("facebook.com") || href.includes("whatsapp")) {
+        return;
+      }
 
-      // El primer enlace que mencione "Bases" va al principal
-      if (tituloNorm.includes("bases") && !enlaceBases) {
+      // Evitar guardar el mismo PDF dos veces
+      if (urlsVistas.has(href)) return;
+
+      const tituloOriginal = limpiar($(el).text());
+      
+      // 🚀 MAGIA: Limpiamos los prefijos exactos que pediste (insensible a mayúsculas)
+      const tituloLimpio = tituloOriginal
+        .replace(/^(?:Descarga aqu[íi][:|-]?\s+|Descargar[:|-]?\s+|Ver aqu[íi][:|-]?\s+|Ver[:|-]?\s+|Revisar[:|-]?\s+)/i, "")
+        .trim();
+      
+      const tituloNorm = normalizar(tituloOriginal);
+
+      // El primer enlace de Bases va directo a la variable principal (no necesita título)
+      if (!enlaceBases && (tituloNorm.includes("bases") || tituloNorm.includes("convocatoria"))) {
         enlaceBases = href;
         urlsVistas.add(href);
       } 
-      // El resto va a enlaces extras
-      else {
+      // El resto de enlaces (Instructivos, Declaraciones, Videos) van a los extra
+      else if (tituloLimpio !== "") {
         enlacesExtras.push({ titulo: tituloLimpio, url: href });
         urlsVistas.add(href);
       }
@@ -601,10 +607,10 @@ export async function POST(request) {
     const remuneracion = extraerRemuneracion(lineas);
     const horaVencimiento = extraerHora(comoPostular);
 
-    // NUEVO: Llamamos a la función que extrae los enlaces
-    const { enlaceBases, enlacesExtras } = extraerEnlaces($, lineas);
+    // Llamamos a la nueva función quirúrgica
+    const { enlaceBases, enlacesExtras } = extraerEnlaces($);
 
-    
+
     const data = {
       empresa: entidad || "",
       titulo: titulo || "",
