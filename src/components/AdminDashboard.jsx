@@ -6,16 +6,28 @@ const API_URL = '/api/jobs';
 
 // 1. DICCIONARIO DE LOGOS (Puedes agregar más siguiendo este mismo formato)
 const logosInstitucionales = {
-  "FONCODES": "https://upload.wikimedia.org/wikipedia/commons/d/df/Foncodes_logo.png",
   "INDECI": "https://yt3.ggpht.com/a/AGF-l7_I-6ge2y8wEBW0cGDJ5kLqdQU_If3LjFpb4A=s900-c-k-c0xffffffff-no-rj-mo",
   "PODER JUDICIAL": "https://seeklogo.com/images/P/poder-judicial-peru-logo-4159895347-seeklogo.com.png",
   "UNDAC": "https://th.bing.com/th/id/R.5d657ee7f84117237ea209992ae27772?rik=yqZ2%2bO5kaVD4uw&riu=http%3a%2f%2frepositorio.undac.edu.pe%2fimage%2flogo-UNDAC.png&ehk=V%2fyUwfTDF%2fsFxuuC1KZ5ECdtQMwXilQWvqTOrv4Y9%2b4%3d&risl=&pid=ImgRaw&r=0",
+  "UNIVERSIDAD NACIONAL DANIEL ALCIDES CARRION": "https://th.bing.com/th/id/R.5d657ee7f84117237ea209992ae27772?rik=yqZ2%2bO5kaVD4uw&riu=http%3a%2f%2frepositorio.undac.edu.pe%2fimage%2flogo-UNDAC.png&ehk=V%2fyUwfTDF%2fsFxuuC1KZ5ECdtQMwXilQWvqTOrv4Y9%2b4%3d&risl=&pid=ImgRaw&r=0",
   "HRDAC": "https://hrdac-cerrodepasco.gob.pe/HDAC/images/logo/logo.png",
   "ONPE": "https://play-lh.googleusercontent.com/DJujnYahKciI3SHL4tPPGCJhTxLRG79SndabNaDTnXKL8XUch5ku_vZA15CAGLwa",
   "UGEL PUERTO BERMUDEZ": "https://tse3.mm.bing.net/th/id/OIP.pBiPwPPysHBVlWNmm26lHAHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
   "GOBIERNO REGIONAL PASCO": "https://tse4.mm.bing.net/th/id/OIP.Js3L5-3s8HEGbG14VYaUagHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
   "INEI": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjKyZTQz7Yq_XjhClSkhfoGJHiQ-JFpbeDZwYpdlTj3um6keFKyhFRx2hiS_v7MndjltV0YIMTAGsdztZauDR5eVHREsQswGA3O3eGxn23QoS-1W_gyPeNyt8WFMobDI1oS8epCfnoSCoEbeYtZGkDzT8CapjbLcx5fIib49RIgyA28_ihrcw7Fn5YQSoeX/s16000-rw/INEI%20logo%202025.webp",
-  "SIS": "https://tse3.mm.bing.net/th/id/OIP.F3j4x2tMr76d9XgMxxKAwgHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3"
+  "SIS": "https://tse3.mm.bing.net/th/id/OIP.F3j4x2tMr76d9XgMxxKAwgHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+  "CONTRALORIA": "https://th.bing.com/th/id/R.291734d40a33200cbe2a331024a292a0?rik=KXsfPN1s9xvHgQ&riu=http%3a%2f%2fwww.iddss.org.pe%2fwp-content%2fuploads%2f2019%2f04%2fctre.jpg&ehk=IY98sXDjyGK4TMtfgpLKmbnwlu%2bkP5Y1UpgL2ZkeLJw%3d&risl=&pid=ImgRaw&r=0",
+  "PENSION 65":"https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhO3-8ffiRFO3IpZWFYl3cWQ0w2Zm2a794tAAXxh8uWs47V8svXwR42fAhi6Yp2ersffV-sC6W75tGa3ETmbpvJtTlDswimR2sahd7TRXbxpuhbyEaSjtkPEQHpNIf3AtR4x3ZgmB_P7QnB/s320/logo-pension65.png",
+  "MUNICIPALIDAD DISTRITAL DE VICCO": "https://www.convocatoriascas.com/imagenes/organizaciones/imagen-MUNICIPALIDAD-DISTRITAL-DE-VICCO.jpg",
+  "SUNAFIL": "https://tse2.mm.bing.net/th/id/OIP.dr2NB_51qHg3IMbtiph2mgAAAA?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+  "PAE": "https://www.convocatoriasdetrabajo.com/imagenes/organizaciones/th-imagen-PROGRAMA-DE-ALIMENTACION-ESCOLAR-PAE.jpg",
+  "CUNA MAS": "https://oportunidadeslaborales.uladech.edu.pe/wp-content/uploads/2022/05/CUNA-MAS.jpg",
+  "ITP": "https://2.bp.blogspot.com/-l10PiVP1WSk/VfGxvAng6OI/AAAAAAAAAPs/LyRyW2slR3w/s1600/095%2BITP.jpg",
+  "DEFENSORIA DEL PUEBLO": "https://tse3.mm.bing.net/th/id/OIP.zfID3eCJ1XBZg6yfoxNerwAAAA?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+  "DRE PASCO": "https://1.bp.blogspot.com/-rTomKEx3i38/X5oB6fzreaI/AAAAAAABlls/UTP-A3_lCkkBaKVxlB9W5DD89dauEiRoACLcBGAsYHQ/s1080/dre-pasco-logo.jpg",
+  "DIRESA PASCO": "https://tse1.mm.bing.net/th/id/OIP.0AIIYZMFLGramynavdj9VAHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+  "FONCODES": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg9joxXl4OXlX1j3oxAYN30JT3aYMXqqm_HWGOYH7DJDZXnIhyphenhyphen5w1NlSOCa9f0tvkyOY7E9r1bw7lDePTZc7o2M1vbvUOvSPgxgKjbHZQQYagh6ZB8b8HxCu5pNcsscj-oDgdDvznao-bY/s1600/045+FONCODES.jpg",
+  "PALCAZU": "https://tse4.mm.bing.net/th/id/OIP.icg2crlw0PCguydXp5np5gHaHd?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
 };
 
 // Función para limpiar el nombre y poder compararlo con el diccionario
