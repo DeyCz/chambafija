@@ -376,53 +376,67 @@ function extraerHora(textoComoPostular) {
 }
 
 
-// Extrae los enlaces del DOM, separando el link principal de las bases de los enlaces extras (anexos, comunicados).
-function extraerEnlaces($) {
+// Extrae los enlaces ÚNICAMENTE de la sección "Descarga aquí las Bases"
+// y limpia el texto para quitar el prefijo "Descarga aquí "
+function extraerEnlaces($, lineas) {
   let enlaceBases = "";
   const enlacesExtras = [];
   const urlsVistas = new Set();
 
+  // 1. Encontrar dónde empieza la sección de descargas
+  let indexInicioDescargas = -1;
+  for (let i = 0; i < lineas.length; i++) {
+    const lineaNorm = normalizar(lineas[i]).replace(/^[•*\-–—\s]+/, "");
+    if (lineaNorm.includes("descarga aqui las bases") || lineaNorm.includes("descargar bases")) {
+      indexInicioDescargas = i;
+      break;
+    }
+  }
+
+  // Si no encuentra la sección, devuelve vacío
+  if (indexInicioDescargas === -1) return { enlaceBases, enlacesExtras };
+
+  // 2. Extraer todos los enlaces de la página y buscar cuáles coinciden con esa sección
   $("a").each((_, el) => {
-    const tituloReal = limpiar($(el).text());
-    const textoNorm = normalizar(tituloReal);
+    let tituloOriginal = limpiar($(el).text());
     let href = $(el).attr("href");
 
-    // Ignorar links vacíos, anclas internas o redes sociales
     if (!href || href.startsWith("javascript:") || href.startsWith("#") || href.includes("facebook.com") || href.includes("whatsapp")) {
       return;
     }
 
-    // Evitar links duplicados
     if (urlsVistas.has(href)) return;
 
-    // Detectar enlace principal (Bases)
-    if (textoNorm.includes("descarga") && (textoNorm.includes("bases") || textoNorm.includes("convocatoria"))) {
-      if (!enlaceBases) {
+    const tituloNorm = normalizar(tituloOriginal);
+
+    // Solo procesamos los enlaces cuyo texto indique que son descargas de la convocatoria
+    if (
+      tituloNorm.includes("bases") || 
+      tituloNorm.includes("cronograma") || 
+      tituloNorm.includes("declaracion") ||
+      tituloNorm.includes("anexo") ||
+      tituloNorm.includes("comunicado") ||
+      tituloNorm.includes("resultado")
+    ) {
+      
+      // Limpiar el prefijo "Descarga aquí " o "Descargar " (insensible a mayúsculas)
+      let tituloLimpio = tituloOriginal.replace(/^(?:Descarga aqu[íi]\s+|Descargar\s+)/i, "").trim();
+
+      // El primer enlace que mencione "Bases" va al principal
+      if (tituloNorm.includes("bases") && !enlaceBases) {
         enlaceBases = href;
         urlsVistas.add(href);
-      } else {
-        enlacesExtras.push({ titulo: tituloReal, url: href });
+      } 
+      // El resto va a enlaces extras
+      else {
+        enlacesExtras.push({ titulo: tituloLimpio, url: href });
         urlsVistas.add(href);
       }
-    } 
-    // Detectar otros enlaces útiles
-    else if (
-      textoNorm.includes("anexo") || 
-      textoNorm.includes("comunicado") || 
-      textoNorm.includes("resultado") || 
-      textoNorm.includes("cronograma") ||
-      textoNorm.includes("postular") ||
-      textoNorm.includes("declaracion")
-    ) {
-      enlacesExtras.push({ titulo: tituloReal, url: href });
-      urlsVistas.add(href);
     }
   });
 
   return { enlaceBases, enlacesExtras };
 }
-
-
 
 export async function POST(request) {
   try {
@@ -588,8 +602,9 @@ export async function POST(request) {
     const horaVencimiento = extraerHora(comoPostular);
 
     // NUEVO: Llamamos a la función que extrae los enlaces
-    const { enlaceBases, enlacesExtras } = extraerEnlaces($);
+    const { enlaceBases, enlacesExtras } = extraerEnlaces($, lineas);
 
+    
     const data = {
       empresa: entidad || "",
       titulo: titulo || "",
