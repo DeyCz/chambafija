@@ -203,6 +203,12 @@ function extraerEntidad($) {
     return limpiar(entidad);
   }
 
+    // 1. Quitamos modalidades que se hayan colado en el nombre (728, 276, CAS, etc.)
+  entidad = entidad.replace(/\b(728|276|CAS|CAP|PAC|FAG)\b/gi, '').trim();
+
+  // 2. Quitamos cualquier guion, coma o espacio suelto que haya quedado al final (Ej: "MUNICIPALIDAD DE PALCAZÚ - ")
+  entidad = entidad.replace(/[-–—_.,|>;:]+$/, "").trim();
+
   return "";
 }
 
