@@ -151,8 +151,6 @@ export default function AdminDashboard() {
     else if (modalidadRaw.includes('locación') || modalidadRaw.includes('locacion')) modalidad = 'Locación';
     else if (modalidadRaw.includes('cas')) modalidad = 'CAS';
 
-    // La ubicación no se extrae de esta fuente. Se deja vacía
-    // y se habilita el campo manual para que se complete correctamente.
     setActiveTab('estado');
     setEditingId(null);
     setCustomLocation(true);
@@ -174,12 +172,15 @@ export default function AdminDashboard() {
       especializacion: d.especializacion || '',
       comoPostular: d.comoPostular || '',
 
-      // Los enlaces siempre se completan manualmente. También limpiamos
-      // cualquier enlace que hubiera quedado de una convocatoria anterior.
-      enlaceBases: '',
-      enlacesExtras: [{ titulo: '', url: '' }],
+      // NUEVO: Asigna los enlaces extraídos. Si no hay extraídos, usa el valor por defecto.
+      enlaceBases: d.enlaceBases || '',
+      enlacesExtras: (d.enlacesExtras && d.enlacesExtras.length > 0 && d.enlacesExtras[0].url !== "") 
+        ? d.enlacesExtras 
+        : [{ titulo: '', url: '' }],
+        
       descripcion: d.descripcion || ''
     }));
+    
     setScrapeError('');
     window.setTimeout(() => {
       document.getElementById('formulario-convocatoria')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
