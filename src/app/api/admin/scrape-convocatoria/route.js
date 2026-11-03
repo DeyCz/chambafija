@@ -106,7 +106,7 @@ function esCorte(linea, etiquetas = []) {
 }
 
 // Extrae exclusivamente el contenido posterior a un encabezado.
-// Ahora soporta inyección de emojis (icono) en lugar de viñetas.
+// Ahora agrupa líneas continuas para evitar que los emojis rompan un mismo párrafo.
 function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
   const objetivo = normalizar(etiqueta).replace(/[:?¿]/g, "").trim();
   let inicio = -1;
@@ -130,13 +130,13 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
 
   if (inicio < 0) return "";
 
-  const partes = [];
-
-  if (primeraParte) partes.push(`${icono} ${primeraParte}`);
+  const partesAgrupadas = [];
+  let parrafoActual = primeraParte ? `${icono} ${primeraParte}` : "";
 
   for (let i = ultimaLineaEncabezado + 1; i < lineas.length; i++) {
     const linea = limpiar(lineas[i]);
     if (!linea) continue;
+    
     if (esCorte(linea, detenerEn)) break;
 
     const normal = normalizar(linea).replace(/^[•*\-–—\s]+/, "");
@@ -144,12 +144,29 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
       break;
     }
 
-    // Reemplaza viñetas originales (puntos, guiones) e inserta el emoji asignado
+    // Comprobamos si la línea actual inicia con una viñeta clásica o guion
+    const esNuevaVineta = /^[•*\-–—]/.test(linea);
     const lineaLimpia = linea.replace(/^[•*\-–—.]\s*/, "");
-    partes.push(`${icono} ${lineaLimpia}`);
+
+    if (esNuevaVineta || parrafoActual === "") {
+      // Si hay un párrafo previo en construcción, lo guardamos antes de iniciar uno nuevo
+      if (parrafoActual) {
+        partesAgrupadas.push(parrafoActual);
+      }
+      parrafoActual = `${icono} ${lineaLimpia}`;
+    } else {
+      // Si NO es una nueva viñeta, asumimos que es continuación del texto anterior
+      // y lo unimos con un espacio en lugar de forzar un nuevo emoji.
+      parrafoActual += ` ${lineaLimpia}`;
+    }
   }
 
-  return limpiar(partes.join("\n"));
+  // Guardamos el último párrafo procesado
+  if (parrafoActual) {
+    partesAgrupadas.push(parrafoActual);
+  }
+
+  return limpiar(partesAgrupadas.join("\n"));
 }
 
 // Entidad: toma solo el nombre limpio, ignorando "Convocatoria" y cortando en separadores
