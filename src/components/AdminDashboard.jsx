@@ -4,6 +4,30 @@ import React, { useState, useEffect } from 'react';
 // Conexión hacia tu backend en la nube
 const API_URL = '/api/jobs';
 
+// 1. DICCIONARIO DE LOGOS (Puedes agregar más siguiendo este mismo formato)
+const logosInstitucionales = {
+  "FONCODES": "https://upload.wikimedia.org/wikipedia/commons/d/df/Foncodes_logo.png",
+  "INDECI": "https://yt3.ggpht.com/a/AGF-l7_I-6ge2y8wEBW0cGDJ5kLqdQU_If3LjFpb4A=s900-c-k-c0xffffffff-no-rj-mo",
+  "PODER JUDICIAL": "https://seeklogo.com/images/P/poder-judicial-peru-logo-4159895347-seeklogo.com.png",
+  "UNDAC": "https://th.bing.com/th/id/R.5d657ee7f84117237ea209992ae27772?rik=yqZ2%2bO5kaVD4uw&riu=http%3a%2f%2frepositorio.undac.edu.pe%2fimage%2flogo-UNDAC.png&ehk=V%2fyUwfTDF%2fsFxuuC1KZ5ECdtQMwXilQWvqTOrv4Y9%2b4%3d&risl=&pid=ImgRaw&r=0",
+  "HRDAC": "https://hrdac-cerrodepasco.gob.pe/HDAC/images/logo/logo.png",
+  "ONPE": "https://play-lh.googleusercontent.com/DJujnYahKciI3SHL4tPPGCJhTxLRG79SndabNaDTnXKL8XUch5ku_vZA15CAGLwa",
+  "UGEL PUERTO BERMUDEZ": "https://tse3.mm.bing.net/th/id/OIP.pBiPwPPysHBVlWNmm26lHAHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+  "GOBIERNO REGIONAL PASCO": "https://tse4.mm.bing.net/th/id/OIP.Js3L5-3s8HEGbG14VYaUagHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+  "INEI": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjKyZTQz7Yq_XjhClSkhfoGJHiQ-JFpbeDZwYpdlTj3um6keFKyhFRx2hiS_v7MndjltV0YIMTAGsdztZauDR5eVHREsQswGA3O3eGxn23QoS-1W_gyPeNyt8WFMobDI1oS8epCfnoSCoEbeYtZGkDzT8CapjbLcx5fIib49RIgyA28_ihrcw7Fn5YQSoeX/s16000-rw/INEI%20logo%202025.webp",
+  "SIS": "https://tse3.mm.bing.net/th/id/OIP.F3j4x2tMr76d9XgMxxKAwgHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3"
+};
+
+// Función para limpiar el nombre y poder compararlo con el diccionario
+function normalizarNombreLogo(nombre) {
+  if (!nombre) return "";
+  return nombre
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .trim();
+}
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('estado');
   const [jobs, setJobs] = useState([]);
@@ -97,11 +121,29 @@ export default function AdminDashboard() {
     setMostrarVencidos(false); // Resetear a activos cuando cambias de pestaña
   }, [activeTab]);
 
+  // 2. FUNCIÓN MEJORADA: Autocompleta el logo mientras escribes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
+    
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      };
+
+      // Si se está modificando el campo "empresa", buscar si hay un logo guardado
+      if (name === 'empresa') {
+        const nombreNormalizado = normalizarNombreLogo(value);
+        const logoEncontrado = Object.keys(logosInstitucionales).find(key => 
+          nombreNormalizado.includes(key)
+        );
+
+        if (logoEncontrado) {
+          newData.logo = logosInstitucionales[logoEncontrado];
+        }
+      }
+
+      return newData;
     });
   };
 
@@ -140,6 +182,7 @@ export default function AdminDashboard() {
     }
   };
 
+  // 3. FUNCIÓN MEJORADA: Asigna el logo y los enlaces extraídos correctamente
   const pasarImportacionAlFormulario = () => {
     if (!scrapeResult?.data) return;
     const d = scrapeResult.data;
@@ -155,10 +198,22 @@ export default function AdminDashboard() {
     setEditingId(null);
     setCustomLocation(true);
 
+    // Identificar el logo automáticamente basado en la entidad extraída
+    const empresaDetectada = d.empresa || '';
+    let logoAsignado = '';
+    const nombreNormalizado = normalizarNombreLogo(empresaDetectada);
+    const logoEncontrado = Object.keys(logosInstitucionales).find(key => 
+      nombreNormalizado.includes(key)
+    );
+    if (logoEncontrado) {
+      logoAsignado = logosInstitucionales[logoEncontrado];
+    }
+
     setFormData(prev => ({
       ...prev,
       tipo: 'Estado',
-      empresa: d.empresa || '',
+      empresa: empresaDetectada,
+      logo: logoAsignado, // Insertar automáticamente aquí el link del Excel
       modalidad: modalidad || 'CAS',
       titulo: d.titulo || '',
       ubicacion: '',
@@ -171,16 +226,12 @@ export default function AdminDashboard() {
       experiencia: d.experiencia || '',
       especializacion: d.especializacion || '',
       comoPostular: d.comoPostular || '',
-
-      // NUEVO: Asigna los enlaces extraídos. Si no hay extraídos, usa el valor por defecto.
       enlaceBases: d.enlaceBases || '',
       enlacesExtras: (d.enlacesExtras && d.enlacesExtras.length > 0 && d.enlacesExtras[0].url !== "") 
         ? d.enlacesExtras 
         : [{ titulo: '', url: '' }],
-        
       descripcion: d.descripcion || ''
     }));
-    
     setScrapeError('');
     window.setTimeout(() => {
       document.getElementById('formulario-convocatoria')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -239,7 +290,6 @@ export default function AdminDashboard() {
         alert(editingId ? '¡Actualizado correctamente!' : '¡Publicado con éxito!');
         resetForm();
         fetchJobs();
-        // Si estábamos editando un vencido para reactivarlo, volvemos a la vista de activos
         if (editingId) setMostrarVencidos(false); 
       } else {
         alert('Error: ' + result.mensaje);
@@ -338,7 +388,6 @@ export default function AdminDashboard() {
     });
   };
 
-  // Configuración dinámica de Clasificados
   const categoriasClasificados = {
     'Locales en alquiler': { icono: '🏪', color: '#2563EB', fondo: '#EFF6FF', borde: '#93C5FD', titulo: 'Información del Local', campos: ['tipoLocal','area','ambientes','banos','garantia','precio'] },
     'Viviendas en alquiler': { icono: '🏠', color: '#16A34A', fondo: '#F0FDF4', borde: '#86EFAC', titulo: 'Información de la Vivienda', campos: ['tipoVivienda','dormitorios','banos','area','cochera','amoblado','serviciosIncluidos','garantia','precio'] },
@@ -437,7 +486,6 @@ export default function AdminDashboard() {
     </div>
   );
 
-  // NUEVO: Evaluación de todos los trabajos para clasificarlos como Vencidos o Activos
   const processedJobs = jobs.map(job => {
     let isExpired = false;
     if (job.fechaVencimiento) {
@@ -454,7 +502,6 @@ export default function AdminDashboard() {
     return { ...job, isExpired };
   });
 
-  // Mostramos activos o vencidos dependiendo del estado del botón
   const displayJobsList = processedJobs.filter(job => mostrarVencidos ? job.isExpired : !job.isExpired);
 
   return (
@@ -631,7 +678,7 @@ export default function AdminDashboard() {
               </button>
 
               <p style={{ margin: '10px 0 0', color: '#334155', fontSize: '12px', fontWeight: 600, lineHeight: 1.5 }}>
-                Los datos pasarán al formulario para que puedas corregirlos. Los enlaces oficiales quedan vacíos para que los agregues manualmente. No se guardará ni publicará nada hasta que pulses tu botón habitual de guardar.
+                Los datos pasarán al formulario para que puedas corregirlos. El sistema detectará automáticamente el logo y los anexos. No se guardará nada hasta que pulses publicar.
               </p>
             </div>
           )}
@@ -668,8 +715,8 @@ export default function AdminDashboard() {
                 
                 <div style={styles.row}>
                   <div style={styles.field}>
-                    <label style={styles.label}>Logo (URL Imagen)</label>
-                    <input type="url" name="logo" value={formData.logo} onChange={handleChange} placeholder="https://.../logo.png" style={styles.input} />
+                    <label style={styles.label}>Logo (URL Imagen - ¡Se auto-rellena!)</label>
+                    <input type="url" name="logo" value={formData.logo} onChange={handleChange} placeholder="https://.../logo.png" style={{...styles.input, backgroundColor: '#EFF6FF'}} />
                   </div>
                   <div style={styles.field}>
                     <label style={styles.label}>Título del Puesto</label>

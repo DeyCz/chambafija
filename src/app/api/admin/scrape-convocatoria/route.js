@@ -384,31 +384,46 @@ function extraerFechas(lineas) {
 }
 
 // Obtiene la última hora del horario de atención como hora límite.
+// Ampliada para detectar formatos sin am/pm y variaciones como "hasta 17:15" o "-17:15"
 function extraerHora(textoComoPostular) {
-  const encontrados = [
-    ...String(textoComoPostular || "").matchAll(
-      /(\d{1,2}):(\d{2})\s*(a\.?\s*m\.?|p\.?\s*m\.?|am|pm)/gi
-    ),
-  ];
+  const texto = String(textoComoPostular || "").toLowerCase();
+  
+  // Buscar formatos con am/pm explícitos (ej. 5:30 pm, 17:00 hrs)
+  const encontradosConSufijo = [...texto.matchAll(/(\d{1,2})[:.](\d{2})\s*(a\.?\s*m\.?|p\.?\s*m\.?|am|pm|hrs|horas)/gi)];
+  
+  // Buscar formatos de límite explícito, incluso si no tienen sufijo (ej. "hasta 17:15", "- 16:30")
+  const encontradosSinSufijo = [...texto.matchAll(/(?:hasta(?:\s+las)?|al|[-–—])\s*(\d{1,2})[:.](\d{2})/gi)];
 
-  if (!encontrados.length) return "";
+  // Juntamos todos los hallazgos
+  const todosEncontrados = [...encontradosConSufijo, ...encontradosSinSufijo];
 
-  const ultimo = encontrados[encontrados.length - 1];
+  if (!todosEncontrados.length) return "";
+
+  // Tomamos el último horario mencionado, que suele ser la hora de cierre
+  const ultimo = todosEncontrados[todosEncontrados.length - 1];
 
   let hora = Number(ultimo[1]);
   const minuto = Number(ultimo[2]);
 
-  const sufijo = ultimo[3]
-    .toLowerCase()
-    .replace(/[.\s]/g, "");
+  // Si se encontró un sufijo (am/pm), lo analizamos
+  if (ultimo[3]) {
+    const sufijo = ultimo[3].replace(/[.\s]/g, "");
+    if (sufijo === "pm" && hora < 12) hora += 12;
+    if (sufijo === "am" && hora === 12) hora = 0;
+  } else {
+    // Si no hay sufijo explícito, pero la hora es menor a 8 (ej. "hasta las 5:00"), 
+    // en el contexto de postulaciones públicas, asumimos que es PM (17:00).
+    if (hora > 0 && hora <= 8) {
+      hora += 12;
+    }
+  }
 
-  if (sufijo === "pm" && hora < 12) hora += 12;
-  if (sufijo === "am" && hora === 12) hora = 0;
-
+  // Validación final para horas ilógicas
   if (hora > 23 || minuto > 59) return "";
 
   return `${String(hora).padStart(2, "0")}:${String(minuto).padStart(2, "0")}`;
 }
+
 
 
 // Extrae los enlaces estrictamente del espacio "Descarga aquí las Bases"
