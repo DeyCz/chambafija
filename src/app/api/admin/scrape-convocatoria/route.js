@@ -206,9 +206,9 @@ function extraerEntidad($) {
   return "";
 }
 
-// Puesto: busca el encabezado CAS independiente, no el H1 principal.
+// Puesto: busca el encabezado CAS, 728 o 276 y extrae TODO el texto hasta toparse con una sección nueva.
 function extraerTituloPuesto($, lineas) {
-  const encabezados = $("h1,h2,h3,h4,h5")
+  const encabezados = $("h1,h2,h3,h4,h5,p,strong,b,span")
     .map((_, el) => limpiar($(el).text()))
     .get();
 
@@ -217,30 +217,48 @@ function extraerTituloPuesto($, lineas) {
   for (const lineaOriginal of candidatos) {
     const linea = limpiar(lineaOriginal);
 
+    // Detección más flexible (ignora espacios extra, saltos y caracteres basura antes del nombre del puesto)
     const match = linea.match(
-      /\bCAS\s*N\s*[°º.]?\s*(\d{1,4})\s*(?:[-–—]\s*C[ÓO]DIGO\s*[\w/-]+)?\s*[:：-]\s*(.+)$/i
+      /\b(CAS|728|276|CAP|PAC|FAG)\s*N\s*[°º.xX]?\s*(\d{1,4})\s*(?:[-–—_:]\s*C[ÓO]DIGO\s*[\w/-]+)?\s*[-–—_:.]*\s*(.+)$/i
     );
 
     if (!match) continue;
 
-    let puesto = limpiar(match[2]);
+    let tipoModalidad = limpiar(match[1]).toUpperCase();
+    if (tipoModalidad.includes('728')) tipoModalidad = '728';
+    if (tipoModalidad.includes('276')) tipoModalidad = '276';
 
+    let puesto = limpiar(match[3]);
+
+    // Limpieza agresiva del final del título (corta si detecta que empieza a hablar de plazas, requisitos o la entidad)
     puesto = puesto.split(
-      /\s+(?:Compartir en|Claves del puesto|Requisitos para el puesto|1 plaza|\d+ plaza\(s\))/i
+      /\s+(?:Compartir en|Claves del|Requisitos|Formación|1 plaza|\d+\s+plaza|lugar de|gobierno regional|municipalidad|diresa|ugel)/i
     )[0];
 
-    puesto = puesto.replace(/[|>].*$/, "").trim();
+    // Quita rayas, puntos, comas o símbolos raros al final del puesto
+    puesto = puesto.replace(/[-–—_.,|>;:]+$/, "").trim();
 
-    if (!puesto) continue;
+    if (!puesto || puesto.length < 4) continue; // Si solo capturó basura corta, sigue buscando
 
-    const numero = String(Number(match[1])).padStart(3, "0");
+    const numero = String(Number(match[2])).padStart(3, "0");
 
-    // AQUÍ ESTÁ EL CAMBIO: Se agrega el símbolo "°" explícitamente
-    return `CAS N° ${numero} ${puesto}`.toLocaleUpperCase("es-PE");
+    return `${tipoModalidad} N° ${numero} - ${puesto}`.toLocaleUpperCase("es-PE");
+  }
+
+  // Si no encuentra el formato clásico "CAS N° 001 - Puesto", intenta buscar la palabra "PUESTO:" o "CARGO:"
+  for (const linea of candidatos) {
+    const match = linea.match(/(?:PUESTO|CARGO|PERFIL)(?:\s+A\s+CONTRATAR)?\s*[:.-]\s*(.+)/i);
+    if (match && match[1].length > 4) {
+      let puesto = limpiar(match[1]);
+      puesto = puesto.split(/\s+(?:Requisitos|Plazas|Remuneración)/i)[0].replace(/[-–—_.,|>;:]+$/, "").trim();
+      return puesto.toLocaleUpperCase("es-PE");
+    }
   }
 
   return "";
 }
+
+
 
 // Normaliza importes con punto o coma decimal.
 function normalizarImporte(valor) {
