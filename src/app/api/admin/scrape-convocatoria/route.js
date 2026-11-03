@@ -106,7 +106,7 @@ function esCorte(linea, etiquetas = []) {
 }
 
 // Extrae exclusivamente el contenido posterior a un encabezado.
-// Agrupa líneas continuas y limpia frases invasivas ("CLIC AQUÍ", "POSTULA AQUÍ").
+// Agrupa líneas continuas y elimina de forma nativa los textos residuales de postulación.
 function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
   const objetivo = normalizar(etiqueta).replace(/[:?¿]/g, "").trim();
   let inicio = -1;
@@ -146,13 +146,19 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
       break;
     }
 
-    // LIMPIEZA QUIRÚRGICA DE FRASES DE ACCIÓN ("CLIC AQUÍ", etc.)
+    // LIMPIEZA AVANZADA DE FRASES DE ACCIÓN EN "¿CÓMO POSTULAR?"
     if (objetivo.includes("como postular")) {
-      // 1. Borramos las frases exactas (insensible a mayúsculas)
-      linea = linea.replace(/\b(clic|postula|ingresa|inscr[íi]bete)\s+aqu[íi]\b/gi, "").trim();
+      // 1. Borrar combinaciones completas como "En el Link convocatorias CAS: POSTULA AQUÍ"
+      linea = linea.replace(/(?:en\s+el\s+)?(?:link|enlace).*?[:\-]?\s*(?:clic|postula|ingresa|inscr[íi]bete)\s+aqu[íi]/gi, "");
       
-      // 2. Borramos textos residuales que suelen quedar solos al final (ej. "En el link convocatorias CAS:")
-      linea = linea.replace(/(?:en el )?(?:link|enlace).*?[:\-]\s*$/gi, "").trim();
+      // 2. Borrar frases sueltas (se elimina \b para evitar el fallo con la tilde de AQUÍ)
+      linea = linea.replace(/(?:clic|postula|ingresa|inscr[íi]bete)\s+aqu[íi]/gi, "");
+      
+      // 3. Borrar texto residual al final si quedó huérfano, como "En el Link convocatorias CAS:"
+      linea = linea.replace(/(?:en\s+el\s+)?(?:link|enlace).*?[:\-]\s*$/gi, "");
+      
+      // 4. Limpiar espacios o dos puntos que hayan quedado sueltos al final
+      linea = linea.replace(/[:\-]\s*$/g, "").trim();
       
       // Si la línea quedó completamente vacía tras la limpieza, la saltamos
       if (!linea) continue;
