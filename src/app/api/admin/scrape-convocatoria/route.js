@@ -583,7 +583,7 @@ export async function POST(request) {
     ].join(" ");
 
     const modalidadMatch = modalidadTexto.match(
-      /\b(CAS|D\.?\s*L\.?\s*728|D\.?\s*L\.?\s*276|Pr[áa]cticas|Locaci[oó]n de servicios|Servicio Civil)\b/i
+      /\b(CAS|728|276|D\.?\s*L\.?\s*728|D\.?\s*L\.?\s*276|Pr[áa]cticas|Locaci[oó]n de servicios|Servicio Civil|CAP|PAC|Terceros|FAG|Suplencia)\b/i
     );
 
     const vacantesLinea = lineas.find(linea =>

@@ -709,21 +709,30 @@ export default function AdminDashboard() {
             {activeTab === 'estado' ? (
               <>
                 <div style={styles.row}>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Entidad Pública</label>
-                    <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. GORE Pasco" style={styles.input} required />
-                  </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Modalidad</label>
-                    <select name="modalidad" value={formData.modalidad} onChange={handleChange} style={styles.input}>
-                      <option value="CAS">CAS</option>
-                      <option value="728">D.L. 728</option>
-                      <option value="276">D.L. 276</option>
-                      <option value="Locación">Locación</option>
-                      <option value="Prácticas">Prácticas</option>
-                    </select>
-                  </div>
+                <div style={styles.field}>
+                  <label style={styles.label}>Entidad Pública</label>
+                  <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. Gobierno Regional de Pasco" style={styles.input} required />
                 </div>
+                <div style={styles.field}>
+                  <label style={styles.label}>Modalidad / Régimen</label>
+                  <select name="modalidad" value={formData.modalidad} onChange={handleChange} style={styles.input}>
+                    {/* Modalidades Clásicas */}
+                    <option value="CAS">CAS (Contratación Admin. Serv.)</option>
+                    <option value="728">Régimen Privado (D.L. 728)</option>
+                    <option value="276">Carrera Admin. (D.L. 276)</option>
+                    <option value="Locación">Locación de Servicios</option>
+                    <option value="Prácticas">Prácticas</option>
+                    
+                    {/* Nuevas Modalidades Agregadas */}
+                    <option value="Servicio Civil">Servicio Civil (Ley 30057)</option>
+                    <option value="CAP">CAP (Cuadro Asignación Personal)</option>
+                    <option value="PAC">PAC (Personal Altamente Calificado)</option>
+                    <option value="Terceros">Terceros / Consultoría</option>
+                    <option value="FAG">FAG (Fondo Apoyo Gerencial)</option>
+                    <option value="Suplencia">Suplencia / Reemplazo</option>
+                  </select>
+                </div>
+              </div>
                 
                 <div style={styles.row}>
                   <div style={styles.field}>
