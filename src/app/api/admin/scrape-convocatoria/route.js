@@ -200,8 +200,8 @@ function extraerTituloPuesto($, lineas) {
 
     const numero = String(Number(match[1])).padStart(3, "0");
 
-    return `CAS N ${numero} ${puesto}`
-      .toLocaleUpperCase("es-PE");
+    // AQUÍ ESTÁ EL CAMBIO: Se agrega el símbolo "°" explícitamente
+    return `CAS N° ${numero} ${puesto}`.toLocaleUpperCase("es-PE");
   }
 
   return "";
@@ -375,6 +375,55 @@ function extraerHora(textoComoPostular) {
   return `${String(hora).padStart(2, "0")}:${String(minuto).padStart(2, "0")}`;
 }
 
+
+// Extrae los enlaces del DOM, separando el link principal de las bases de los enlaces extras (anexos, comunicados).
+function extraerEnlaces($) {
+  let enlaceBases = "";
+  const enlacesExtras = [];
+  const urlsVistas = new Set();
+
+  $("a").each((_, el) => {
+    const tituloReal = limpiar($(el).text());
+    const textoNorm = normalizar(tituloReal);
+    let href = $(el).attr("href");
+
+    // Ignorar links vacíos, anclas internas o redes sociales
+    if (!href || href.startsWith("javascript:") || href.startsWith("#") || href.includes("facebook.com") || href.includes("whatsapp")) {
+      return;
+    }
+
+    // Evitar links duplicados
+    if (urlsVistas.has(href)) return;
+
+    // Detectar enlace principal (Bases)
+    if (textoNorm.includes("descarga") && (textoNorm.includes("bases") || textoNorm.includes("convocatoria"))) {
+      if (!enlaceBases) {
+        enlaceBases = href;
+        urlsVistas.add(href);
+      } else {
+        enlacesExtras.push({ titulo: tituloReal, url: href });
+        urlsVistas.add(href);
+      }
+    } 
+    // Detectar otros enlaces útiles
+    else if (
+      textoNorm.includes("anexo") || 
+      textoNorm.includes("comunicado") || 
+      textoNorm.includes("resultado") || 
+      textoNorm.includes("cronograma") ||
+      textoNorm.includes("postular") ||
+      textoNorm.includes("declaracion")
+    ) {
+      enlacesExtras.push({ titulo: tituloReal, url: href });
+      urlsVistas.add(href);
+    }
+  });
+
+  return { enlaceBases, enlacesExtras };
+}
+
+
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -533,10 +582,13 @@ export async function POST(request) {
       "📌" // Emoji para ¿Cómo postular?
     );
 
-    
+
     const fechas = extraerFechas(lineas);
     const remuneracion = extraerRemuneracion(lineas);
     const horaVencimiento = extraerHora(comoPostular);
+
+    // NUEVO: Llamamos a la función que extrae los enlaces
+    const { enlaceBases, enlacesExtras } = extraerEnlaces($);
 
     const data = {
       empresa: entidad || "",
@@ -544,10 +596,7 @@ export async function POST(request) {
       modalidad: modalidadMatch
         ? modalidadMatch[1].replace(/\s+/g, " ").trim()
         : "",
-
-      // La ubicación se completa manualmente.
       ubicacion: "",
-
       vacantes,
       sueldo: remuneracion,
       fechaInicio: fechas.fechaInicio,
@@ -559,9 +608,9 @@ export async function POST(request) {
       especializacion,
       comoPostular,
 
-      // Los enlaces oficiales se agregan manualmente.
-      enlaceBases: "",
-      enlacesExtras: [],
+      // NUEVO: Ahora inyectamos los links encontrados automáticamente
+      enlaceBases: enlaceBases,
+      enlacesExtras: enlacesExtras.length > 0 ? enlacesExtras : [{ titulo: "", url: "" }],
       descripcion: "",
     };
 
