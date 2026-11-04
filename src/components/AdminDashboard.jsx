@@ -99,6 +99,28 @@ export default function AdminDashboard() {
     'Villa Rica, Pasco'
   ];
 
+  // Ordenar registros: el último agregado aparece primero
+  const ordenarPorFechaCreacion = (registros) => {
+    return [...registros].sort((a, b) => {
+      const obtenerFecha = (job) => {
+        // Prioridad: fecha real de creación
+        if (job.createdAt) {
+          const fecha = new Date(job.createdAt).getTime();
+          if (!isNaN(fecha)) return fecha;
+        }
+
+        // Respaldo: fecha de creación contenida en el ObjectId de MongoDB
+        if (job._id && /^[a-fA-F0-9]{24}$/.test(job._id)) {
+          return parseInt(job._id.substring(0, 8), 16) * 1000;
+        }
+
+        return 0;
+      };
+
+      return obtenerFecha(b) - obtenerFecha(a);
+    });
+  };
+
   const fetchJobs = async () => {
     setLoading(true);
     try {
@@ -113,8 +135,10 @@ export default function AdminDashboard() {
       }
 
       const result = await res.json();
+
       if (result.success) {
-        setJobs(result.data || []);
+        const registrosOrdenados = ordenarPorFechaCreacion(result.data || []);
+        setJobs(registrosOrdenados);
       }
     } catch (error) {
       console.error("Error al cargar empleos:", error);
