@@ -514,7 +514,14 @@ export default function AdminDashboard() {
     return { ...job, isExpired };
   });
 
-  const displayJobsList = processedJobs.filter(job => mostrarVencidos ? job.isExpired : !job.isExpired);
+  const displayJobsList = processedJobs
+    .filter(job => mostrarVencidos ? job.isExpired : !job.isExpired)
+    .sort((a, b) => {
+      // Ordenar para que el último agregado (el _id más grande) aparezca primero
+      if (a._id > b._id) return -1;
+      if (a._id < b._id) return 1;
+      return 0;
+    });
 
   return (
     <div style={styles.wrapper}>
