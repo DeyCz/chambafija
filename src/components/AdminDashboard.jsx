@@ -517,8 +517,10 @@ export default function AdminDashboard() {
   const displayJobsList = processedJobs
     .filter(job => mostrarVencidos ? job.isExpired : !job.isExpired)
     .sort((a, b) => {
-      // Ordenar por orden de creación: el más reciente (_id más grande) va primero
-      return String(b._id).localeCompare(String(a._id));
+      // Ordenar por fecha de creación: de la más reciente a la más antigua
+      const fechaA = new Date(a.fechaCreacion || 0);
+      const fechaB = new Date(b.fechaCreacion || 0);
+      return fechaB - fechaA;
     });
 
   return (
