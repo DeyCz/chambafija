@@ -1572,7 +1572,20 @@ const resumenVacantes = useMemo(() => {
         </div>
       </section>
 
-      {/* ======================================================
+     
+
+      {/* ====================================================
+            PUBLICIDAD
+            ==================================================== */}
+
+        {!loading && (
+          <PublicidadSection
+            whatsappUrl={whatsappPublicidadUrl}
+          />
+        )}
+      
+
+       {/* ======================================================
     CONTADOR DE VACANTES
     ====================================================== */}
 
@@ -1639,17 +1652,6 @@ const resumenVacantes = useMemo(() => {
   </div>
 
 </section>
-
-      {/* ====================================================
-            PUBLICIDAD
-            ==================================================== */}
-
-        {!loading && (
-          <PublicidadSection
-            whatsappUrl={whatsappPublicidadUrl}
-          />
-        )}
-      
 
 
 
