@@ -109,6 +109,66 @@ const getCategoriaConfig = (categoria) =>
   categoriasClasificados[categoria] ||
   categoriasClasificados.Otros;
 
+  // ============================================================
+// CONTADOR DE VACANTES
+// ============================================================
+
+// Comprobar si una publicación sigue vigente
+const estaVigente = (job) => {
+  if (!job.fechaVencimiento) return true;
+
+  const fechaString = String(job.fechaVencimiento).split('T')[0];
+  const partes = fechaString.split('-');
+
+  if (partes.length !== 3) return true;
+
+  const [year, month, day] = partes;
+
+  let h = 23;
+  let m = 59;
+
+  if (job.horaVencimiento) {
+    const [hours, minutes] = String(job.horaVencimiento).split(':');
+
+    const horaNumero = parseInt(hours, 10);
+    const minutoNumero = parseInt(minutes, 10);
+
+    if (!Number.isNaN(horaNumero)) h = horaNumero;
+    if (!Number.isNaN(minutoNumero)) m = minutoNumero;
+  }
+
+  const fechaExp = new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    h,
+    m,
+    59
+  );
+
+  return (
+    Number.isNaN(fechaExp.getTime()) ||
+    new Date() <= fechaExp
+  );
+};
+
+// Convertir el campo vacantes a un número
+const obtenerNumeroVacantes = (valor) => {
+  if (typeof valor === 'number') {
+    return Number.isFinite(valor) && valor > 0
+      ? Math.floor(valor)
+      : 0;
+  }
+
+  const coincidencia = String(valor ?? '').trim().match(/^\d+/);
+
+  if (!coincidencia) return 0;
+
+  const numero = parseInt(coincidencia[0], 10);
+
+  return numero > 0 ? numero : 0;
+};
+
 /* ============================================================
    PUBLICIDADES
    ============================================================
@@ -425,6 +485,7 @@ const SectionTitle = ({
 export default function Home() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [jobsResumen, setJobsResumen] = useState([]);
 
   const [filter, setFilter] = useState('Todos');
   const [searchTerm, setSearchTerm] = useState('');
@@ -517,6 +578,59 @@ const whatsappPublicidadUrl =
   useEffect(() => {
     fetchJobs(filter);
   }, [filter]);
+
+  // ============================================================
+// CARGAR DATOS PARA EL CONTADOR DE VACANTES
+// ============================================================
+
+useEffect(() => {
+  let activo = true;
+
+  const cargarResumen = async () => {
+    try {
+      const res = await fetch('/api/jobs', {
+        cache: 'no-store'
+      });
+
+      const result = await res.json();
+
+      if (activo && result.success) {
+        setJobsResumen(
+          Array.isArray(result.data) ? result.data : []
+        );
+      }
+    } catch (error) {
+      console.error('Error al cargar contador de vacantes:', error);
+    }
+  };
+
+  cargarResumen();
+
+  return () => {
+    activo = false;
+  };
+}, []);
+
+// ============================================================
+// SUMA TOTAL DE VACANTES ACTIVAS
+// ============================================================
+
+const resumenVacantes = useMemo(() => {
+  const empleosActivos = jobsResumen.filter(estaVigente);
+
+  const sumarVacantes = (tipo) => {
+    return empleosActivos
+      .filter(job => job.tipo === tipo)
+      .reduce((total, job) => {
+        return total + obtenerNumeroVacantes(job.vacantes);
+      }, 0);
+  };
+
+  return {
+    estado: sumarVacantes('Estado'),
+    locales: sumarVacantes('Privado')
+  };
+}, [jobsResumen]);
 
   /* ==========================================================
      FILTRADO
@@ -1458,6 +1572,74 @@ const whatsappPublicidadUrl =
         </div>
       </section>
 
+      {/* ======================================================
+    CONTADOR DE VACANTES
+    ====================================================== */}
+
+<section className="max-w-6xl mx-auto px-4 pt-7 pb-2 w-full">
+
+  <div className="text-center mb-5">
+    <h2 className="text-xl sm:text-2xl font-black text-[#0B132B]">
+      Vacantes laborales disponibles
+    </h2>
+
+    <p className="text-xs sm:text-sm text-slate-500 mt-1">
+      Oportunidades de trabajo en Cerro de Pasco
+    </p>
+  </div>
+
+  <div className="grid grid-cols-2 gap-3 sm:gap-5">
+
+    {/* ESTADO */}
+    <div className="bg-white border border-blue-100 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-all">
+
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-xl">
+          🏛️
+        </div>
+
+        <span className="text-xs sm:text-sm font-black text-slate-700">
+          Estado
+        </span>
+      </div>
+
+      <p className="text-3xl sm:text-4xl font-black text-blue-600">
+        {resumenVacantes.estado.toLocaleString('es-PE')}
+      </p>
+
+      <p className="text-[10px] sm:text-xs text-slate-500 font-semibold mt-1">
+        Vacantes disponibles
+      </p>
+
+    </div>
+
+    {/* EMPLEOS LOCALES */}
+    <div className="bg-white border border-emerald-100 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-all">
+
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-xl">
+          💼
+        </div>
+
+        <span className="text-xs sm:text-sm font-black text-slate-700">
+          Empleos locales
+        </span>
+      </div>
+
+      <p className="text-3xl sm:text-4xl font-black text-emerald-600">
+        {resumenVacantes.locales.toLocaleString('es-PE')}
+      </p>
+
+      <p className="text-[10px] sm:text-xs text-slate-500 font-semibold mt-1">
+        Vacantes disponibles
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
+
       {/* ====================================================
             PUBLICIDAD
             ==================================================== */}
@@ -1467,7 +1649,9 @@ const whatsappPublicidadUrl =
             whatsappUrl={whatsappPublicidadUrl}
           />
         )}
-        
+      
+
+
 
       {/* ======================================================
           FILTROS
