@@ -117,7 +117,7 @@ export default function AdminDashboard() {
         return 0;
       };
 
-      return obtenerFecha(b) - obtenerFecha(a);
+      return obtenerFecha(a) - obtenerFecha(b);
     });
   };
 
