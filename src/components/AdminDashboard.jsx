@@ -28,6 +28,7 @@ const logosInstitucionales = {
   "DIRESA PASCO": "https://tse1.mm.bing.net/th/id/OIP.0AIIYZMFLGramynavdj9VAHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
   "FONCODES": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg9joxXl4OXlX1j3oxAYN30JT3aYMXqqm_HWGOYH7DJDZXnIhyphenhyphen5w1NlSOCa9f0tvkyOY7E9r1bw7lDePTZc7o2M1vbvUOvSPgxgKjbHZQQYagh6ZB8b8HxCu5pNcsscj-oDgdDvznao-bY/s1600/045+FONCODES.jpg",
   "PALCAZU": "https://tse4.mm.bing.net/th/id/OIP.icg2crlw0PCguydXp5np5gHaHd?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+  "MUNICIPALIDAD DE HUACHON": "https://tse4.mm.bing.net/th/id/OIP.ius3TEpxkUSrtMi7ViewngHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
 };
 
 function normalizarNombreLogo(nombre) {
@@ -255,6 +256,8 @@ export default function AdminDashboard() {
         : [{ titulo: '', url: '' }],
       descripcion: d.descripcion || ''
     }));
+    setScrapeUrl('');      // Limpia el input del enlace para pegar el siguiente
+    setScrapeResult(null); // Opcional: cierra también el cuadro de vista previa ya copiado
     setScrapeError('');
     window.setTimeout(() => {
       document.getElementById('formulario-convocatoria')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
