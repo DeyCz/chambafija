@@ -35,12 +35,14 @@ const formatDateRange = (inicio, fin, hora) => {
 
   if (inicio && fin && inicio !== fin) {
     return (
-      <>
-        <span className="whitespace-nowrap">⏳ Del {formatD(inicio)} al</span>{' '}
+      <span>
+        <span className="whitespace-nowrap">
+          ⏳ Del {formatD(inicio)} al
+        </span>{' '}
         <span className="whitespace-nowrap">
           {formatD(fin)} ({horaFormateada})
         </span>
-      </>
+      </span>
     );
   }
 
