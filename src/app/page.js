@@ -47,7 +47,7 @@ const formatDateRange = (inicio, fin, hora) => {
   if (fin) {
     return (
       <span className="whitespace-nowrap">
-        ⏳ Vence: {formatD(fin)} - {horaFormateada}
+        ⏳ Vence: {formatD(fin)} · {horaFormateada}
       </span>
     );
   }
@@ -101,9 +101,9 @@ const categoriasClasificados = {
 const getCategoriaConfig = (categoria) =>
   categoriasClasificados[categoria] || categoriasClasificados.Otros;
 
-// ============================================================
-// CONTADOR DE VACANTES
-// ============================================================
+/* ============================================================
+   CONTADOR DE VACANTES
+   ============================================================ */
 
 const estaVigente = (job) => {
   if (!job.fechaVencimiento) return true;
@@ -156,16 +156,6 @@ const obtenerNumeroVacantes = (valor) => {
 
 /* ============================================================
    PUBLICIDADES
-   ============================================================
-
-   AQUÍ AGREGAS LAS PUBLICIDADES.
-
-   Google Drive:
-   1. Sube la imagen a Drive.
-   2. Compartir -> "Cualquier persona con el enlace".
-   3. Copia el ID del archivo (ej: 1ABCDEF123456789) y colócalo en driveId.
-
-   whatsapp: número PERUANO SIN +51 (Ejemplo: 967576214)
    ============================================================ */
 
 const publicidades = [
@@ -174,7 +164,8 @@ const publicidades = [
     driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_1',
     nombre: 'Publicidad 1',
     whatsapp: '967576214',
-    mensaje: 'Hola, vi su publicidad en ChambaFija y quisiera más información.',
+    mensaje:
+      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
     activo: true,
   },
   {
@@ -182,7 +173,8 @@ const publicidades = [
     driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_2',
     nombre: 'Publicidad 2',
     whatsapp: '967576214',
-    mensaje: 'Hola, vi su publicidad en ChambaFija y quisiera más información.',
+    mensaje:
+      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
     activo: true,
   },
   {
@@ -190,7 +182,8 @@ const publicidades = [
     driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_3',
     nombre: 'Publicidad 3',
     whatsapp: '967576214',
-    mensaje: 'Hola, vi su publicidad en ChambaFija y quisiera más información.',
+    mensaje:
+      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
     activo: true,
   },
   {
@@ -198,7 +191,8 @@ const publicidades = [
     driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_4',
     nombre: 'Publicidad 4',
     whatsapp: '967576214',
-    mensaje: 'Hola, vi su publicidad en ChambaFija y quisiera más información.',
+    mensaje:
+      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
     activo: true,
   },
   {
@@ -206,7 +200,8 @@ const publicidades = [
     driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_5',
     nombre: 'Publicidad 5',
     whatsapp: '967576214',
-    mensaje: 'Hola, vi su publicidad en ChambaFija y quisiera más información.',
+    mensaje:
+      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
     activo: true,
   },
   {
@@ -214,7 +209,8 @@ const publicidades = [
     driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_6',
     nombre: 'Publicidad 6',
     whatsapp: '967576214',
-    mensaje: 'Hola, vi su publicidad en ChambaFija y quisiera más información.',
+    mensaje:
+      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
     activo: true,
   },
 ];
@@ -326,7 +322,8 @@ const PublicidadSection = ({ whatsappUrl }) => {
                 </h2>
 
                 <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl">
-                  Anuncia tu empresa, servicio, local o emprendimiento en la portada de ChambaFija.
+                  Anuncia tu empresa, servicio, local o emprendimiento en la
+                  portada de ChambaFija.
                 </p>
               </div>
             </div>
@@ -434,10 +431,7 @@ export default function Home() {
     `https://api.whatsapp.com/send?phone=${numeroWhatsApp}` +
     `&text=${encodeURIComponent(mensajePublicar)}`;
 
-  // ============================================================
-  // WHATSAPP PARA PUBLICIDAD
-  // ============================================================
-
+  /* WHATSAPP PARA PUBLICIDAD */
   const mensajePublicidad =
     '¡Hola! 📢 Quiero anunciar mi negocio en ChambaFija y quisiera conocer los espacios publicitarios disponibles.';
 
@@ -445,10 +439,7 @@ export default function Home() {
     `https://api.whatsapp.com/send?phone=${numeroWhatsApp}` +
     `&text=${encodeURIComponent(mensajePublicidad)}`;
 
-  /* ==========================================================
-     WHATSAPP VIP
-     ========================================================== */
-
+  /* WHATSAPP VIP */
   const mensajeVIP =
     '¡Hola! ⭐ Quiero destacar mi negocio/anuncio en ChambaFija y quisiera conocer cómo puedo ser VIP. 📲🔥';
 
@@ -502,10 +493,7 @@ export default function Home() {
     fetchJobs(filter);
   }, [filter]);
 
-  // ============================================================
-  // CARGAR DATOS PARA EL CONTADOR DE VACANTES
-  // ============================================================
-
+  /* CARGAR DATOS PARA EL CONTADOR DE VACANTES */
   useEffect(() => {
     let activo = true;
 
@@ -532,10 +520,7 @@ export default function Home() {
     };
   }, []);
 
-  // ============================================================
-  // SUMA TOTAL DE VACANTES ACTIVAS
-  // ============================================================
-
+  /* SUMA TOTAL DE VACANTES ACTIVAS */
   const resumenVacantes = useMemo(() => {
     const empleosActivos = jobsResumen.filter(estaVigente);
 
@@ -559,7 +544,6 @@ export default function Home() {
 
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
-      /* ELIMINAR ANUNCIOS VENCIDOS */
       if (job.fechaVencimiento) {
         const fechaString = String(job.fechaVencimiento).split('T')[0];
         const partes = fechaString.split('-');
@@ -594,14 +578,14 @@ export default function Home() {
         }
       }
 
-      /* BÚSQUEDA */
       const texto = searchTerm.toLowerCase().trim();
 
       if (!texto) {
         if (filter === 'Destacados') return Boolean(job.esVip);
         if (filter === 'Empleos') return job.tipo === 'Privado';
         if (filter === 'Estado') return job.tipo === 'Estado';
-        if (filter === 'Anuncios Clasificados') return job.tipo === 'Clasificado';
+        if (filter === 'Anuncios Clasificados')
+          return job.tipo === 'Clasificado';
         return true;
       }
 
@@ -630,7 +614,6 @@ export default function Home() {
 
       if (!matchesSearch) return false;
 
-      /* FILTROS */
       if (filter === 'Destacados') return Boolean(job.esVip);
       if (filter === 'Empleos') return job.tipo === 'Privado';
       if (filter === 'Estado') return job.tipo === 'Estado';
@@ -783,50 +766,195 @@ export default function Home() {
 
     if (categoria === 'Locales en alquiler') {
       datos.push(
-        <CampoClasificado key="tipoLocal" label="Tipo de local" valor={job.tipoLocal} icono="🏪" />,
-        <CampoClasificado key="area" label="Área" valor={job.area} icono="📐" />,
-        <CampoClasificado key="ambientes" label="Ambientes" valor={job.ambientes} icono="🚪" />,
-        <CampoClasificado key="banos" label="Baños" valor={job.banos} icono="🚿" />,
-        <CampoClasificado key="garantia" label="Garantía" valor={job.garantia} icono="🔐" />
+        <CampoClasificado
+          key="tipoLocal"
+          label="Tipo de local"
+          valor={job.tipoLocal}
+          icono="🏪"
+        />,
+        <CampoClasificado
+          key="area"
+          label="Área"
+          valor={job.area}
+          icono="📐"
+        />,
+        <CampoClasificado
+          key="ambientes"
+          label="Ambientes"
+          valor={job.ambientes}
+          icono="🚪"
+        />,
+        <CampoClasificado
+          key="banos"
+          label="Baños"
+          valor={job.banos}
+          icono="🚿"
+        />,
+        <CampoClasificado
+          key="garantia"
+          label="Garantía"
+          valor={job.garantia}
+          icono="🔐"
+        />
       );
     } else if (categoria === 'Viviendas en alquiler') {
       datos.push(
-        <CampoClasificado key="tipoVivienda" label="Tipo de vivienda" valor={job.tipoVivienda} icono="🏠" />,
-        <CampoClasificado key="area" label="Área" valor={job.area} icono="📐" />,
-        <CampoClasificado key="dormitorios" label="Dormitorios" valor={job.dormitorios} icono="🛏️" />,
-        <CampoClasificado key="banos" label="Baños" valor={job.banos} icono="🚿" />,
-        <CampoClasificado key="cochera" label="Cochera" valor={job.cochera} icono="🚗" />,
-        <CampoClasificado key="amoblado" label="Amoblado" valor={job.amoblado} icono="🛋️" />,
-        <CampoClasificado key="serviciosIncluidos" label="Servicios incluidos" valor={job.serviciosIncluidos} icono="💡" />,
-        <CampoClasificado key="garantia" label="Garantía" valor={job.garantia} icono="🔐" />
+        <CampoClasificado
+          key="tipoVivienda"
+          label="Tipo de vivienda"
+          valor={job.tipoVivienda}
+          icono="🏠"
+        />,
+        <CampoClasificado
+          key="area"
+          label="Área"
+          valor={job.area}
+          icono="📐"
+        />,
+        <CampoClasificado
+          key="dormitorios"
+          label="Dormitorios"
+          valor={job.dormitorios}
+          icono="🛏️"
+        />,
+        <CampoClasificado
+          key="banos"
+          label="Baños"
+          valor={job.banos}
+          icono="🚿"
+        />,
+        <CampoClasificado
+          key="cochera"
+          label="Cochera"
+          valor={job.cochera}
+          icono="🚗"
+        />,
+        <CampoClasificado
+          key="amoblado"
+          label="Amoblado"
+          valor={job.amoblado}
+          icono="🛋️"
+        />,
+        <CampoClasificado
+          key="serviciosIncluidos"
+          label="Servicios incluidos"
+          valor={job.serviciosIncluidos}
+          icono="💡"
+        />,
+        <CampoClasificado
+          key="garantia"
+          label="Garantía"
+          valor={job.garantia}
+          icono="🔐"
+        />
       );
     } else if (categoria === 'Vehículos') {
       datos.push(
-        <CampoClasificado key="tipoVehiculo" label="Tipo" valor={job.tipoVehiculo} icono="🚗" />,
-        <CampoClasificado key="marca" label="Marca" valor={job.marca} icono="🏷️" />,
-        <CampoClasificado key="modelo" label="Modelo" valor={job.modelo} icono="🚘" />,
-        <CampoClasificado key="anio" label="Año" valor={job.anio} icono="📅" />,
-        <CampoClasificado key="kilometraje" label="Kilometraje" valor={job.kilometraje} icono="🛣️" />,
-        <CampoClasificado key="combustible" label="Combustible" valor={job.combustible} icono="⛽" />,
-        <CampoClasificado key="transmision" label="Transmisión" valor={job.transmision} icono="⚙️" />,
-        <CampoClasificado key="colorVehiculo" label="Color" valor={job.colorVehiculo} icono="🎨" />
+        <CampoClasificado
+          key="tipoVehiculo"
+          label="Tipo"
+          valor={job.tipoVehiculo}
+          icono="🚗"
+        />,
+        <CampoClasificado
+          key="marca"
+          label="Marca"
+          valor={job.marca}
+          icono="🏷️"
+        />,
+        <CampoClasificado
+          key="modelo"
+          label="Modelo"
+          valor={job.modelo}
+          icono="🚘"
+        />,
+        <CampoClasificado
+          key="anio"
+          label="Año"
+          valor={job.anio}
+          icono="📅"
+        />,
+        <CampoClasificado
+          key="kilometraje"
+          label="Kilometraje"
+          valor={job.kilometraje}
+          icono="🛣️"
+        />,
+        <CampoClasificado
+          key="combustible"
+          label="Combustible"
+          valor={job.combustible}
+          icono="⛽"
+        />,
+        <CampoClasificado
+          key="transmision"
+          label="Transmisión"
+          valor={job.transmision}
+          icono="⚙️"
+        />,
+        <CampoClasificado
+          key="colorVehiculo"
+          label="Color"
+          valor={job.colorVehiculo}
+          icono="🎨"
+        />
       );
     } else if (categoria === 'Servicios') {
       datos.push(
-        <CampoClasificado key="tipoServicio" label="Servicio" valor={job.tipoServicio} icono="🛠️" />,
-        <CampoClasificado key="modalidadServicio" label="Modalidad" valor={job.modalidadServicio} icono="💻" />,
-        <CampoClasificado key="zonaAtencion" label="Zona de atención" valor={job.zonaAtencion} icono="📍" />
+        <CampoClasificado
+          key="tipoServicio"
+          label="Servicio"
+          valor={job.tipoServicio}
+          icono="🛠️"
+        />,
+        <CampoClasificado
+          key="modalidadServicio"
+          label="Modalidad"
+          valor={job.modalidadServicio}
+          icono="💻"
+        />,
+        <CampoClasificado
+          key="zonaAtencion"
+          label="Zona de atención"
+          valor={job.zonaAtencion}
+          icono="📍"
+        />
       );
     } else if (categoria === 'Ventas') {
       datos.push(
-        <CampoClasificado key="producto" label="Producto" valor={job.producto} icono="📦" />,
-        <CampoClasificado key="marcaProducto" label="Marca" valor={job.marcaProducto} icono="🏷️" />,
-        <CampoClasificado key="estadoProducto" label="Estado" valor={job.estadoProducto} icono="✨" />,
-        <CampoClasificado key="cantidad" label="Cantidad" valor={job.cantidad} icono="🔢" />
+        <CampoClasificado
+          key="producto"
+          label="Producto"
+          valor={job.producto}
+          icono="📦"
+        />,
+        <CampoClasificado
+          key="marcaProducto"
+          label="Marca"
+          valor={job.marcaProducto}
+          icono="🏷️"
+        />,
+        <CampoClasificado
+          key="estadoProducto"
+          label="Estado"
+          valor={job.estadoProducto}
+          icono="✨"
+        />,
+        <CampoClasificado
+          key="cantidad"
+          label="Cantidad"
+          valor={job.cantidad}
+          icono="🔢"
+        />
       );
     } else {
       datos.push(
-        <CampoClasificado key="area" label="Área / Medida" valor={job.area} icono="📐" />
+        <CampoClasificado
+          key="area"
+          label="Área / Medida"
+          valor={job.area}
+          icono="📐"
+        />
       );
     }
 
@@ -847,56 +975,57 @@ export default function Home() {
   };
 
   /* ==========================================================
-     TARJETA DE ANUNCIO
+     TARJETA DE ANUNCIO (DISEÑO EJECUTIVO SIN DESBORDES)
      ========================================================== */
 
   const JobCard = ({ job }) => {
-    /* CLASIFICADOS */
+    /* 1. TARJETA DE CLASIFICADOS */
     if (job.tipo === 'Clasificado') {
       const categoria = job.categoriaClasificado || 'Otros';
       const config = getCategoriaConfig(categoria);
 
       return (
-        <div
-          className={`group bg-white rounded-3xl p-5 sm:p-6 border flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_18px_35px_-10px_rgba(11,19,43,0.12)] ${
+        <article
+          className={`group bg-white rounded-2xl p-5 sm:p-6 border flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-14px_rgba(11,19,43,0.14)] ${
             job.esVip
-              ? 'border-amber-400/90 ring-2 ring-amber-400/25 shadow-md'
-              : 'border-slate-200/90 shadow-[0_4px_20px_-4px_rgba(11,19,43,0.06)]'
+              ? 'border-amber-400/90 ring-2 ring-amber-400/20 shadow-md'
+              : 'border-slate-200/90 shadow-[0_2px_12px_-3px_rgba(11,19,43,0.06)]'
           }`}
         >
           <div
-            className="absolute inset-x-0 top-0 h-1.5"
+            className="absolute inset-x-0 top-0 h-1"
             style={{ backgroundColor: job.esVip ? '#F59E0B' : config.color }}
           />
 
           <div>
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-3.5 pt-1">
+            <div className="flex items-center justify-between gap-2 mb-4">
               <span
-                className="text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1 whitespace-nowrap"
+                className="text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider inline-flex items-center gap-1.5 whitespace-nowrap"
                 style={{
                   backgroundColor: config.fondo,
                   color: config.color,
                   border: `1px solid ${config.borde}`,
                 }}
               >
-                {config.icono} {categoria}
+                <span>{config.icono}</span>
+                <span>{categoria}</span>
               </span>
 
               {job.esVip && (
-                <span className="text-[10px] font-extrabold bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-full uppercase tracking-wider whitespace-nowrap shadow-2xs">
-                  ⭐ Destacado
+                <span className="text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-300/80 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+                  ⭐ VIP
                 </span>
               )}
             </div>
 
-            <h3 className="text-base sm:text-lg font-extrabold text-[#0B132B] mb-3.5 leading-snug group-hover:text-slate-700 transition-colors">
+            <h3 className="text-base sm:text-[17px] font-extrabold text-[#0B132B] mb-3.5 leading-snug group-hover:text-slate-700 transition-colors">
               {job.titulo}
             </h3>
 
             <div
-              className="p-4 rounded-2xl border mb-4"
+              className="p-3.5 rounded-xl border mb-4"
               style={{
-                backgroundColor: `${config.fondo}90`,
+                backgroundColor: `${config.fondo}75`,
                 borderColor: config.borde,
               }}
             >
@@ -927,107 +1056,111 @@ export default function Home() {
               </p>
             )}
 
-            <p className="text-[11px] text-slate-400 font-semibold mb-5">
-              📅 Publicado: {formatearFechaPub(job.fechaInicio || job.fechaPublicacion)}
+            <p className="text-[11px] text-slate-400 font-semibold mb-4">
+              📅 Publicado:{' '}
+              {formatearFechaPub(job.fechaInicio || job.fechaPublicacion)}
             </p>
           </div>
 
           <button
             onClick={() => setSelectedJob(job)}
-            className="w-full text-white text-xs font-extrabold py-3.5 rounded-2xl transition-all duration-300 shadow-sm hover:opacity-95 active:scale-[0.99] cursor-pointer flex items-center justify-center gap-1.5"
+            className="w-full text-white text-xs font-extrabold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-xs hover:opacity-95 active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
             style={{ backgroundColor: config.color }}
           >
             <span>📲 Ver detalles y contactar</span>
+            <span>→</span>
           </button>
-        </div>
+        </article>
       );
     }
 
-    /* EMPLEO / ESTADO */
+    /* 2. TARJETA DE EMPLEO LOCAL / CONVOCATORIA DEL ESTADO */
     const esEstado = job.tipo === 'Estado';
 
     return (
-      <div
-        className={`group bg-white rounded-3xl p-5 sm:p-6 border flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_18px_35px_-10px_rgba(11,19,43,0.12)] ${
+      <article
+        className={`group bg-white rounded-2xl p-5 sm:p-6 border flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-14px_rgba(11,19,43,0.14)] ${
           job.esVip
-            ? 'border-amber-400/90 bg-gradient-to-b from-amber-50/35 via-white to-white ring-2 ring-amber-400/25 shadow-md'
-            : 'border-slate-200/90 hover:border-[#06D6A0]/60 shadow-[0_4px_20px_-4px_rgba(11,19,43,0.06)]'
+            ? 'border-amber-400/90 bg-gradient-to-b from-amber-50/30 via-white to-white ring-2 ring-amber-400/20 shadow-md'
+            : 'border-slate-200/90 hover:border-slate-300 shadow-[0_2px_12px_-3px_rgba(11,19,43,0.06)]'
         }`}
       >
+        {/* Franja superior corporativa */}
+        <div
+          className={`absolute inset-x-0 top-0 h-1 ${
+            job.esVip
+              ? 'bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-500'
+              : esEstado
+              ? 'bg-gradient-to-r from-[#0B132B] to-blue-600'
+              : 'bg-gradient-to-r from-[#06D6A0] to-emerald-500'
+          }`}
+        />
+
         <div>
-          {/* 1. BARRA SUPERIOR: TIPO A LA IZQUIERDA Y VENCIMIENTO / VIP A LA DERECHA */}
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+          {/* NIVEL 1: ETIQUETA DE SECTOR + INSIGNIA VIP (SIN FECHAS LARGAS AQUÍ) */}
+          <div className="flex items-center justify-between gap-2 mb-4">
             <span
-              className={`inline-flex items-center gap-1.5 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider whitespace-nowrap shrink-0 ${
+              className={`inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap ${
                 esEstado
                   ? 'bg-blue-50 text-blue-700 border border-blue-200/80'
                   : 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
               }`}
             >
               <span>{esEstado ? '🏛️' : '💼'}</span>
-              <span>{esEstado ? 'Público' : 'Empleo Local'}</span>
+              <span>{esEstado ? 'Sector Público' : 'Empleo Local'}</span>
             </span>
 
-            <div className="flex flex-wrap items-center justify-end gap-1.5">
-              {job.esVip && (
-                <span className="text-[10px] font-extrabold bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-full whitespace-nowrap shadow-2xs">
-                  ⭐ VIP
-                </span>
-              )}
-
-              {esEstado && job.fechaVencimiento && (
-                <div className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200/80 px-2.5 py-1 rounded-xl leading-tight text-right">
-                  {formatDateRange(
-                    job.fechaInicio,
-                    job.fechaVencimiento,
-                    job.horaVencimiento
-                  )}
-                </div>
-              )}
-            </div>
+            {job.esVip && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-300/80 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+                ⭐ VIP
+              </span>
+            )}
           </div>
 
-          {/* 2. IDENTIDAD DE LA ENTIDAD / EMPRESA (ANCHO COMPLETO SIN CORTES) */}
+          {/* NIVEL 2: ESCUDO + NOMBRE DE ENTIDAD DE ANCHO COMPLETO */}
           <div className="flex items-center gap-3.5 mb-3.5 pb-3.5 border-b border-slate-100">
             {job.logo ? (
-              <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200/90 p-1.5 shadow-2xs flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 p-1.5 shadow-2xs flex items-center justify-center shrink-0 overflow-hidden">
                 <img
                   src={job.logo}
                   alt={job.empresa || 'Empresa'}
-                  className="w-full h-full object-contain rounded-xl"
+                  className="w-full h-full object-contain"
                 />
               </div>
             ) : (
               <div
-                className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-lg font-bold flex-shrink-0 ${
+                className={`w-12 h-12 rounded-xl border flex items-center justify-center text-lg font-bold shrink-0 ${
                   esEstado
-                    ? 'bg-blue-50 border-blue-100 text-blue-700'
-                    : 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                    ? 'bg-blue-50/80 border-blue-100 text-blue-700'
+                    : 'bg-emerald-50/80 border-emerald-100 text-emerald-700'
                 }`}
               >
-                {esEstado ? '🏛️' : '💼'}
+                {esEstado ? '🏛️' : '🏢'}
               </div>
             )}
 
             <div className="min-w-0 flex-1">
-              <p className="text-xs sm:text-[13px] text-slate-700 font-extrabold leading-snug break-words line-clamp-2">
+              <p
+                className="text-xs sm:text-[13px] font-extrabold text-slate-700 leading-snug line-clamp-2"
+                style={{ wordBreak: 'normal', overflowWrap: 'break-word' }}
+              >
                 {job.empresa || 'Empresa'}
               </p>
 
-              <p className="text-[11px] text-slate-500 font-semibold mt-0.5 flex items-center gap-1">
+              <p className="text-[11px] text-slate-400 font-semibold mt-0.5 flex items-center gap-1">
                 <span className="shrink-0">📍</span>
                 <span className="truncate">{job.ubicacion || 'Pasco'}</span>
               </p>
             </div>
           </div>
 
-          {/* 3. TÍTULO DEL PUESTO */}
-          <h3 className="text-base sm:text-[17px] font-extrabold text-[#0B132B] mb-4 leading-snug group-hover:text-emerald-700 transition-colors">
+          {/* NIVEL 3: TÍTULO DEL PUESTO */}
+          <h3 className="text-[16px] sm:text-[17px] font-extrabold text-[#0B132B] mb-4 leading-snug line-clamp-2 group-hover:text-blue-900 transition-colors">
             {job.titulo}
           </h3>
 
-          {/* 4. RESUMEN DE CONDICIONES */}
-          <div className="bg-[#F8FAFC] p-3.5 rounded-2xl border border-slate-200/70 space-y-2.5 mb-5">
+          {/* NIVEL 4: DATOS CLAVE */}
+          <div className="bg-slate-50/90 p-3.5 rounded-xl border border-slate-200/70 space-y-2 mb-4">
             <div className="flex justify-between items-center text-xs gap-2">
               <span className="text-slate-500 font-semibold">Remuneración</span>
               <span className="font-extrabold text-emerald-600 text-sm text-right tabular-nums">
@@ -1037,152 +1170,51 @@ export default function Home() {
 
             <div className="flex justify-between items-center text-xs gap-2 pt-2 border-t border-slate-200/60">
               <span className="text-slate-500 font-semibold">Modalidad</span>
-              <span className="font-bold text-[#0B132B] bg-white px-2.5 py-0.5 rounded-lg border border-slate-200/90 truncate max-w-[165px] shadow-2xs">
+              <span className="font-bold text-[#0B132B] bg-white px-2.5 py-0.5 rounded-md border border-slate-200/90 truncate max-w-[165px]">
                 {job.modalidad || 'No especificada'}
               </span>
             </div>
 
             {job.vacantes && (
               <div className="flex justify-between items-center text-xs gap-2 pt-2 border-t border-slate-200/60">
-                <span className="text-slate-500 font-semibold">Vacantes / Plazas</span>
-                <span className="font-extrabold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-100 tabular-nums">
+                <span className="text-slate-500 font-semibold">
+                  Vacantes / Plazas
+                </span>
+                <span className="font-extrabold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200/60 tabular-nums">
                   {job.vacantes}
                 </span>
               </div>
             )}
           </div>
+
+          {/* NIVEL 5: BARRA DE CIERRE DE ANCHO COMPLETO (CERO COLISIONES) */}
+          {esEstado && job.fechaVencimiento && (
+            <div className="mb-4 px-3 py-2 rounded-xl bg-rose-50/90 border border-rose-200/80 text-rose-700 text-[11px] font-bold flex flex-wrap items-center justify-center text-center leading-snug">
+              {formatDateRange(
+                job.fechaInicio,
+                job.fechaVencimiento,
+                job.horaVencimiento
+              )}
+            </div>
+          )}
         </div>
 
         <button
           onClick={() => setSelectedJob(job)}
-          className={`w-full text-xs font-extrabold py-3.5 rounded-2xl transition-all duration-300 shadow-sm cursor-pointer flex items-center justify-center gap-2 active:scale-[0.99] ${
+          className={`w-full text-xs font-extrabold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-xs cursor-pointer flex items-center justify-center gap-2 active:scale-[0.99] ${
             esEstado
-              ? 'bg-[#0B132B] hover:bg-[#162447] text-white shadow-[#0B132B]/15'
-              : 'bg-[#0B132B] hover:bg-emerald-600 text-white hover:shadow-emerald-600/20'
+              ? 'bg-[#0B132B] hover:bg-[#162447] text-white'
+              : 'bg-[#0B132B] hover:bg-emerald-600 text-white'
           }`}
         >
-          <span>{esEstado ? '📄 VER CONVOCATORIA' : '📲 Ver Detalles y Postular'}</span>
+          <span>
+            {esEstado ? 'Ver Convocatoria Oficial' : 'Ver Detalles y Postular'}
+          </span>
+          <span className="text-[#06D6A0] group-hover:text-white transition-colors">
+            →
+          </span>
         </button>
-      </div>
-    );
-  };
-
-    /* EMPLEO / ESTADO */
-    const esEstado = job.tipo === 'Estado';
-
-    return (
-      <div
-        className={`group bg-white rounded-3xl p-5 sm:p-6 border flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_18px_35px_-10px_rgba(11,19,43,0.12)] ${
-          job.esVip
-            ? 'border-amber-400/90 bg-gradient-to-b from-amber-50/35 via-white to-white ring-2 ring-amber-400/25 shadow-md'
-            : 'border-slate-200/90 hover:border-[#06D6A0]/60 shadow-[0_4px_20px_-4px_rgba(11,19,43,0.06)]'
-        }`}
-      >
-        <div>
-          <div className="flex justify-between items-start mb-3.5 gap-2.5">
-            <div className="flex items-center gap-3 min-w-0">
-              {job.logo ? (
-                <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200/90 p-1 shadow-2xs flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  <img
-                    src={job.logo}
-                    alt={job.empresa || 'Empresa'}
-                    className="w-full h-full object-contain rounded-xl"
-                  />
-                </div>
-              ) : (
-                <div
-                  className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-lg font-bold flex-shrink-0 ${
-                    esEstado
-                      ? 'bg-blue-50 border-blue-100 text-blue-700'
-                      : 'bg-emerald-50 border-emerald-100 text-emerald-700'
-                  }`}
-                >
-                  {esEstado ? '🏛️' : '💼'}
-                </div>
-              )}
-
-              <div className="min-w-0">
-                <span
-                  className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
-                    esEstado
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200/70'
-                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200/70'
-                  }`}
-                >
-                  {esEstado ? '🏛️ Público' : '💼 Empleo Local'}
-                </span>
-
-                <p className="text-xs text-slate-600 font-bold mt-1 whitespace-normal break-words leading-snug">
-                  {job.empresa || 'Empresa'}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-              {job.esVip && (
-                <span className="text-[10px] font-extrabold bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-900 border border-amber-300 px-2.5 py-0.5 rounded-full shadow-2xs">
-                  ⭐ VIP
-                </span>
-              )}
-
-              {esEstado && job.fechaVencimiento && (
-                <div className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200/80 px-2.5 py-1 rounded-xl flex flex-col items-end leading-tight text-right">
-                  {formatDateRange(
-                    job.fechaInicio,
-                    job.fechaVencimiento,
-                    job.horaVencimiento
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <h3 className="text-base sm:text-[17px] font-extrabold text-[#0B132B] mb-1.5 leading-snug group-hover:text-emerald-700 transition-colors">
-            {job.titulo}
-          </h3>
-
-          <p className="text-xs text-slate-500 font-semibold mb-4 flex items-center gap-1.5">
-            <span>📍</span>
-            <span className="truncate">{job.ubicacion || 'Pasco'}</span>
-          </p>
-
-          <div className="bg-[#F8FAFC] p-3.5 rounded-2xl border border-slate-200/70 space-y-2.5 mb-5">
-            <div className="flex justify-between items-center text-xs gap-2">
-              <span className="text-slate-500 font-semibold">Remuneración</span>
-              <span className="font-extrabold text-emerald-600 text-sm text-right tabular-nums">
-                {job.sueldo || 'A tratar'}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center text-xs gap-2 pt-2 border-t border-slate-200/60">
-              <span className="text-slate-500 font-semibold">Modalidad</span>
-              <span className="font-bold text-[#0B132B] bg-white px-2.5 py-0.5 rounded-lg border border-slate-200/90 truncate max-w-[165px] shadow-2xs">
-                {job.modalidad || 'No especificada'}
-              </span>
-            </div>
-
-            {job.vacantes && (
-              <div className="flex justify-between items-center text-xs gap-2 pt-2 border-t border-slate-200/60">
-                <span className="text-slate-500 font-semibold">Vacantes / Plazas</span>
-                <span className="font-extrabold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-100 tabular-nums">
-                  {job.vacantes}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <button
-          onClick={() => setSelectedJob(job)}
-          className={`w-full text-xs font-extrabold py-3.5 rounded-2xl transition-all duration-300 shadow-sm cursor-pointer flex items-center justify-center gap-2 active:scale-[0.99] ${
-            esEstado
-              ? 'bg-[#0B132B] hover:bg-[#162447] text-white shadow-[#0B132B]/15'
-              : 'bg-[#0B132B] hover:bg-emerald-600 text-white hover:shadow-emerald-600/20'
-          }`}
-        >
-          <span>{esEstado ? '📄 VER CONVOCATORIA' : '📲 Ver Detalles y Postular'}</span>
-        </button>
-      </div>
+      </article>
     );
   };
 
@@ -1216,7 +1248,10 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 py-3.5 flex flex-col sm:flex-row justify-between items-center gap-3.5">
           {/* LOGO */}
           <div className="flex items-center justify-between w-full sm:w-auto">
-            <a href="/" className="flex items-center gap-2.5 group cursor-pointer">
+            <a
+              href="/"
+              className="flex items-center gap-2.5 group cursor-pointer"
+            >
               <img
                 src="/logo.png"
                 alt="Chamba Fija Pasco"
@@ -1230,7 +1265,7 @@ export default function Home() {
           </div>
 
           {/* BUSCADOR */}
-          <div className="w-full sm:w-[430px] relative group">
+          <div className="w-full sm:w-[430px] relative">
             <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400">
               🔍
             </span>
@@ -1279,7 +1314,6 @@ export default function Home() {
           backgroundImage: "url('/portadav2.png')",
         }}
       >
-        {/* Capa de contraste elegante sobre la portada */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#0B132B]/80 via-[#0B132B]/70 to-[#0B132B]/90 pointer-events-none" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(6,214,160,0.16)_0,transparent_60%)] pointer-events-none" />
 
@@ -1290,8 +1324,7 @@ export default function Home() {
           </span>
 
           <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight drop-shadow-sm">
-            Encuentra de todo en{' '}
-            <span className="text-[#06D6A0]">PASCO</span>
+            Encuentra de todo en <span className="text-[#06D6A0]">PASCO</span>
           </h2>
 
           <p className="text-sm sm:text-base text-slate-200 max-w-xl mx-auto font-medium leading-relaxed">
@@ -1322,11 +1355,10 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-2 gap-3.5 sm:gap-6 max-w-3xl mx-auto">
-          {/* ESTADO */}
-          <div className="relative overflow-hidden bg-white border border-blue-200/80 rounded-3xl p-4 sm:p-6 shadow-[0_6px_24px_-6px_rgba(29,78,216,0.1)] hover:shadow-[0_12px_28px_-6px_rgba(29,78,216,0.18)] transition-all">
+          <div className="relative overflow-hidden bg-white border border-blue-200/80 rounded-2xl p-4 sm:p-6 shadow-[0_6px_24px_-6px_rgba(29,78,216,0.08)] hover:shadow-[0_12px_28px_-6px_rgba(29,78,216,0.16)] transition-all">
             <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-blue-500/5 pointer-events-none" />
             <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-xl">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-xl">
                 🏛️
               </div>
               <span className="text-xs sm:text-sm font-extrabold text-[#0B132B]">
@@ -1343,11 +1375,10 @@ export default function Home() {
             </p>
           </div>
 
-          {/* EMPLEOS LOCALES */}
-          <div className="relative overflow-hidden bg-white border border-emerald-200/80 rounded-3xl p-4 sm:p-6 shadow-[0_6px_24px_-6px_rgba(5,150,105,0.1)] hover:shadow-[0_12px_28px_-6px_rgba(5,150,105,0.18)] transition-all">
+          <div className="relative overflow-hidden bg-white border border-emerald-200/80 rounded-2xl p-4 sm:p-6 shadow-[0_6px_24px_-6px_rgba(5,150,105,0.08)] hover:shadow-[0_12px_28px_-6px_rgba(5,150,105,0.16)] transition-all">
             <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-[#06D6A0]/10 pointer-events-none" />
             <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-xl">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-xl">
                 💼
               </div>
               <span className="text-xs sm:text-sm font-extrabold text-[#0B132B]">
@@ -1398,7 +1429,7 @@ export default function Home() {
                   }
                 }, 50);
               }}
-              className={`text-xs px-5 py-3 rounded-2xl font-extrabold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
+              className={`text-xs px-5 py-3 rounded-xl font-extrabold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
                 activo
                   ? 'bg-[#0B132B] text-white shadow-lg shadow-[#0B132B]/20 ring-2 ring-[#06D6A0]/60 -translate-y-0.5'
                   : 'bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-700 hover:border-slate-300 shadow-2xs'
@@ -1436,26 +1467,27 @@ export default function Home() {
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <div
                 key={n}
-                className="bg-white rounded-3xl p-6 border border-slate-200/80 h-68 animate-pulse flex flex-col justify-between shadow-xs"
+                className="bg-white rounded-2xl p-6 border border-slate-200/80 h-72 animate-pulse flex flex-col justify-between shadow-xs"
               >
                 <div className="space-y-4">
+                  <div className="w-24 h-5 bg-slate-200 rounded-md" />
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-slate-200 rounded-2xl" />
+                    <div className="w-12 h-12 bg-slate-200 rounded-xl shrink-0" />
                     <div className="space-y-2 flex-1">
-                      <div className="w-20 h-4 bg-slate-200 rounded-full" />
-                      <div className="w-32 h-3 bg-slate-200 rounded-full" />
+                      <div className="w-3/4 h-3.5 bg-slate-200 rounded-full" />
+                      <div className="w-1/2 h-3 bg-slate-100 rounded-full" />
                     </div>
                   </div>
-                  <div className="w-full h-5 bg-slate-200 rounded-lg" />
-                  <div className="w-full h-20 bg-slate-100 rounded-2xl" />
+                  <div className="w-full h-5 bg-slate-200 rounded-md" />
+                  <div className="w-full h-20 bg-slate-100 rounded-xl" />
                 </div>
 
-                <div className="w-full h-11 bg-slate-200 rounded-2xl" />
+                <div className="w-full h-11 bg-slate-200 rounded-xl" />
               </div>
             ))}
           </div>
         ) : sortedJobs.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-slate-200/80 py-20 px-6 text-center max-w-lg mx-auto shadow-xs space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200/80 py-20 px-6 text-center max-w-lg mx-auto shadow-xs space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-slate-100 mx-auto flex items-center justify-center text-3xl">
               🔎
             </div>
@@ -1465,7 +1497,8 @@ export default function Home() {
             </p>
 
             <p className="text-xs sm:text-sm text-slate-500">
-              Intenta cambiar la categoría seleccionada o buscar con otra palabra clave.
+              Intenta cambiar la categoría seleccionada o buscar con otra
+              palabra clave.
             </p>
 
             <button
@@ -1477,20 +1510,15 @@ export default function Home() {
                   desplazarAResultados();
                 }, 100);
               }}
-              className="text-xs bg-[#0B132B] hover:bg-slate-800 text-[#06D6A0] px-6 py-3.5 rounded-2xl font-extrabold shadow-md cursor-pointer transition-all"
+              className="text-xs bg-[#0B132B] hover:bg-slate-800 text-[#06D6A0] px-6 py-3.5 rounded-xl font-extrabold shadow-md cursor-pointer transition-all"
             >
               Restablecer búsqueda y filtros
             </button>
           </div>
         ) : (
           <div>
-            {/* =================================================
-                TODOS
-                ================================================= */}
-
             {filter === 'Todos' && (
               <>
-                {/* VIP */}
                 {vipJobs.length > 0 && (
                   <section>
                     <SectionTitle
@@ -1502,14 +1530,14 @@ export default function Home() {
 
                     <CardsGrid items={vipJobs} />
 
-                    {/* CTA VIP */}
-                    <div className="mt-6 rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 via-yellow-50/70 to-amber-50 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+                    <div className="mt-6 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-yellow-50/70 to-amber-50 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
                       <div className="text-center sm:text-left">
                         <p className="text-sm sm:text-base font-extrabold text-[#0B132B]">
                           ⭐ ¿Quieres que tu anuncio aparezca primero?
                         </p>
                         <p className="text-xs text-slate-600 font-medium mt-1">
-                          Fija tu oferta o negocio en la sección VIP y multiplica tus contactos.
+                          Fija tu oferta o negocio en la sección VIP y
+                          multiplica tus contactos.
                         </p>
                       </div>
 
@@ -1517,7 +1545,7 @@ export default function Home() {
                         href={whatsappVIPUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full sm:w-auto text-center bg-[#0B132B] hover:bg-slate-800 text-[#06D6A0] text-xs font-extrabold px-6 py-3.5 rounded-2xl shadow-md transition-all hover:-translate-y-0.5 shrink-0"
+                        className="w-full sm:w-auto text-center bg-[#0B132B] hover:bg-slate-800 text-[#06D6A0] text-xs font-extrabold px-6 py-3.5 rounded-xl shadow-md transition-all hover:-translate-y-0.5 shrink-0"
                       >
                         📲 Quiero ser VIP
                       </a>
@@ -1525,7 +1553,6 @@ export default function Home() {
                   </section>
                 )}
 
-                {/* EMPLEOS */}
                 {privateJobs.length > 0 && (
                   <section>
                     <SectionTitle
@@ -1538,7 +1565,6 @@ export default function Home() {
                   </section>
                 )}
 
-                {/* ESTADO */}
                 {estadoJobs.length > 0 && (
                   <section>
                     <SectionTitle
@@ -1551,7 +1577,6 @@ export default function Home() {
                   </section>
                 )}
 
-                {/* CLASIFICADOS */}
                 {categoriasConAnuncios.length > 0 && (
                   <section>
                     <SectionTitle
@@ -1606,10 +1631,6 @@ export default function Home() {
               </>
             )}
 
-            {/* =================================================
-                DESTACADOS
-                ================================================= */}
-
             {filter === 'Destacados' && vipJobs.length > 0 && (
               <>
                 <SectionTitle
@@ -1621,13 +1642,14 @@ export default function Home() {
 
                 <CardsGrid items={vipJobs} />
 
-                <div className="mt-6 rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 via-yellow-50/70 to-amber-50 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+                <div className="mt-6 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-yellow-50/70 to-amber-50 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
                   <div className="text-center sm:text-left">
                     <p className="text-sm sm:text-base font-extrabold text-[#0B132B]">
                       ⭐ Haz que tu negocio aparezca entre los destacados
                     </p>
                     <p className="text-xs text-slate-600 font-medium mt-1">
-                      Aumenta la visibilidad de tu anuncio y llega a más clientes hoy.
+                      Aumenta la visibilidad de tu anuncio y llega a más
+                      clientes hoy.
                     </p>
                   </div>
 
@@ -1635,17 +1657,13 @@ export default function Home() {
                     href={whatsappVIPUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full sm:w-auto text-center bg-[#0B132B] hover:bg-slate-800 text-[#06D6A0] text-xs font-extrabold px-6 py-3.5 rounded-2xl shadow-md transition-all shrink-0"
+                    className="w-full sm:w-auto text-center bg-[#0B132B] hover:bg-slate-800 text-[#06D6A0] text-xs font-extrabold px-6 py-3.5 rounded-xl shadow-md transition-all shrink-0"
                   >
                     📲 Quiero ser VIP
                   </a>
                 </div>
               </>
             )}
-
-            {/* =================================================
-                EMPLEOS
-                ================================================= */}
 
             {filter === 'Empleos' && sortedJobs.length > 0 && (
               <>
@@ -1659,10 +1677,6 @@ export default function Home() {
               </>
             )}
 
-            {/* =================================================
-                ESTADO
-                ================================================= */}
-
             {filter === 'Estado' && sortedJobs.length > 0 && (
               <>
                 <SectionTitle
@@ -1674,10 +1688,6 @@ export default function Home() {
                 <CardsGrid items={sortedJobs} />
               </>
             )}
-
-            {/* =================================================
-                CLASIFICADOS
-                ================================================= */}
 
             {filter === 'Anuncios Clasificados' && (
               <>
@@ -1750,7 +1760,6 @@ export default function Home() {
           }}
         >
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200/90 relative max-h-[90vh] flex flex-col animate-modal">
-            {/* CERRAR */}
             <button
               onClick={() => setSelectedJob(null)}
               className="absolute top-5 right-5 text-slate-500 hover:text-[#0B132B] text-sm font-bold bg-slate-100 hover:bg-slate-200 w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer"
@@ -1758,7 +1767,6 @@ export default function Home() {
               ✕
             </button>
 
-            {/* ETIQUETA TIPO */}
             {(() => {
               const config =
                 selectedJob.tipo === 'Clasificado'
@@ -1770,7 +1778,7 @@ export default function Home() {
               return (
                 <div className="pr-12 mb-3">
                   <span
-                    className="inline-flex items-center gap-1.5 text-[10px] font-extrabold px-3.5 py-1.5 rounded-full uppercase tracking-wider"
+                    className="inline-flex items-center gap-1.5 text-[10px] font-extrabold px-3.5 py-1.5 rounded-lg uppercase tracking-wider"
                     style={
                       selectedJob.tipo === 'Clasificado'
                         ? {
@@ -1804,22 +1812,18 @@ export default function Home() {
               );
             })()}
 
-            {/* TÍTULO */}
             <h3 className="text-xl sm:text-2xl font-extrabold text-[#0B132B] mb-1.5 leading-tight pr-8">
               {selectedJob.tipo === 'Clasificado'
                 ? selectedJob.titulo
                 : `${selectedJob.empresa || 'Empresa'}: ${selectedJob.titulo}`}
             </h3>
 
-            {/* UBICACIÓN */}
             <p className="text-xs sm:text-sm text-slate-500 font-semibold mb-5 flex items-center gap-1.5">
               <span>📍</span>
               <span>{selectedJob.ubicacion || 'Pasco'}</span>
             </p>
 
-            {/* CONTENIDO SCROLLABLE */}
             <div className="overflow-y-auto pr-1.5 space-y-4 mb-6 text-xs sm:text-[13px] text-slate-700">
-              {/* ESTADO */}
               {selectedJob.tipo === 'Estado' ? (
                 <>
                   <div className="bg-[#F8FAFC] rounded-2xl border border-slate-200/90 overflow-hidden">
@@ -1829,13 +1833,19 @@ export default function Home() {
 
                     <div className="p-4 space-y-3 font-medium leading-relaxed">
                       <p>
-                        <strong className="text-[#0B132B]">Número de vacantes:</strong>{' '}
-                        <span className="font-bold text-blue-700">{selectedJob.vacantes || '1'}</span>
+                        <strong className="text-[#0B132B]">
+                          Número de vacantes:
+                        </strong>{' '}
+                        <span className="font-bold text-blue-700">
+                          {selectedJob.vacantes || '1'}
+                        </span>
                       </p>
 
                       {selectedJob.formacion && (
                         <p className="whitespace-pre-wrap">
-                          <strong className="text-[#0B132B]">Formación Académica:</strong>
+                          <strong className="text-[#0B132B]">
+                            Formación Académica:
+                          </strong>
                           <br />
                           {selectedJob.formacion}
                         </p>
@@ -1843,7 +1853,9 @@ export default function Home() {
 
                       {selectedJob.experiencia && (
                         <p className="whitespace-pre-wrap">
-                          <strong className="text-[#0B132B]">Experiencia:</strong>
+                          <strong className="text-[#0B132B]">
+                            Experiencia:
+                          </strong>
                           <br />
                           {selectedJob.experiencia}
                         </p>
@@ -1851,7 +1863,9 @@ export default function Home() {
 
                       {selectedJob.especializacion && (
                         <p className="whitespace-pre-wrap">
-                          <strong className="text-[#0B132B]">Cursos y/o programas:</strong>
+                          <strong className="text-[#0B132B]">
+                            Cursos y/o programas:
+                          </strong>
                           <br />
                           {selectedJob.especializacion}
                         </p>
@@ -1866,12 +1880,18 @@ export default function Home() {
 
                     <div className="p-4 space-y-2.5 font-medium">
                       <p>
-                        <strong className="text-[#0B132B]">Lugar de prestación:</strong>{' '}
-                        {selectedJob.empresa || selectedJob.ubicacion || 'Pasco'}
+                        <strong className="text-[#0B132B]">
+                          Lugar de prestación:
+                        </strong>{' '}
+                        {selectedJob.empresa ||
+                          selectedJob.ubicacion ||
+                          'Pasco'}
                       </p>
 
                       <p>
-                        <strong className="text-[#0B132B]">Remuneración:</strong>{' '}
+                        <strong className="text-[#0B132B]">
+                          Remuneración:
+                        </strong>{' '}
                         <span className="text-emerald-600 font-extrabold">
                           {selectedJob.sueldo
                             ? String(selectedJob.sueldo).startsWith('S/')
@@ -1890,7 +1910,9 @@ export default function Home() {
 
                     <div className="p-4 space-y-2.5 font-medium leading-relaxed">
                       <p>
-                        <strong className="text-[#0B132B]">Plazo límite:</strong>{' '}
+                        <strong className="text-[#0B132B]">
+                          Plazo límite:
+                        </strong>{' '}
                         <span className="font-bold text-rose-600">
                           {selectedJob.fechaVencimiento
                             ? formatDateRange(
@@ -1903,7 +1925,9 @@ export default function Home() {
                       </p>
 
                       <p className="whitespace-pre-wrap">
-                        <strong className="text-[#0B132B]">Procedimiento:</strong>{' '}
+                        <strong className="text-[#0B132B]">
+                          Procedimiento:
+                        </strong>{' '}
                         {selectedJob.comoPostular ||
                           'Presentación de expediente según bases oficiales.'}
                       </p>
@@ -1953,7 +1977,8 @@ export default function Home() {
                         (!selectedJob.enlacesExtras ||
                           selectedJob.enlacesExtras.length === 0) && (
                           <p className="text-slate-400 italic">
-                            No hay enlaces externos registrados para este proceso.
+                            No hay enlaces externos registrados para este
+                            proceso.
                           </p>
                         )}
                     </div>
@@ -1961,7 +1986,8 @@ export default function Home() {
                 </>
               ) : selectedJob.tipo === 'Clasificado' ? (
                 (() => {
-                  const categoria = selectedJob.categoriaClasificado || 'Otros';
+                  const categoria =
+                    selectedJob.categoriaClasificado || 'Otros';
                   const config = getCategoriaConfig(categoria);
 
                   return (
@@ -2043,17 +2069,19 @@ export default function Home() {
                           Descripción Detallada:
                         </h4>
                         <p className="text-slate-700 leading-relaxed whitespace-pre-line text-sm bg-white p-4 rounded-2xl border border-slate-200/70">
-                          {selectedJob.descripcion || 'Sin descripción adicional.'}
+                          {selectedJob.descripcion ||
+                            'Sin descripción adicional.'}
                         </p>
                       </div>
                     </div>
                   );
                 })()
               ) : (
-                /* EMPLEO PRIVADO */
                 <div className="bg-[#F8FAFC] p-5 rounded-2xl border border-slate-200/90 space-y-4">
                   <div className="flex justify-between items-center border-b border-slate-200/80 pb-3 gap-4">
-                    <span className="text-slate-500 font-bold">Remuneración</span>
+                    <span className="text-slate-500 font-bold">
+                      Remuneración
+                    </span>
                     <span className="font-extrabold text-emerald-600 text-base text-right">
                       {selectedJob.sueldo || 'A tratar'}
                     </span>
@@ -2089,11 +2117,10 @@ export default function Home() {
               )}
             </div>
 
-            {/* BOTONES */}
             <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100">
               <button
                 onClick={() => setSelectedJob(null)}
-                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold py-3.5 rounded-2xl transition-all cursor-pointer"
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold py-3.5 rounded-xl transition-all cursor-pointer"
               >
                 Cerrar
               </button>
@@ -2104,7 +2131,7 @@ export default function Home() {
                     href={selectedJob.enlaceBases}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex-1 text-center bg-[#0B132B] hover:bg-slate-800 text-[#06D6A0] text-xs font-extrabold py-3.5 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2"
+                    className="flex-1 text-center bg-[#0B132B] hover:bg-slate-800 text-[#06D6A0] text-xs font-extrabold py-3.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
                   >
                     📄 Descargar Bases Oficiales
                   </a>
@@ -2127,7 +2154,7 @@ export default function Home() {
                           )}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="w-full flex-1 bg-[#06D6A0] hover:bg-emerald-400 text-[#0B132B] text-xs font-extrabold py-3.5 px-4 rounded-2xl shadow-md transition-all flex items-center justify-center text-center gap-1.5"
+                          className="w-full flex-1 bg-[#06D6A0] hover:bg-emerald-400 text-[#0B132B] text-xs font-extrabold py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center text-center gap-1.5"
                         >
                           📲{' '}
                           {arr.length === 1
@@ -2137,7 +2164,7 @@ export default function Home() {
                       ))}
 
                   {!selectedJob.contacto && (
-                    <span className="flex-1 text-center bg-slate-100 text-slate-400 text-xs font-bold py-3.5 rounded-2xl">
+                    <span className="flex-1 text-center bg-slate-100 text-slate-400 text-xs font-bold py-3.5 rounded-xl">
                       No hay contacto registrado
                     </span>
                   )}
@@ -2173,30 +2200,51 @@ export default function Home() {
 
             <div className="overflow-y-auto space-y-4 text-xs sm:text-[13px] text-slate-600 pr-2 mb-6 leading-relaxed font-medium">
               <p>
-                <strong className="text-[#0B132B]">1. Naturaleza del Servicio:</strong>{' '}
-                ChambaFija es un directorio y espacio publicitario digital independiente que difunde ofertas laborales del sector privado local y convocatorias públicas del Estado en Cerro de Pasco. Operamos estrictamente como un{' '}
+                <strong className="text-[#0B132B]">
+                  1. Naturaleza del Servicio:
+                </strong>{' '}
+                ChambaFija es un directorio y espacio publicitario digital
+                independiente que difunde ofertas laborales del sector privado
+                local y convocatorias públicas del Estado en Cerro de Pasco.
+                Operamos estrictamente como un{' '}
                 <em>tablón de anuncios clasificados</em>.
               </p>
 
               <p>
-                <strong className="text-[#0B132B]">2. Exoneración de Responsabilidad:</strong>{' '}
-                No participamos ni intervenimos en procesos de selección. Las ofertas privadas son responsabilidad exclusiva de los anunciantes. Las convocatorias estatales se enlazan solo con fines informativos desde fuentes oficiales.
+                <strong className="text-[#0B132B]">
+                  2. Exoneración de Responsabilidad:
+                </strong>{' '}
+                No participamos ni intervenimos en procesos de selección. Las
+                ofertas privadas son responsabilidad exclusiva de los
+                anunciantes. Las convocatorias estatales se enlazan solo con
+                fines informativos desde fuentes oficiales.
               </p>
 
               <p>
-                <strong className="text-[#0B132B]">3. Protección de Datos:</strong>{' '}
-                ChambaFija <strong>NO recopila ni almacena Currículums Vitae (CV)</strong> de los postulantes. Las postulaciones se realizan de forma directa mediante enlaces externos o WhatsApp proporcionados por los empleadores.
+                <strong className="text-[#0B132B]">
+                  3. Protección de Datos:
+                </strong>{' '}
+                ChambaFija{' '}
+                <strong>
+                  NO recopila ni almacena Currículums Vitae (CV)
+                </strong>{' '}
+                de los postulantes. Las postulaciones se realizan de forma
+                directa mediante enlaces externos o WhatsApp proporcionados por
+                los empleadores.
               </p>
 
               <p>
-                <strong className="text-[#0B132B]">4. Publicidad:</strong>{' '}
-                Los espacios publicitarios mostrados en ChambaFija corresponden a anuncios de terceros. ChambaFija actúa como medio de difusión y no garantiza los productos, servicios, precios o condiciones ofrecidas por los anunciantes.
+                <strong className="text-[#0B132B]">4. Publicidad:</strong> Los
+                espacios publicitarios mostrados en ChambaFija corresponden a
+                anuncios de terceros. ChambaFija actúa como medio de difusión y
+                no garantiza los productos, servicios, precios o condiciones
+                ofrecidas por los anunciantes.
               </p>
             </div>
 
             <button
               onClick={() => setShowTerms(false)}
-              className="w-full bg-[#0B132B] hover:bg-slate-800 text-[#06D6A0] text-xs font-extrabold py-3.5 rounded-2xl shadow-md cursor-pointer transition-all"
+              className="w-full bg-[#0B132B] hover:bg-slate-800 text-[#06D6A0] text-xs font-extrabold py-3.5 rounded-xl shadow-md cursor-pointer transition-all"
             >
               Entendido y Cerrar
             </button>
@@ -2217,31 +2265,38 @@ export default function Home() {
             </h4>
 
             <p className="text-slate-300 text-xs sm:text-sm mb-5 leading-relaxed">
-              Únete a nuestros canales oficiales y sé el primero en postular a las convocatorias del Estado y negocios locales de Cerro de Pasco.
+              Únete a nuestros canales oficiales y sé el primero en postular a
+              las convocatorias del Estado y negocios locales de Cerro de Pasco.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              {/* WHATSAPP */}
               <a
                 href="https://whatsapp.com/channel/0029Vb8NSHbDJ6H4RX6Zqj25"
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center justify-center gap-2 bg-[#06D6A0] hover:bg-emerald-300 text-[#0B132B] font-extrabold py-3 px-6 rounded-2xl transition-all shadow-md"
+                className="flex items-center justify-center gap-2 bg-[#06D6A0] hover:bg-emerald-300 text-[#0B132B] font-extrabold py-3 px-6 rounded-xl transition-all shadow-md"
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M12.031 6.172c-3.183 0-5.767 2.584-5.767 5.767 0 1.01.265 1.959.728 2.782l-.764 2.788 2.859-.751c.789.434 1.708.683 2.684.683 3.183 0 5.767-2.584 5.767-5.767 0-3.183-2.584-5.767-5.767-5.767zm3.322 8.167c-.139.39-.811.722-1.116.768-.291.045-.658.082-1.066-.051-.247-.079-.564-.183-.969-.356-1.712-.738-2.831-2.482-2.918-2.599-.087-.117-.696-.927-.696-1.769 0-.842.439-1.256.595-1.427.156-.171.341-.214.455-.214.114 0 .228.003.328.012.105.01.246-.039.384.292.139.332.476 1.157.518 1.242.043.085.072.185.014.299-.058.114-.087.185-.173.285-.086.1-.182.224-.26.3-.087.087-.179.182-.077.356.101.174.45.744.966 1.206.666.595 1.228.779 1.402.868.174.089.277.074.38-.043.103-.117.442-.514.56-.69.117-.176.234-.148.39-.09.156.058 1.001.472 1.173.558.172.086.287.129.329.2.043.071.043.413-.096.803z" />
                 </svg>
                 Canal de WhatsApp
               </a>
 
-              {/* TELEGRAM */}
               <a
                 href="https://t.me/Chamba_Fija"
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 text-white font-extrabold py-3 px-6 rounded-2xl transition-all shadow-md"
+                className="flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 text-white font-extrabold py-3 px-6 rounded-xl transition-all shadow-md"
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.02-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.25.38-.51 1.05-.78 4.1-1.78 6.84-2.95 8.22-3.51 3.91-1.63 4.72-1.92 5.25-1.93.12 0 .39.03.57.18.15.12.19.28.21.4-.01.07.01.35-.06.7z" />
                 </svg>
                 Canal de Telegram
@@ -2255,7 +2310,9 @@ export default function Home() {
             </p>
 
             <p className="leading-relaxed text-slate-400 max-w-2xl mx-auto font-medium">
-              ChambaFija es un espacio de difusión informativo independiente (tablón de anuncios clasificados). No participamos en los procesos de selección ni manejamos bases de datos de postulantes.
+              ChambaFija es un espacio de difusión informativo independiente
+              (tablón de anuncios clasificados). No participamos en los procesos
+              de selección ni manejamos bases de datos de postulantes.
             </p>
 
             <div>
