@@ -1,6 +1,14 @@
 import './globals.css';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import Script from 'next/script';
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-jakarta',
+  display: 'swap',
+});
 
 export const metadata = {
   metadataBase: new URL('https://www.chambafija.com'),
@@ -53,8 +61,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="es">
-      <body className="bg-[#0B0F19] text-slate-100 min-h-screen flex flex-col antialiased">
+    <html lang="es" className={jakarta.variable}>
+      <body className="bg-[#F4F7FB] text-[#0B132B] min-h-screen flex flex-col antialiased">
 
         {children}
 

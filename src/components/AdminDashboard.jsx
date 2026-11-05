@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 // Conexión hacia tu backend en la nube
 const API_URL = '/api/jobs';
 
-// 1. DICCIONARIO DE LOGOS (Puedes agregar más siguiendo este mismo formato)
+// 1. DICCIONARIO DE LOGOS
 const logosInstitucionales = {
   "INDECI": "https://yt3.ggpht.com/a/AGF-l7_I-6ge2y8wEBW0cGDJ5kLqdQU_If3LjFpb4A=s900-c-k-c0xffffffff-no-rj-mo",
   "PODER JUDICIAL": "https://seeklogo.com/images/P/poder-judicial-peru-logo-4159895347-seeklogo.com.png",
@@ -30,7 +30,6 @@ const logosInstitucionales = {
   "PALCAZU": "https://tse4.mm.bing.net/th/id/OIP.icg2crlw0PCguydXp5np5gHaHd?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
 };
 
-// Función para limpiar el nombre y poder compararlo con el diccionario
 function normalizarNombreLogo(nombre) {
   if (!nombre) return "";
   return nombre
@@ -46,13 +45,11 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
 
-  // Importador manual de convocatorias desde convocatoriasdetrabajo.com
   const [scrapeUrl, setScrapeUrl] = useState('');
   const [scrapeLoading, setScrapeLoading] = useState(false);
   const [scrapeResult, setScrapeResult] = useState(null);
   const [scrapeError, setScrapeError] = useState('');
-  
-  // NUEVO ESTADO: Controla si vemos los activos o los vencidos
+
   const [mostrarVencidos, setMostrarVencidos] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -99,24 +96,18 @@ export default function AdminDashboard() {
     'Villa Rica, Pasco'
   ];
 
-  // Ordenar registros: el último agregado aparece primero
   const ordenarPorFechaCreacion = (registros) => {
     return [...registros].sort((a, b) => {
       const obtenerFecha = (job) => {
-        // Prioridad: fecha real de creación
         if (job.createdAt) {
           const fecha = new Date(job.createdAt).getTime();
           if (!isNaN(fecha)) return fecha;
         }
-
-        // Respaldo: fecha de creación contenida en el ObjectId de MongoDB
         if (job._id && /^[a-fA-F0-9]{24}$/.test(job._id)) {
           return parseInt(job._id.substring(0, 8), 16) * 1000;
         }
-
         return 0;
       };
-
       return obtenerFecha(a) - obtenerFecha(b);
     });
   };
@@ -154,23 +145,21 @@ export default function AdminDashboard() {
     if (activeTab === 'clasificados') nuevoTipo = 'Clasificado';
     setFormData(prev => ({ ...prev, tipo: nuevoTipo }));
     fetchJobs();
-    setMostrarVencidos(false); // Resetear a activos cuando cambias de pestaña
+    setMostrarVencidos(false);
   }, [activeTab]);
 
-  // 2. FUNCIÓN MEJORADA: Autocompleta el logo mientras escribes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     setFormData(prev => {
       const newData = {
         ...prev,
         [name]: type === 'checkbox' ? checked : value
       };
 
-      // Si se está modificando el campo "empresa", buscar si hay un logo guardado
       if (name === 'empresa') {
         const nombreNormalizado = normalizarNombreLogo(value);
-        const logoEncontrado = Object.keys(logosInstitucionales).find(key => 
+        const logoEncontrado = Object.keys(logosInstitucionales).find(key =>
           nombreNormalizado.includes(key)
         );
 
@@ -218,7 +207,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // 3. FUNCIÓN MEJORADA: Asigna el logo y los enlaces extraídos correctamente
   const pasarImportacionAlFormulario = () => {
     if (!scrapeResult?.data) return;
     const d = scrapeResult.data;
@@ -234,11 +222,10 @@ export default function AdminDashboard() {
     setEditingId(null);
     setCustomLocation(true);
 
-    // Identificar el logo automáticamente basado en la entidad extraída
     const empresaDetectada = d.empresa || '';
     let logoAsignado = '';
     const nombreNormalizado = normalizarNombreLogo(empresaDetectada);
-    const logoEncontrado = Object.keys(logosInstitucionales).find(key => 
+    const logoEncontrado = Object.keys(logosInstitucionales).find(key =>
       nombreNormalizado.includes(key)
     );
     if (logoEncontrado) {
@@ -249,7 +236,7 @@ export default function AdminDashboard() {
       ...prev,
       tipo: 'Estado',
       empresa: empresaDetectada,
-      logo: logoAsignado, // Insertar automáticamente aquí el link del Excel
+      logo: logoAsignado,
       modalidad: modalidad || 'CAS',
       titulo: d.titulo || '',
       ubicacion: '',
@@ -263,8 +250,8 @@ export default function AdminDashboard() {
       especializacion: d.especializacion || '',
       comoPostular: d.comoPostular || '',
       enlaceBases: d.enlaceBases || '',
-      enlacesExtras: (d.enlacesExtras && d.enlacesExtras.length > 0 && d.enlacesExtras[0].url !== "") 
-        ? d.enlacesExtras 
+      enlacesExtras: (d.enlacesExtras && d.enlacesExtras.length > 0 && d.enlacesExtras[0].url !== "")
+        ? d.enlacesExtras
         : [{ titulo: '', url: '' }],
       descripcion: d.descripcion || ''
     }));
@@ -295,16 +282,16 @@ export default function AdminDashboard() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const sueldoLimpio = formData.sueldo 
-        ? (formData.sueldo.toString().startsWith('S/') ? formData.sueldo : `S/ ${formData.sueldo}`) 
+      const sueldoLimpio = formData.sueldo
+        ? (formData.sueldo.toString().startsWith('S/') ? formData.sueldo : `S/ ${formData.sueldo}`)
         : 'A tratar';
 
-      const modalidadFinal = activeTab === 'privado' 
+      const modalidadFinal = activeTab === 'privado'
         ? (formData.modalidades.length > 0 ? formData.modalidades.join(', ') : 'No especificado')
         : (formData.modalidad || 'No especificado');
 
-      const datosAEnviar = { 
-        ...formData, 
+      const datosAEnviar = {
+        ...formData,
         sueldo: sueldoLimpio,
         modalidad: modalidadFinal,
         contacto: (activeTab === 'privado' || activeTab === 'clasificados')
@@ -326,7 +313,7 @@ export default function AdminDashboard() {
         alert(editingId ? '¡Actualizado correctamente!' : '¡Publicado con éxito!');
         resetForm();
         fetchJobs();
-        if (editingId) setMostrarVencidos(false); 
+        if (editingId) setMostrarVencidos(false);
       } else {
         alert('Error: ' + result.mensaje);
       }
@@ -425,12 +412,12 @@ export default function AdminDashboard() {
   };
 
   const categoriasClasificados = {
-    'Locales en alquiler': { icono: '🏪', color: '#2563EB', fondo: '#EFF6FF', borde: '#93C5FD', titulo: 'Información del Local', campos: ['tipoLocal','area','ambientes','banos','garantia','precio'] },
-    'Viviendas en alquiler': { icono: '🏠', color: '#16A34A', fondo: '#F0FDF4', borde: '#86EFAC', titulo: 'Información de la Vivienda', campos: ['tipoVivienda','dormitorios','banos','area','cochera','amoblado','serviciosIncluidos','garantia','precio'] },
-    'Vehículos': { icono: '🚗', color: '#DC2626', fondo: '#FEF2F2', borde: '#FCA5A5', titulo: 'Información del Vehículo', campos: ['tipoVehiculo','marca','modelo','anio','kilometraje','combustible','transmision','colorVehiculo','precio'] },
-    'Servicios': { icono: '🛠️', color: '#9333EA', fondo: '#FAF5FF', borde: '#D8B4FE', titulo: 'Información del Servicio', campos: ['tipoServicio','modalidadServicio','zonaAtencion','precio'] },
-    'Ventas': { icono: '🏷️', color: '#EA580C', fondo: '#FFF7ED', borde: '#FDBA74', titulo: 'Información del Producto', campos: ['producto','marcaProducto','estadoProducto','cantidad','precio'] },
-    'Otros': { icono: '📌', color: '#64748B', fondo: '#F8FAFC', borde: '#CBD5E1', titulo: 'Información del Anuncio', campos: ['precio'] }
+    'Locales en alquiler': { icono: '🏪', color: '#2563EB', fondo: '#EFF6FF', borde: '#BFDBFE', titulo: 'Información del Local', campos: ['tipoLocal','area','ambientes','banos','garantia','precio'] },
+    'Viviendas en alquiler': { icono: '🏠', color: '#059669', fondo: '#ECFDF5', borde: '#A7F3D0', titulo: 'Información de la Vivienda', campos: ['tipoVivienda','dormitorios','banos','area','cochera','amoblado','serviciosIncluidos','garantia','precio'] },
+    'Vehículos': { icono: '🚗', color: '#DC2626', fondo: '#FEF2F2', borde: '#FECACA', titulo: 'Información del Vehículo', campos: ['tipoVehiculo','marca','modelo','anio','kilometraje','combustible','transmision','colorVehiculo','precio'] },
+    'Servicios': { icono: '🛠️', color: '#7C3AED', fondo: '#F5F3FF', borde: '#DDD6FE', titulo: 'Información del Servicio', campos: ['tipoServicio','modalidadServicio','zonaAtencion','precio'] },
+    'Ventas': { icono: '🏷️', color: '#D97706', fondo: '#FFFBEB', borde: '#FDE68A', titulo: 'Información del Producto', campos: ['producto','marcaProducto','estadoProducto','cantidad','precio'] },
+    'Otros': { icono: '📌', color: '#475569', fondo: '#F8FAFC', borde: '#CBD5E1', titulo: 'Información del Anuncio', campos: ['precio'] }
   };
 
   const categoriaActual = categoriasClasificados[formData.categoriaClasificado] || categoriasClasificados['Otros'];
@@ -479,18 +466,18 @@ export default function AdminDashboard() {
       <label style={styles.label}>Ubicación</label>
       {!customLocation ? (
         <div style={{ display: 'flex', gap: '6px' }}>
-          <select 
-            name="ubicacion" 
-            value={formData.ubicacion} 
-            onChange={handleChange} 
+          <select
+            name="ubicacion"
+            value={formData.ubicacion}
+            onChange={handleChange}
             style={{ ...styles.input, flex: '1 1 auto' }}
           >
             {standardLocations.map(loc => (
               <option key={loc} value={loc}>{loc}</option>
             ))}
           </select>
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => { setCustomLocation(true); setFormData({ ...formData, ubicacion: '' }); }}
             style={styles.btnManual}
             title="Escribir libremente"
@@ -500,17 +487,17 @@ export default function AdminDashboard() {
         </div>
       ) : (
         <div style={{ display: 'flex', gap: '6px' }}>
-          <input 
-            type="text" 
-            name="ubicacion" 
-            value={formData.ubicacion} 
-            onChange={handleChange} 
-            placeholder="Escribe exacto..." 
+          <input
+            type="text"
+            name="ubicacion"
+            value={formData.ubicacion}
+            onChange={handleChange}
+            placeholder="Escribe exacto..."
             style={{ ...styles.input, flex: '1 1 auto' }}
-            required 
+            required
           />
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => { setCustomLocation(false); setFormData({ ...formData, ubicacion: 'Chaupimarca, Pasco' }); }}
             style={styles.btnManual}
             title="Volver a lista"
@@ -545,40 +532,51 @@ export default function AdminDashboard() {
   return (
     <div style={styles.wrapper}>
       <div style={styles.tabNav}>
-        <button 
+        <button
           onClick={() => setActiveTab('estado')}
           style={{
             ...styles.tabBtn,
             backgroundColor: activeTab === 'estado' ? '#0B132B' : '#FFFFFF',
             color: activeTab === 'estado' ? '#FFFFFF' : '#0B132B',
-            borderColor: activeTab === 'estado' ? '#0B132B' : '#CBD5E1',
+            borderColor: activeTab === 'estado' ? '#0B132B' : '#E2E8F0',
+            boxShadow: activeTab === 'estado' ? '0 8px 20px -6px rgba(11,19,43,0.35)' : '0 1px 3px rgba(11,19,43,0.04)',
           }}
         >
           🏛️ Estado
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('privado')}
           style={{
             ...styles.tabBtn,
             backgroundColor: activeTab === 'privado' ? '#06D6A0' : '#FFFFFF',
-            color: activeTab === 'privado' ? '#0B132B' : '#0B132B',
-            borderColor: activeTab === 'privado' ? '#06D6A0' : '#CBD5E1',
+            color: '#0B132B',
+            borderColor: activeTab === 'privado' ? '#06D6A0' : '#E2E8F0',
+            boxShadow: activeTab === 'privado' ? '0 8px 20px -6px rgba(6,214,160,0.4)' : '0 1px 3px rgba(11,19,43,0.04)',
           }}
         >
           💼 Empleos Locales
         </button>
-        <button onClick={() => setActiveTab('clasificados')} style={{...styles.tabBtn, backgroundColor: activeTab === 'clasificados' ? '#4F46E5' : '#FFFFFF', color: activeTab === 'clasificados' ? '#FFFFFF' : '#0B132B', borderColor: activeTab === 'clasificados' ? '#4F46E5' : '#CBD5E1'}}>
+        <button
+          onClick={() => setActiveTab('clasificados')}
+          style={{
+            ...styles.tabBtn,
+            backgroundColor: activeTab === 'clasificados' ? '#4F46E5' : '#FFFFFF',
+            color: activeTab === 'clasificados' ? '#FFFFFF' : '#0B132B',
+            borderColor: activeTab === 'clasificados' ? '#4F46E5' : '#E2E8F0',
+            boxShadow: activeTab === 'clasificados' ? '0 8px 20px -6px rgba(79,70,229,0.35)' : '0 1px 3px rgba(11,19,43,0.04)',
+          }}
+        >
           📢 Clasificados
         </button>
       </div>
 
       {activeTab === 'estado' && (
-        <div style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '14px', padding: '18px', margin: '18px 0' }}>
-          <h3 style={{ margin: '0 0 8px', color: '#0B132B', fontSize: '18px' }}>🌐 Importar convocatoria desde una URL</h3>
-          <p style={{ margin: '0 0 12px', color: '#475569', fontSize: '14px' }}>
+        <div style={{ maxWidth: '1240px', margin: '0 auto 20px auto', background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '20px', padding: '20px', boxShadow: '0 8px 24px -8px rgba(11, 19, 43, 0.06)' }}>
+          <h3 style={{ margin: '0 0 6px', color: '#0B132B', fontSize: '16px', fontWeight: 800 }}>🌐 Importar convocatoria desde una URL</h3>
+          <p style={{ margin: '0 0 14px', color: '#64748B', fontSize: '13px', fontWeight: 500 }}>
             Pega el enlace de detalle. La información se extrae como borrador y no se publica automáticamente.
           </p>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <input
               type="url"
               value={scrapeUrl}
@@ -586,24 +584,28 @@ export default function AdminDashboard() {
               placeholder="https://www.convocatoriasdetrabajo.com/oportunidad-laboral-...html"
               style={{ ...styles.input, flex: '1 1 360px', minWidth: '220px' }}
             />
-            <button type="button" onClick={importarConvocatoria} disabled={scrapeLoading}
-              style={{ ...styles.btnPrimary, opacity: scrapeLoading ? 0.65 : 1, cursor: scrapeLoading ? 'wait' : 'pointer' }}>
+            <button
+              type="button"
+              onClick={importarConvocatoria}
+              disabled={scrapeLoading}
+              style={{ ...styles.btnPrimary, flex: '0 0 auto', padding: '11px 22px', opacity: scrapeLoading ? 0.65 : 1, cursor: scrapeLoading ? 'wait' : 'pointer' }}
+            >
               {scrapeLoading ? '⏳ Analizando...' : '🔎 Extraer datos'}
             </button>
           </div>
-          {scrapeError && <p style={{ color: '#B91C1C', margin: '10px 0 0', fontSize: '14px' }}>{scrapeError}</p>}
+          {scrapeError && <p style={{ color: '#DC2626', margin: '10px 0 0', fontSize: '13px', fontWeight: 700 }}>{scrapeError}</p>}
           {scrapeResult && (
             <div style={{
               marginTop: '16px',
-              padding: '16px',
-              background: 'linear-gradient(135deg, #FFFFFF 0%, #F0FDFA 100%)',
-              border: '1px solid #99F6E4',
-              borderTop: '5px solid #06B6A4',
-              borderRadius: '14px',
-              boxShadow: '0 8px 24px rgba(11, 19, 43, 0.08)'
+              padding: '18px',
+              background: 'linear-gradient(135deg, #FFFFFF 0%, #F0FDF9 100%)',
+              border: '1px solid #A7F3D0',
+              borderTop: '4px solid #06D6A0',
+              borderRadius: '16px',
+              boxShadow: '0 8px 24px rgba(11, 19, 43, 0.06)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                <p style={{ margin: 0, color: '#065F46', fontWeight: 900, fontSize: '15px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                <p style={{ margin: 0, color: '#065F46', fontWeight: 800, fontSize: '15px' }}>
                   ✅ Extracción completada
                 </p>
                 <span style={{
@@ -611,9 +613,9 @@ export default function AdminDashboard() {
                   color: '#065F46',
                   border: '1px solid #6EE7B7',
                   borderRadius: '999px',
-                  padding: '5px 10px',
+                  padding: '5px 12px',
                   fontSize: '11px',
-                  fontWeight: 900
+                  fontWeight: 800
                 }}>
                   {scrapeResult.camposDetectados ?? 'Datos'}{scrapeResult.totalCamposClave ? ` / ${scrapeResult.totalCamposClave} campos clave` : ' detectados'}
                 </span>
@@ -621,11 +623,11 @@ export default function AdminDashboard() {
 
               <p style={{
                 margin: '0 0 14px',
-                padding: '9px 11px',
-                color: '#7C2D12',
-                background: '#FFF7ED',
-                border: '1px solid #FDBA74',
-                borderRadius: '8px',
+                padding: '10px 12px',
+                color: '#92400E',
+                background: '#FFFBEB',
+                border: '1px solid #FDE68A',
+                borderRadius: '10px',
                 fontSize: '12px',
                 fontWeight: 700
               }}>
@@ -635,7 +637,7 @@ export default function AdminDashboard() {
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))',
-                gap: '9px',
+                gap: '10px',
                 marginBottom: '12px'
               }}>
                 {[
@@ -652,11 +654,11 @@ export default function AdminDashboard() {
                     background: fondo,
                     border: `1px solid ${borde}`,
                     borderLeft: `4px solid ${color}`,
-                    padding: '10px 11px',
-                    borderRadius: '9px',
+                    padding: '10px 12px',
+                    borderRadius: '12px',
                     minWidth: 0
                   }}>
-                    <div style={{ color, fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.35px', marginBottom: '5px' }}>
+                    <div style={{ color, fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.35px', marginBottom: '4px' }}>
                       {label}
                     </div>
                     <div style={{ color: '#0B132B', fontSize: '13px', fontWeight: 800, lineHeight: 1.4, overflowWrap: 'anywhere' }}>
@@ -669,23 +671,23 @@ export default function AdminDashboard() {
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
-                gap: '9px',
+                gap: '10px',
                 marginBottom: '14px'
               }}>
                 {[
                   ['Formación académica', scrapeResult.data?.formacion, '#EFF6FF', '#1D4ED8', '#BFDBFE'],
                   ['Experiencia requerida', scrapeResult.data?.experiencia, '#F5F3FF', '#6D28D9', '#DDD6FE'],
                   ['Cursos / especialización', scrapeResult.data?.especializacion, '#ECFDF5', '#047857', '#A7F3D0'],
-                  ['¿Cómo postular?', scrapeResult.data?.comoPostular, '#FFF7ED', '#C2410C', '#FED7AA']
+                  ['¿Cómo postular?', scrapeResult.data?.comoPostular, '#FFFBEB', '#B45309', '#FDE68A']
                 ].map(([label, value, fondo, color, borde]) => (
                   <div key={label} style={{
                     background: fondo,
                     border: `1px solid ${borde}`,
-                    borderRadius: '10px',
-                    padding: '11px',
+                    borderRadius: '12px',
+                    padding: '12px',
                     minWidth: 0
                   }}>
-                    <div style={{ color, fontSize: '11px', fontWeight: 900, marginBottom: '7px' }}>
+                    <div style={{ color, fontSize: '11px', fontWeight: 800, marginBottom: '6px' }}>
                       {label}
                     </div>
                     <div style={{
@@ -708,14 +710,13 @@ export default function AdminDashboard() {
                 ...styles.btnPrimary,
                 flex: '1 1 100%',
                 background: 'linear-gradient(90deg, #06D6A0 0%, #34D399 100%)',
-                color: '#052E2B',
-                border: '1px solid #059669',
-                boxShadow: '0 4px 12px rgba(5, 150, 105, 0.18)'
+                color: '#0B132B',
+                boxShadow: '0 6px 16px rgba(6, 214, 160, 0.25)'
               }}>
                 ⬇️ Pasar datos al formulario
               </button>
 
-              <p style={{ margin: '10px 0 0', color: '#334155', fontSize: '12px', fontWeight: 600, lineHeight: 1.5 }}>
+              <p style={{ margin: '10px 0 0', color: '#475569', fontSize: '12px', fontWeight: 600, lineHeight: 1.5 }}>
                 Los datos pasarán al formulario para que puedas corregirlos. El sistema detectará automáticamente el logo y los anexos. No se guardará nada hasta que pulses publicar.
               </p>
             </div>
@@ -727,7 +728,8 @@ export default function AdminDashboard() {
         <div style={styles.card}>
           <div style={styles.cardHeader}>
             <h2 style={styles.cardTitle}>
-              {editingId ? '✏️ Modificar Registro' : (activeTab === 'estado' ? '🏛️ Nueva Convocatoria' : activeTab === 'privado' ? '💼 Nuevo Empleo Local' : '📢 Nuevo Anuncio Clasificado')}            </h2>
+              {editingId ? '✏️ Modificar Registro' : (activeTab === 'estado' ? '🏛️ Nueva Convocatoria' : activeTab === 'privado' ? '💼 Nuevo Empleo Local' : '📢 Nuevo Anuncio Clasificado')}
+            </h2>
           </div>
 
           <form onSubmit={handleSubmit} style={styles.form}>
@@ -735,35 +737,32 @@ export default function AdminDashboard() {
             {activeTab === 'estado' ? (
               <>
                 <div style={styles.row}>
-                <div style={styles.field}>
-                  <label style={styles.label}>Entidad Pública</label>
-                  <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. Gobierno Regional de Pasco" style={styles.input} required />
+                  <div style={styles.field}>
+                    <label style={styles.label}>Entidad Pública</label>
+                    <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. Gobierno Regional de Pasco" style={styles.input} required />
+                  </div>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Modalidad / Régimen</label>
+                    <select name="modalidad" value={formData.modalidad} onChange={handleChange} style={styles.input}>
+                      <option value="CAS">CAS (Contratación Admin. Serv.)</option>
+                      <option value="728">Régimen Privado (D.L. 728)</option>
+                      <option value="276">Carrera Admin. (D.L. 276)</option>
+                      <option value="Locación">Locación de Servicios</option>
+                      <option value="Prácticas">Prácticas</option>
+                      <option value="Servicio Civil">Servicio Civil (Ley 30057)</option>
+                      <option value="CAP">CAP (Cuadro Asignación Personal)</option>
+                      <option value="PAC">PAC (Personal Altamente Calificado)</option>
+                      <option value="Terceros">Terceros / Consultoría</option>
+                      <option value="FAG">FAG (Fondo Apoyo Gerencial)</option>
+                      <option value="Suplencia">Suplencia / Reemplazo</option>
+                    </select>
+                  </div>
                 </div>
-                <div style={styles.field}>
-                  <label style={styles.label}>Modalidad / Régimen</label>
-                  <select name="modalidad" value={formData.modalidad} onChange={handleChange} style={styles.input}>
-                    {/* Modalidades Clásicas */}
-                    <option value="CAS">CAS (Contratación Admin. Serv.)</option>
-                    <option value="728">Régimen Privado (D.L. 728)</option>
-                    <option value="276">Carrera Admin. (D.L. 276)</option>
-                    <option value="Locación">Locación de Servicios</option>
-                    <option value="Prácticas">Prácticas</option>
-                    
-                    {/* Nuevas Modalidades Agregadas */}
-                    <option value="Servicio Civil">Servicio Civil (Ley 30057)</option>
-                    <option value="CAP">CAP (Cuadro Asignación Personal)</option>
-                    <option value="PAC">PAC (Personal Altamente Calificado)</option>
-                    <option value="Terceros">Terceros / Consultoría</option>
-                    <option value="FAG">FAG (Fondo Apoyo Gerencial)</option>
-                    <option value="Suplencia">Suplencia / Reemplazo</option>
-                  </select>
-                </div>
-              </div>
-                
+
                 <div style={styles.row}>
                   <div style={styles.field}>
                     <label style={styles.label}>Logo (URL Imagen - ¡Se auto-rellena!)</label>
-                    <input type="url" name="logo" value={formData.logo} onChange={handleChange} placeholder="https://.../logo.png" style={{...styles.input, backgroundColor: '#EFF6FF'}} />
+                    <input type="url" name="logo" value={formData.logo} onChange={handleChange} placeholder="https://.../logo.png" style={{...styles.input, backgroundColor: '#F0F9FF', borderColor: '#BAE6FD'}} />
                   </div>
                   <div style={styles.field}>
                     <label style={styles.label}>Título del Puesto</label>
@@ -817,29 +816,29 @@ export default function AdminDashboard() {
                   <textarea name="comoPostular" value={formData.comoPostular} onChange={handleChange} placeholder="Instrucciones..." style={styles.textarea} />
                 </div>
 
-                <div style={{ ...styles.field, backgroundColor: '#F8FAFC', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                  <label style={{ ...styles.label, marginBottom: '6px', color: '#0B132B' }}>🔗 Enlaces Oficiales (Bases, PDF)</label>
-                  <div style={{ marginBottom: '6px' }}>
-                    <input type="url" name="enlaceBases" value={formData.enlaceBases} onChange={handleChange} placeholder="Enlace principal (Bases)" style={{ ...styles.input, marginBottom: '6px' }} />
+                <div style={{ ...styles.field, backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0' }}>
+                  <label style={{ ...styles.label, marginBottom: '8px', color: '#0B132B' }}>🔗 Enlaces Oficiales (Bases, PDF)</label>
+                  <div style={{ marginBottom: '8px' }}>
+                    <input type="url" name="enlaceBases" value={formData.enlaceBases} onChange={handleChange} placeholder="Enlace principal (Bases)" style={styles.input} />
                   </div>
 
                   {formData.enlacesExtras.map((item, index) => (
-                    <div key={index} style={{ display: 'flex', gap: '4px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                      <input 
-                        type="text" 
-                        placeholder="Ej. Comunicado" 
-                        value={item.titulo} 
-                        onChange={(e) => handleExtraLinkChange(index, 'titulo', e.target.value)} 
-                        style={{ ...styles.input, flex: '1 1 100px' }} 
+                    <div key={index} style={{ display: 'flex', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                      <input
+                        type="text"
+                        placeholder="Ej. Comunicado"
+                        value={item.titulo}
+                        onChange={(e) => handleExtraLinkChange(index, 'titulo', e.target.value)}
+                        style={{ ...styles.input, flex: '1 1 110px' }}
                       />
-                      <input 
-                        type="url" 
-                        placeholder="https://..." 
-                        value={item.url} 
-                        onChange={(e) => handleExtraLinkChange(index, 'url', e.target.value)} 
-                        style={{ ...styles.input, flex: '1 1 140px' }} 
+                      <input
+                        type="url"
+                        placeholder="https://..."
+                        value={item.url}
+                        onChange={(e) => handleExtraLinkChange(index, 'url', e.target.value)}
+                        style={{ ...styles.input, flex: '1 1 150px' }}
                       />
-                      <button type="button" onClick={() => eliminarFilaEnlace(index)} style={{ ...styles.btnDeleteRow, flex: '1 1 auto' }}>✕ Quitar</button>
+                      <button type="button" onClick={() => eliminarFilaEnlace(index)} style={{ ...styles.btnDeleteRow, flex: '0 0 auto' }}>✕ Quitar</button>
                     </div>
                   ))}
                   <button type="button" onClick={agregarFilaEnlace} style={styles.btnAddRow}>+ Agregar otro enlace</button>
@@ -869,20 +868,20 @@ export default function AdminDashboard() {
                   </div>
                   {renderLocationField()}
                 </div>
-                  
-                <div style={{ ...styles.field, backgroundColor: '#F8FAFC', padding: '10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+
+                <div style={{ ...styles.field, backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0' }}>
                   <label style={styles.label}>Modalidad de Trabajo</label>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}> 
-                      {[
-                        'Tiempo Completo',
-                        'Medio Tiempo',
-                        'CAS',
-                        'Por Horas',
-                        'Fines de Semana',
-                        'Prácticas',
-                        'Sistema 14x7'
-                      ].map(mod => (
-                      <label key={mod} style={{ fontSize: '11px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#0B132B' }}>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px' }}>
+                    {[
+                      'Tiempo Completo',
+                      'Medio Tiempo',
+                      'CAS',
+                      'Por Horas',
+                      'Fines de Semana',
+                      'Prácticas',
+                      'Sistema 14x7'
+                    ].map(mod => (
+                      <label key={mod} style={{ fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#0B132B', backgroundColor: '#FFFFFF', padding: '5px 10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
                         <input
                           type="checkbox"
                           checked={formData.modalidades.includes(mod)}
@@ -916,24 +915,24 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div style={{ ...styles.field, backgroundColor: '#F0FDF4', padding: '10px', borderRadius: '8px', border: '1px solid #86EFAC' }}>
-                  <label style={{ ...styles.label, color: '#166534', marginBottom: '6px' }}>📱 WhatsApp Contacto</label>
+                <div style={{ ...styles.field, backgroundColor: '#ECFDF5', padding: '14px', borderRadius: '14px', border: '1px solid #A7F3D0' }}>
+                  <label style={{ ...styles.label, color: '#065F46', marginBottom: '8px' }}>📱 WhatsApp Contacto</label>
                   {formData.contactos.map((numero, index) => (
-                    <div key={index} style={{ display: 'flex', gap: '4px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                      <input 
-                        type="text" 
-                        placeholder={`Ej. 987654321 (#${index + 1})`} 
-                        value={numero} 
+                    <div key={index} style={{ display: 'flex', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                      <input
+                        type="text"
+                        placeholder={`Ej. 987654321 (#${index + 1})`}
+                        value={numero}
                         onChange={(e) => {
                           const nuevos = [...formData.contactos];
                           nuevos[index] = e.target.value;
                           setFormData({ ...formData, contactos: nuevos });
-                        }} 
-                        style={{ ...styles.input, flex: '1 1 120px', backgroundColor: '#FFFFFF' }} 
-                        required={index === 0} 
+                        }}
+                        style={{ ...styles.input, flex: '1 1 120px', backgroundColor: '#FFFFFF' }}
+                        required={index === 0}
                       />
                       {formData.contactos.length > 1 && (
-                        <button type="button" onClick={() => setFormData({ ...formData, contactos: formData.contactos.filter((_, i) => i !== index) })} style={{ ...styles.btnDeleteRow, flex: '1 1 auto' }}>✕ Quitar</button>
+                        <button type="button" onClick={() => setFormData({ ...formData, contactos: formData.contactos.filter((_, i) => i !== index) })} style={{ ...styles.btnDeleteRow, flex: '0 0 auto' }}>✕ Quitar</button>
                       )}
                     </div>
                   ))}
@@ -943,24 +942,24 @@ export default function AdminDashboard() {
             ) : (
               /* ================= CLASIFICADOS ================= */
               <>
-                <div style={{ backgroundColor: categoriaActual.fondo, border: `1px solid ${categoriaActual.borde}`, borderLeft: `5px solid ${categoriaActual.color}`, borderRadius: '10px', padding: '12px', marginBottom: '2px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                    <span style={{ fontSize: '22px' }}>{categoriaActual.icono}</span>
-                    <div><div style={{ fontSize: '11px', fontWeight: '900', color: categoriaActual.color }}>CATEGORÍA DEL ANUNCIO</div><div style={{ fontSize: '16px', fontWeight: '900', color: '#0B132B' }}>{formData.categoriaClasificado}</div></div>
+                <div style={{ backgroundColor: categoriaActual.fondo, border: `1px solid ${categoriaActual.borde}`, borderLeft: `5px solid ${categoriaActual.color}`, borderRadius: '16px', padding: '16px', marginBottom: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '24px' }}>{categoriaActual.icono}</span>
+                    <div><div style={{ fontSize: '10px', fontWeight: '800', color: categoriaActual.color, letterSpacing: '0.5px' }}>CATEGORÍA DEL ANUNCIO</div><div style={{ fontSize: '16px', fontWeight: '800', color: '#0B132B' }}>{formData.categoriaClasificado}</div></div>
                   </div>
                   <div style={styles.row}>
                     <div style={styles.field}><label style={styles.label}>Título del Anuncio</label><input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder={formData.categoriaClasificado === 'Vehículos' ? 'Ej. Toyota Corolla 2022' : formData.categoriaClasificado === 'Viviendas en alquiler' ? 'Ej. Departamento en alquiler de 3 dormitorios' : formData.categoriaClasificado === 'Servicios' ? 'Ej. Servicio de fotografía y video' : formData.categoriaClasificado === 'Ventas' ? 'Ej. Laptop Lenovo en venta' : 'Ej. Alquiler de local comercial'} style={{ ...styles.input, borderColor: categoriaActual.borde }} required /></div>
                     <div style={styles.field}><label style={styles.label}>Categoría</label><select name="categoriaClasificado" value={formData.categoriaClasificado} onChange={handleChange} style={{ ...styles.input, borderColor: categoriaActual.color, fontWeight: '800' }}><option value="Locales en alquiler">🏪 Locales en alquiler</option><option value="Viviendas en alquiler">🏠 Viviendas en alquiler</option><option value="Vehículos">🚗 Vehículos</option><option value="Servicios">🛠️ Servicios</option><option value="Ventas">🏷️ Ventas</option><option value="Otros">📌 Otros</option></select></div>
                   </div>
-                  <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#FFFFFF', borderRadius: '8px', border: `1px solid ${categoriaActual.borde}` }}>
-                    <div style={{ color: categoriaActual.color, fontSize: '12px', fontWeight: '900', marginBottom: '9px' }}>{categoriaActual.icono} {categoriaActual.titulo}</div>
+                  <div style={{ marginTop: '12px', padding: '14px', backgroundColor: '#FFFFFF', borderRadius: '12px', border: `1px solid ${categoriaActual.borde}` }}>
+                    <div style={{ color: categoriaActual.color, fontSize: '12px', fontWeight: '800', marginBottom: '10px' }}>{categoriaActual.icono} {categoriaActual.titulo}</div>
                     <div style={styles.row}>{categoriaActual.campos.map(renderCampoClasificado)}{renderLocationField()}</div>
                   </div>
                 </div>
                 <div style={styles.row}><div style={styles.field}><label style={styles.label}>Fecha de Vencimiento (Autoborrado)</label><input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={{ ...styles.input, borderColor: categoriaActual.borde }} /></div></div>
-                <div style={{ ...styles.field, backgroundColor: '#FEFCE8', padding: '10px', borderRadius: '8px', border: '1px solid #FEF08A' }}>
-                  <label style={{ ...styles.label, color: '#854D0E', marginBottom: '6px' }}>📱 WhatsApp del Anunciante</label>
-                  {formData.contactos.map((numero, index) => (<div key={index} style={{ display: 'flex', gap: '4px', marginBottom: '6px', flexWrap: 'wrap' }}><input type="text" placeholder={`Ej. 987654321 (#${index + 1})`} value={numero} onChange={(e) => { const nuevos = [...formData.contactos]; nuevos[index] = e.target.value; setFormData({ ...formData, contactos: nuevos }); }} style={{ ...styles.input, flex: '1 1 120px', backgroundColor: '#FFFFFF' }} required={index === 0} />{formData.contactos.length > 1 && (<button type="button" onClick={() => setFormData({ ...formData, contactos: formData.contactos.filter((_, i) => i !== index) })} style={{ ...styles.btnDeleteRow, flex: '1 1 auto' }}>✕ Quitar</button>)}</div>))}
+                <div style={{ ...styles.field, backgroundColor: '#FFFBEB', padding: '14px', borderRadius: '14px', border: '1px solid #FDE68A' }}>
+                  <label style={{ ...styles.label, color: '#92400E', marginBottom: '8px' }}>📱 WhatsApp del Anunciante</label>
+                  {formData.contactos.map((numero, index) => (<div key={index} style={{ display: 'flex', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}><input type="text" placeholder={`Ej. 987654321 (#${index + 1})`} value={numero} onChange={(e) => { const nuevos = [...formData.contactos]; nuevos[index] = e.target.value; setFormData({ ...formData, contactos: nuevos }); }} style={{ ...styles.input, flex: '1 1 120px', backgroundColor: '#FFFFFF' }} required={index === 0} />{formData.contactos.length > 1 && (<button type="button" onClick={() => setFormData({ ...formData, contactos: formData.contactos.filter((_, i) => i !== index) })} style={{ ...styles.btnDeleteRow, flex: '0 0 auto' }}>✕ Quitar</button>)}</div>))}
                   <button type="button" onClick={() => setFormData({ ...formData, contactos: [...formData.contactos, ''] })} style={styles.btnAddRow}>+ Agregar otro número</button>
                 </div>
               </>
@@ -972,8 +971,8 @@ export default function AdminDashboard() {
             </div>
 
             <div style={styles.vipContainer}>
-              <input type="checkbox" id="esVip" name="esVip" checked={formData.esVip} onChange={handleChange} style={{ accentColor: '#166534' }} />
-              <label htmlFor="esVip" style={styles.vipLabel}>⭐ Destacar Anuncio (VIP)</label>
+              <input type="checkbox" id="esVip" name="esVip" checked={formData.esVip} onChange={handleChange} style={{ accentColor: '#D97706', width: '16px', height: '16px' }} />
+              <label htmlFor="esVip" style={styles.vipLabel}>⭐ Destacar Anuncio en Sección VIP</label>
             </div>
 
             <div style={styles.btnGroup}>
@@ -993,17 +992,16 @@ export default function AdminDashboard() {
               <h2 style={styles.cardTitle}>{mostrarVencidos ? '🗄️ Historial (Vencidos)' : '📋 Registros Activos'}</h2>
               <span style={styles.counterBadge}>{displayJobsList.length}</span>
             </div>
-            
-            {/* BOTÓN PARA ALTERNAR ENTRE ACTIVOS Y VENCIDOS */}
-            <button 
-              type="button" 
+
+            <button
+              type="button"
               onClick={() => setMostrarVencidos(!mostrarVencidos)}
               style={{
                 ...styles.btnManual,
                 backgroundColor: mostrarVencidos ? '#0B132B' : '#FEF2F2',
-                color: mostrarVencidos ? '#FFFFFF' : '#991B1B',
-                border: 'none',
-                padding: '6px 12px'
+                color: mostrarVencidos ? '#06D6A0' : '#991B1B',
+                border: mostrarVencidos ? '1px solid #0B132B' : '1px solid #FECACA',
+                padding: '7px 14px'
               }}
             >
               {mostrarVencidos ? '👀 Volver a Activos' : '🗑️ Ver Vencidos'}
@@ -1012,54 +1010,59 @@ export default function AdminDashboard() {
 
           <div style={styles.scrollList}>
             {displayJobsList.length === 0 && (
-               <p style={{textAlign: 'center', color: '#64748B', fontSize: '13px', padding: '20px 0'}}>
-                 No hay anuncios {mostrarVencidos ? 'vencidos' : 'activos'} aquí.
-               </p>
+              <p style={{ textAlign: 'center', color: '#64748B', fontSize: '13px', padding: '28px 0', fontWeight: 600 }}>
+                No hay anuncios {mostrarVencidos ? 'vencidos' : 'activos'} en esta categoría.
+              </p>
             )}
-            
+
             {displayJobsList.map((job) => (
-              <div key={job._id} style={{ ...styles.itemCard, opacity: job.isExpired ? 0.75 : 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div key={job._id} style={{ ...styles.itemCard, opacity: job.isExpired ? 0.78 : 1, borderColor: job.esVip ? '#FBBF24' : '#E2E8F0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                   <div>
-                    <span style={{...styles.tagModality, backgroundColor: job.tipo === 'Clasificado' ? (categoriasClasificados[job.categoriaClasificado]?.color || '#4F46E5') : '#0B132B'}}>
-                      {job.tipo === 'Clasificado' ? `${categoriasClasificados[job.categoriaClasificado]?.icono || '📌'} ${job.categoriaClasificado}` : job.tipo}
-                    </span>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap' }}>
+                      <span style={{ ...styles.tagModality, backgroundColor: job.tipo === 'Clasificado' ? (categoriasClasificados[job.categoriaClasificado]?.color || '#4F46E5') : '#0B132B' }}>
+                        {job.tipo === 'Clasificado' ? `${categoriasClasificados[job.categoriaClasificado]?.icono || '📌'} ${job.categoriaClasificado}` : job.tipo}
+                      </span>
+                      {job.esVip && (
+                        <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#FFFBEB', color: '#B45309', border: '1px solid #FDE68A', padding: '2px 8px', borderRadius: '999px' }}>
+                          ⭐ VIP
+                        </span>
+                      )}
+                    </div>
                     <h3 style={styles.itemTitle}>{job.titulo}</h3>
                     <p style={styles.itemMeta}><strong>{job.tipo === 'Clasificado' ? 'Clasificado' : job.empresa}</strong> • 📍 {job.ubicacion}</p>
                   </div>
-                  {/* ETIQUETA VISUAL DE VENCIDO */}
                   {job.isExpired && (
-                    <span style={{ fontSize: '10px', fontWeight: '900', color: '#991B1B', backgroundColor: '#FEF2F2', padding: '4px 8px', borderRadius: '6px', border: '1px solid #FCA5A5' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '800', color: '#991B1B', backgroundColor: '#FEF2F2', padding: '4px 9px', borderRadius: '999px', border: '1px solid #FECACA', whiteSpace: 'nowrap' }}>
                       🔴 VENCIDO
                     </span>
                   )}
                 </div>
-                
+
                 <div style={styles.itemFooterRow}>
                   <span style={styles.itemSalary}>{job.sueldo || 'A tratar'}</span>
                   <div style={styles.itemButtons}>
-                    {/* El botón de compartir solo aparece si el anuncio está activo */}
                     {!job.isExpired && (
-                      <button 
+                      <button
                         onClick={() => {
                           const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://chambafija.vercel.app';
                           const url = `${baseUrl}/oferta/${job._id}`;
                           const text = `🚨 *Nueva Oferta*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
                           window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-                        }} 
-                        style={{...styles.btnEdit, backgroundColor: '#06D6A0', color: '#0B132B', borderColor: '#059669', fontWeight: '900'}}
+                        }}
+                        style={{ ...styles.btnEdit, backgroundColor: '#06D6A0', color: '#0B132B', borderColor: '#06D6A0', fontWeight: '800' }}
                       >
                         📲 Compartir
                       </button>
                     )}
-                    
-                    <button 
-                      onClick={() => handleEdit(job)} 
-                      style={{...styles.btnEdit, borderColor: job.isExpired ? '#94A3B8' : '#CBD5E1', backgroundColor: job.isExpired ? '#F8FAFC' : '#FFFFFF'}}
+
+                    <button
+                      onClick={() => handleEdit(job)}
+                      style={{ ...styles.btnEdit, borderColor: '#CBD5E1', backgroundColor: '#F8FAFC' }}
                     >
                       {job.isExpired ? 'Renovar (Editar)' : 'Editar'}
                     </button>
-                    
+
                     <button onClick={() => handleDelete(job._id)} style={styles.btnDelete}>Eliminar</button>
                   </div>
                 </div>
@@ -1073,37 +1076,37 @@ export default function AdminDashboard() {
 }
 
 const styles = {
-  wrapper: { padding: 'clamp(8px, 3vw, 24px)', backgroundColor: '#F1F5F9', minHeight: '100vh', fontFamily: 'system-ui, sans-serif' },
-  tabNav: { display: 'flex', gap: '8px', marginBottom: '16px', maxWidth: '1200px', margin: '0 auto 16px auto', flexWrap: 'wrap' },
-  tabBtn: { flex: '1 1 45%', padding: '12px', borderRadius: '10px', borderWidth: '1px', borderStyle: 'solid', fontWeight: '900', fontSize: 'clamp(12px, 4vw, 14px)', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'center' },
-  mainGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '16px', maxWidth: '1200px', margin: '0 auto' },
-  card: { backgroundColor: '#FFFFFF', padding: 'clamp(14px, 4vw, 24px)', borderRadius: '14px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #CBD5E1' },
-  cardHeader: { marginBottom: '12px', borderBottom: '1px solid #E2E8F0', paddingBottom: '10px' },
-  cardTitle: { fontSize: 'clamp(14px, 4vw, 16px)', fontWeight: '900', color: '#0B132B', margin: 0 },
-  form: { display: 'flex', flexDirection: 'column', gap: '12px' },
-  row: { display: 'flex', gap: '10px', flexWrap: 'wrap' },
-  field: { display: 'flex', flexDirection: 'column', gap: '4px', flex: '1 1 130px', minWidth: 0 },
-  label: { fontSize: '11px', fontWeight: '900', color: '#0B132B' },
-  input: { padding: '9px 12px', borderRadius: '8px', border: '1px solid #94A3B8', fontSize: '13px', fontWeight: '600', color: '#0B132B', outline: 'none', backgroundColor: '#FFFFFF', width: '100%', boxSizing: 'border-box' },
-  textarea: { padding: '9px 12px', borderRadius: '8px', border: '1px solid #94A3B8', fontSize: '13px', fontWeight: '600', color: '#0B132B', outline: 'none', backgroundColor: '#FFFFFF', width: '100%', boxSizing: 'border-box', minHeight: '80px', resize: 'vertical' },
-  btnManual: { padding: '8px 10px', backgroundColor: '#E2E8F0', border: '1px solid #94A3B8', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', color: '#0B132B', flex: '0 0 auto', textAlign: 'center' },
-  vipContainer: { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', backgroundColor: '#F0FDF4', borderRadius: '8px', border: '1px solid #86EFAC', flexWrap: 'wrap' },
-  vipLabel: { fontSize: '12px', fontWeight: '900', color: '#166534', cursor: 'pointer', flex: '1 1 auto' },
-  btnGroup: { display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap' },
-  btnPrimary: { flex: '1 1 100%', padding: '12px', backgroundColor: '#0B132B', color: '#FFFFFF', border: 'none', borderRadius: '8px', fontWeight: '900', fontSize: '14px', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
-  btnSecondary: { flex: '1 1 100%', padding: '12px', backgroundColor: '#64748B', color: '#FFFFFF', border: 'none', borderRadius: '8px', fontWeight: '900', fontSize: '13px', cursor: 'pointer' },
-  listHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #E2E8F0', paddingBottom: '8px', flexWrap: 'wrap', gap: '8px' },
-  counterBadge: { fontSize: '11px', backgroundColor: '#E2E8F0', color: '#0B132B', padding: '3px 10px', borderRadius: '12px', fontWeight: '900' },
-  scrollList: { display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '70vh', overflowY: 'auto', paddingRight: '2px' },
-  itemCard: { padding: '14px', borderRadius: '10px', backgroundColor: '#FFFFFF', border: '1px solid #CBD5E1', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
-  tagModality: { fontSize: '9px', fontWeight: '900', backgroundColor: '#0B132B', color: '#FFFFFF', padding: '2px 6px', borderRadius: '4px', display: 'inline-block', marginBottom: '4px' },
-  itemTitle: { fontSize: '14px', fontWeight: '900', color: '#0B132B', margin: '0 0 4px 0', lineHeight: '1.2' },
-  itemMeta: { fontSize: '11px', color: '#334155', margin: 0, fontWeight: '700' },
-  itemFooterRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid #F1F5F9', flexWrap: 'wrap', gap: '8px' },
-  itemSalary: { fontSize: '13px', fontWeight: '900', color: '#059669' },
+  wrapper: { padding: 'clamp(12px, 3vw, 28px)', backgroundColor: '#F4F7FB', minHeight: '100vh', fontFamily: 'var(--font-jakarta), system-ui, sans-serif' },
+  tabNav: { display: 'flex', gap: '10px', marginBottom: '20px', maxWidth: '1240px', margin: '0 auto 20px auto', flexWrap: 'wrap' },
+  tabBtn: { flex: '1 1 30%', padding: '14px 16px', borderRadius: '16px', borderWidth: '1px', borderStyle: 'solid', fontWeight: '800', fontSize: 'clamp(12px, 3.5vw, 14px)', cursor: 'pointer', transition: 'all 0.2s ease', textAlign: 'center' },
+  mainGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '20px', maxWidth: '1240px', margin: '0 auto' },
+  card: { backgroundColor: '#FFFFFF', padding: 'clamp(16px, 4vw, 28px)', borderRadius: '24px', boxShadow: '0 10px 30px -10px rgba(11, 19, 43, 0.07)', border: '1px solid #E2E8F0' },
+  cardHeader: { marginBottom: '16px', borderBottom: '1px solid #F1F5F9', paddingBottom: '12px' },
+  cardTitle: { fontSize: 'clamp(15px, 4vw, 18px)', fontWeight: '800', color: '#0B132B', margin: 0 },
+  form: { display: 'flex', flexDirection: 'column', gap: '14px' },
+  row: { display: 'flex', gap: '12px', flexWrap: 'wrap' },
+  field: { display: 'flex', flexDirection: 'column', gap: '5px', flex: '1 1 140px', minWidth: 0 },
+  label: { fontSize: '11px', fontWeight: '800', color: '#334155', letterSpacing: '0.2px' },
+  input: { padding: '10px 13px', borderRadius: '12px', border: '1px solid #CBD5E1', fontSize: '13px', fontWeight: '600', color: '#0B132B', outline: 'none', backgroundColor: '#F8FAFC', width: '100%', boxSizing: 'border-box', transition: 'border-color 0.2s' },
+  textarea: { padding: '10px 13px', borderRadius: '12px', border: '1px solid #CBD5E1', fontSize: '13px', fontWeight: '600', color: '#0B132B', outline: 'none', backgroundColor: '#F8FAFC', width: '100%', boxSizing: 'border-box', minHeight: '84px', resize: 'vertical' },
+  btnManual: { padding: '9px 12px', backgroundColor: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: '12px', fontWeight: '800', fontSize: '12px', cursor: 'pointer', color: '#0B132B', flex: '0 0 auto', textAlign: 'center' },
+  vipContainer: { display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', backgroundColor: '#FFFBEB', borderRadius: '14px', border: '1px solid #FDE68A', flexWrap: 'wrap' },
+  vipLabel: { fontSize: '13px', fontWeight: '800', color: '#92400E', cursor: 'pointer', flex: '1 1 auto' },
+  btnGroup: { display: 'flex', gap: '10px', marginTop: '6px', flexWrap: 'wrap' },
+  btnPrimary: { flex: '1 1 100%', padding: '14px', backgroundColor: '#0B132B', color: '#FFFFFF', border: 'none', borderRadius: '14px', fontWeight: '800', fontSize: '14px', cursor: 'pointer', boxShadow: '0 8px 18px -6px rgba(11,19,43,0.3)' },
+  btnSecondary: { flex: '1 1 100%', padding: '13px', backgroundColor: '#64748B', color: '#FFFFFF', border: 'none', borderRadius: '14px', fontWeight: '800', fontSize: '13px', cursor: 'pointer' },
+  listHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #F1F5F9', paddingBottom: '12px', flexWrap: 'wrap', gap: '8px' },
+  counterBadge: { fontSize: '12px', backgroundColor: '#0B132B', color: '#06D6A0', padding: '3px 11px', borderRadius: '999px', fontWeight: '800' },
+  scrollList: { display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '72vh', overflowY: 'auto', paddingRight: '4px' },
+  itemCard: { padding: '16px', borderRadius: '16px', backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(11,19,43,0.04)' },
+  tagModality: { fontSize: '10px', fontWeight: '800', backgroundColor: '#0B132B', color: '#FFFFFF', padding: '3px 9px', borderRadius: '999px', display: 'inline-block' },
+  itemTitle: { fontSize: '14px', fontWeight: '800', color: '#0B132B', margin: '0 0 4px 0', lineHeight: '1.3' },
+  itemMeta: { fontSize: '12px', color: '#64748B', margin: 0, fontWeight: '600' },
+  itemFooterRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #F1F5F9', flexWrap: 'wrap', gap: '8px' },
+  itemSalary: { fontSize: '14px', fontWeight: '800', color: '#059669' },
   itemButtons: { display: 'flex', gap: '6px', flexWrap: 'wrap', flex: '1 1 auto', justifyContent: 'flex-end' },
-  btnEdit: { padding: '6px 12px', fontSize: '11px', fontWeight: '900', backgroundColor: '#F1F5F9', color: '#0B132B', border: '1px solid #94A3B8', borderRadius: '6px', cursor: 'pointer', flex: '1 1 auto', textAlign: 'center' },
-  btnDelete: { padding: '6px 12px', fontSize: '11px', fontWeight: '900', backgroundColor: '#FEF2F2', color: '#991B1B', border: '1px solid #FCA5A5', borderRadius: '6px', cursor: 'pointer', flex: '1 1 auto', textAlign: 'center' },
-  btnAddRow: { background: 'none', border: 'none', color: '#059669', fontSize: '11px', fontWeight: '900', cursor: 'pointer', padding: '4px 0', textAlign: 'left', width: '100%' },
-  btnDeleteRow: { background: 'none', border: 'none', color: '#EF4444', fontWeight: '900', fontSize: '13px', cursor: 'pointer', padding: '4px 8px', textAlign: 'center' }
+  btnEdit: { padding: '7px 13px', fontSize: '11px', fontWeight: '800', backgroundColor: '#F8FAFC', color: '#0B132B', border: '1px solid #CBD5E1', borderRadius: '10px', cursor: 'pointer', flex: '0 1 auto', textAlign: 'center' },
+  btnDelete: { padding: '7px 13px', fontSize: '11px', fontWeight: '800', backgroundColor: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', borderRadius: '10px', cursor: 'pointer', flex: '0 1 auto', textAlign: 'center' },
+  btnAddRow: { background: 'none', border: 'none', color: '#059669', fontSize: '12px', fontWeight: '800', cursor: 'pointer', padding: '4px 0', textAlign: 'left', width: '100%' },
+  btnDeleteRow: { background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '10px', color: '#DC2626', fontWeight: '800', fontSize: '12px', cursor: 'pointer', padding: '6px 10px', textAlign: 'center' }
 };
