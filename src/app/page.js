@@ -168,20 +168,20 @@ const obtenerNumeroVacantes = (valor) => {
 const publicidades = [
   {
     id: 'publicidad-1',
-    activo: false, // Cámbialo a true cuando tengas un cliente real
-    imagen: '',    // Ej: '/banners/polleria-kimbos.jpg' o link directo
-    driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_1',
-    nombre: 'Nombre del Negocio',
-    rubro: 'Restaurante · Chaupimarca',
+    activo: true, // Cámbialo a true cuando tengas un cliente real
+    imagen: '/public/PromosDeluces.png',    // Ej: '/banners/polleria-kimbos.jpg' o link directo
+    driveId: '',
+    nombre: 'Deluces Films',
+    rubro: 'Fotografía · Video',
     promo: '🔥 Promo exclusiva viendo ChambaFija',
     whatsapp: '967576214',
-    mensaje: 'Hola, vi su publicidad en portada de ChambaFija y quisiera hacer un pedido / consulta.',
+    mensaje: 'Hola, vi su publicidad en la portada de ChambaFija y quisiera mas información de fotografía y video.',
   },
   {
     id: 'publicidad-2',
     activo: false,
     imagen: '',
-    driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_2',
+    driveId: '',
     nombre: 'Publicidad 2',
     rubro: 'Academia / Instituto',
     promo: '🎓 Matrículas abiertas',
