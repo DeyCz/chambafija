@@ -109,34 +109,52 @@ async function enviarAlertaCelular(mensaje) {
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
+    const enviarNotificacion = searchParams.get('notify') === '1';
 
-    // PRUEBA DIRECTA DE TELEGRAM
+        // PRUEBA DIRECTA DE TELEGRAM
     if (searchParams.get('testTelegram') === '1') {
-      const secret = process.env.TELEGRAM_TEST_SECRET;
-      const providedSecret = request.headers.get('x-test-secret');
+      const secreto = process.env.TELEGRAM_TEST_SECRET;
+      const secretoEnviado = request.headers.get('x-test-secret');
 
-      if (!secret || providedSecret !== secret) {
+      if (!secreto || !secretoEnviado || secretoEnviado !== secreto) {
         return NextResponse.json(
-          { success: false, error: 'No autorizado' },
+          { success: false, mensaje: 'Acceso no autorizado' },
           { status: 401 }
         );
       }
 
-      const resultado = await enviarAlertaCelular(
-        '✅ Prueba exitosa: Telegram está conectado con Chamba Fija Pasco.'
+      const tgToken = process.env.TELEGRAM_BOT_TOKEN;
+      const tgChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+
+      if (!tgToken || !tgChatId) {
+        return NextResponse.json(
+          { success: false, mensaje: 'Faltan variables de Telegram en Vercel' },
+          { status: 500 }
+        );
+      }
+
+      const resTg = await fetch(
+        `https://api.telegram.org/bot${tgToken}/sendMessage`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: tgChatId,
+            text: '✅ PRUEBA EXITOSA: ChambaFija Pasco está conectado a Telegram.',
+            disable_web_page_preview: true,
+          }),
+          cache: 'no-store',
+        }
       );
 
+      const resultadoTelegram = await resTg.json();
+
       return NextResponse.json({
-        success: resultado.telegram,
-        telegram: resultado.telegram,
-        whatsapp: resultado.whatsapp,
-        mensaje: resultado.telegram
-          ? 'Mensaje enviado a Telegram'
-          : 'No se pudo enviar el mensaje a Telegram',
+        success: resTg.ok && resultadoTelegram.ok === true,
+        telegram: resultadoTelegram.ok === true,
+        mensaje: resultadoTelegram.description || 'Mensaje enviado correctamente',
       });
     }
-
-    const enviarNotificacion = searchParams.get('notify') === '1';
 
     const response = await fetch(TARGET_URL, {
       cache: 'no-store',
