@@ -170,8 +170,21 @@ const obtenerNumeroVacantes = (valor) => {
    ============================================================ */
 
 const publicidades = [
+  
   {
     id: 'publicidad-1',
+    activo: true,
+    imagen: '/PatitasSOSv1.jpg',
+    imagenMovil: '',
+    driveId: '',
+    nombre: 'Patitas SOS',
+    rubro: 'Ayuda Social',
+    promo: '',
+    whatsapp: '943794468',
+    mensaje: 'Hola, vi su publicidad en ChambaFija y quisiera más información.',
+  },
+  {
+    id: 'publicidad-2',
     activo: true,
     imagen: '/PromosDelucesV4.jpg', // Imagen principal (se adapta sin recortes en PC y celular)
     imagenMovil: '',              // Opcional: pon otra ruta solo si hiciste versión exclusiva para celular
@@ -181,18 +194,6 @@ const publicidades = [
     promo: '🔥 Promo exclusiva viendo ChambaFija',
     whatsapp: '967576214',
     mensaje: 'Hola, vi su publicidad en portada de ChambaFija y quisiera solicitar una cotización.',
-  },
-  {
-    id: 'publicidad-2',
-    activo: false,
-    imagen: '',
-    imagenMovil: '',
-    driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_2',
-    nombre: 'Publicidad 2',
-    rubro: 'Negocio Local',
-    promo: '',
-    whatsapp: '967576214',
-    mensaje: 'Hola, vi su publicidad en ChambaFija y quisiera más información.',
   },
 ];
 
