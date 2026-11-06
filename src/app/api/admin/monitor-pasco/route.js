@@ -273,21 +273,36 @@ export async function GET(request) {
       { merge: true }
     );
 
-    let alertaEnviada = null;
-    if (enviarNotificacion && recienDetectadas.length > 0) {
-      const resumen = recienDetectadas
-        .slice(0, 4)
-        .map((c, i) => `${i + 1}. ${c.titulo}`)
-        .join('\n');
+    
+let alertaEnviada = null;
 
-      const textoAlerta =
-        `🚨 *Radar ChambaFija Pasco*\n` +
-        `Aparecieron *${recienDetectadas.length}* nueva(s) convocatoria(s) en Pasco (Contador actual: *${contadorPortal}* vacantes).\n\n` +
-        `${resumen}\n\n` +
-        `👉 Entra a tu Panel Admin para extraerlas en 1 clic.`;
+if (enviarNotificacion && recienDetectadas.length > 0) {
+  const resultadosTelegram = [];
 
-      alertaEnviada = await enviarAlertaCelular(textoAlerta);
-    }
+  for (const convocatoria of recienDetectadas) {
+    const mensaje =
+      `🚨 NUEVA CONVOCATORIA | CHAMBAFIJA\n\n` +
+      `📌 Convocatoria:\n${convocatoria.titulo}\n\n` +
+      `🏢 Institución:\nNo identificada en el listado\n\n` +
+      `📍 Ubicación:\nPasco\n\n` +
+      `📅 Fecha de publicación:\nNo identificada en el listado\n\n` +
+      `🔗 Ver convocatoria completa:\n${convocatoria.url}`;
+
+    const resultado = await enviarAlertaCelular(mensaje);
+
+    resultadosTelegram.push({
+      titulo: convocatoria.titulo,
+      url: convocatoria.url,
+      telegram: resultado.telegram,
+      whatsapp: resultado.whatsapp,
+    });
+  }
+
+  alertaEnviada = {
+    total: resultadosTelegram.length,
+    resultados: resultadosTelegram,
+  };
+}
 
     return NextResponse.json({
       success: true,
