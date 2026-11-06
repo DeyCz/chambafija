@@ -169,7 +169,7 @@ const publicidades = [
   {
     id: 'publicidad-1',
     activo: true, // Cámbialo a true cuando tengas un cliente real
-    imagen: '/public/PromosDeluces.png',    // Ej: '/banners/polleria-kimbos.jpg' o link directo
+    imagen: '/PromosDeluces.png',    // Ej: '/banners/polleria-kimbos.jpg' o link directo
     driveId: '',
     nombre: 'Deluces Films',
     rubro: 'Fotografía · Video',
