@@ -109,6 +109,33 @@ async function enviarAlertaCelular(mensaje) {
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
+
+    // PRUEBA DIRECTA DE TELEGRAM
+    if (searchParams.get('testTelegram') === '1') {
+      const secret = process.env.TELEGRAM_TEST_SECRET;
+      const providedSecret = request.headers.get('x-test-secret');
+
+      if (!secret || providedSecret !== secret) {
+        return NextResponse.json(
+          { success: false, error: 'No autorizado' },
+          { status: 401 }
+        );
+      }
+
+      const resultado = await enviarAlertaCelular(
+        '✅ Prueba exitosa: Telegram está conectado con Chamba Fija Pasco.'
+      );
+
+      return NextResponse.json({
+        success: resultado.telegram,
+        telegram: resultado.telegram,
+        whatsapp: resultado.whatsapp,
+        mensaje: resultado.telegram
+          ? 'Mensaje enviado a Telegram'
+          : 'No se pudo enviar el mensaje a Telegram',
+      });
+    }
+
     const enviarNotificacion = searchParams.get('notify') === '1';
 
     const response = await fetch(TARGET_URL, {
