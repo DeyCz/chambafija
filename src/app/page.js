@@ -172,7 +172,7 @@ const obtenerNumeroVacantes = (valor) => {
 const publicidades = [
   {
     id: 'publicidad-1',
-    activo: flase,
+    activo: false,
     imagen: '/PromosDelucesv2.png', // Imagen principal (se adapta sin recortes en PC y celular)
     imagenMovil: '',              // Opcional: pon otra ruta solo si hiciste versión exclusiva para celular
     driveId: '',
