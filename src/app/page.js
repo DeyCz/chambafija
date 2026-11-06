@@ -173,7 +173,7 @@ const publicidades = [
   {
     id: 'publicidad-1',
     activo: true,
-    imagen: '/PromosDeluces.png', // Imagen principal (se adapta sin recortes en PC y celular)
+    imagen: '/PromosDelucesv2.png', // Imagen principal (se adapta sin recortes en PC y celular)
     imagenMovil: '',              // Opcional: pon otra ruta solo si hiciste versión exclusiva para celular
     driveId: '',
     nombre: 'Deluces Films',
@@ -209,12 +209,17 @@ const obtenerUrlImagenBanner = (pub) => {
 };
 
 const PublicidadSection = ({ whatsappUrl }) => {
+  const [erroresImg, setErroresImg] = useState({});
+
   const anunciosActivos = useMemo(
     () =>
       publicidades.filter(
-        (pub) => pub.activo && obtenerUrlImagenBanner(pub) !== ''
+        (pub) =>
+          pub.activo &&
+          !erroresImg[pub.id] &&
+          obtenerUrlImagenBanner(pub) !== ''
       ),
-    []
+    [erroresImg]
   );
 
   const [indiceActual, setIndiceActual] = useState(0);
@@ -240,10 +245,11 @@ const PublicidadSection = ({ whatsappUrl }) => {
           onMouseEnter={() => setPausado(true)}
           onMouseLeave={() => setPausado(false)}
         >
-          {/* TARJETA COMERCIAL INTEGRADA */}
-          <div className="relative overflow-hidden rounded-3xl border border-slate-200/90 bg-[#0B132B] shadow-[0_14px_34px_-12px_rgba(11,19,43,0.32)]">
+          {/* TARJETA COMERCIAL AUTO-ADAPTABLE (CERO BORDES VACÍOS) */}
+          <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-[#0B132B] shadow-[0_14px_34px_-12px_rgba(11,19,43,0.32)]">
             {(() => {
-              const actual = anunciosActivos[indiceActual] || anunciosActivos[0];
+              const actual =
+                anunciosActivos[indiceActual] || anunciosActivos[0];
               const imgPc = obtenerUrlImagenBanner(actual);
               const imgMovil =
                 actual.imagenMovil && actual.imagenMovil.trim() !== ''
@@ -265,27 +271,23 @@ const PublicidadSection = ({ whatsappUrl }) => {
                   rel="noopener noreferrer"
                   className="group block w-full"
                 >
-                  {/* ÁREA DE IMAGEN 100% LIMPIA Y SIN RECORTES */}
-                  <div className="relative w-full aspect-[9/4] sm:aspect-[5/2] md:aspect-[16/5] overflow-hidden bg-[#0B132B] flex items-center justify-center">
-                    {/* Fondo ambiental difuminado del mismo anuncio (evita barras vacías si el afiche tiene otra medida) */}
-                    <img
-                      src={imgPc}
-                      alt=""
-                      aria-hidden="true"
-                      className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-55 brightness-75 pointer-events-none select-none"
-                    />
-
-                    {/* Imagen principal completa sin cortar cabezas ni textos */}
-                    <picture className="relative z-10 w-full h-full flex items-center justify-center">
+                  {/* CONTENEDOR QUE SE AJUSTA AL 100% DEL BORDE DE CUALQUIER IMAGEN */}
+                  <div className="relative w-full overflow-hidden bg-[#0B132B]">
+                    <picture className="block w-full">
                       <source media="(max-width: 639px)" srcSet={imgMovil} />
                       <img
                         src={imgPc}
                         alt={actual.nombre}
-                        className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.01]"
+                        onError={() =>
+                          setErroresImg((prev) => ({
+                            ...prev,
+                            [actual.id]: true,
+                          }))
+                        }
+                        className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.01]"
                       />
                     </picture>
 
-                    {/* Contador discreto si hay varios anuncios */}
                     {anunciosActivos.length > 1 && (
                       <span className="absolute top-3 right-3 z-20 bg-[#0B132B]/80 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full border border-white/15">
                         {indiceActual + 1} / {anunciosActivos.length}
@@ -293,8 +295,8 @@ const PublicidadSection = ({ whatsappUrl }) => {
                     )}
                   </div>
 
-                  {/* BARRA INFERIOR EJECUTIVA (NO TAPA EL DISEÑO DEL AFICHE) */}
-                  <div className="bg-[#0B132B] border-t border-white/10 px-4 py-3 sm:px-6 sm:py-3.5 flex flex-wrap items-center justify-between gap-3">
+                  {/* BARRA INFERIOR DE CONTACTO */}
+                  <div className="bg-[#0B132B] border-t border-white/10 px-4 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
                       <span className="inline-flex items-center gap-1 bg-white/10 text-[#06D6A0] text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg border border-[#06D6A0]/30 shrink-0">
                         ⭐ Destacado
@@ -328,7 +330,6 @@ const PublicidadSection = ({ whatsappUrl }) => {
               );
             })()}
 
-            {/* Flechas laterales cuando hay más de 1 anuncio */}
             {anunciosActivos.length > 1 && (
               <>
                 <button
@@ -348,7 +349,9 @@ const PublicidadSection = ({ whatsappUrl }) => {
                 <button
                   type="button"
                   onClick={() =>
-                    setIndiceActual((prev) => (prev + 1) % anunciosActivos.length)
+                    setIndiceActual(
+                      (prev) => (prev + 1) % anunciosActivos.length
+                    )
                   }
                   className="absolute right-2.5 top-[42%] -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-[#0B132B]/75 hover:bg-[#0B132B] text-white text-sm flex items-center justify-center border border-white/15 cursor-pointer"
                   aria-label="Siguiente"
@@ -359,7 +362,7 @@ const PublicidadSection = ({ whatsappUrl }) => {
             )}
           </div>
 
-          {/* BARRA DE CAPTACIÓN DE NUEVOS ANUNCIANTES */}
+          {/* BARRA INFERIOR PARA CAPTAR NUEVOS ANUNCIANTES */}
           <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 rounded-2xl bg-white border border-slate-200/80 text-xs shadow-2xs">
             <div className="flex items-center gap-2">
               {anunciosActivos.length > 1 && (
@@ -434,6 +437,8 @@ const PublicidadSection = ({ whatsappUrl }) => {
     </section>
   );
 };
+
+
 /* ============================================================
    CAMPO CLASIFICADO
    ============================================================ */
