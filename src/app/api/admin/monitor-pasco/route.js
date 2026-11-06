@@ -5,7 +5,7 @@ const TARGET_URL = 'https://www.convocatoriasdetrabajo.com/buscar-trabajos-en-PA
 const DOC_REF = 'monitor_pasco_estado';
 
 function limpiarTextoHtml(html) {
-  return html
+  return String(html || '')
     .replace(/<[^>]*>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
@@ -15,11 +15,61 @@ function limpiarTextoHtml(html) {
     .trim();
 }
 
+// Acepta ÚNICAMENTE URLs directas de convocatorias y descarta botones de compartir en redes
+function normalizarUrlConvocatoria(rawHref) {
+  if (!rawHref) return null;
+  const limpio = String(rawHref).trim();
+
+  if (
+    /facebook\.com|linkedin\.com|whatsapp\.com|wa\.me|twitter\.com|x\.com|t\.me|telegram|sharer|shareArticle|mailto:/i.test(
+      limpio
+    )
+  ) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(limpio, 'https://www.convocatoriasdetrabajo.com');
+
+    if (!parsed.hostname.endsWith('convocatoriasdetrabajo.com')) {
+      return null;
+    }
+
+    if (!/^\/oportunidad-laboral-[^/]+\.html$/i.test(parsed.pathname)) {
+      return null;
+    }
+
+    return `https://www.convocatoriasdetrabajo.com${parsed.pathname}`;
+  } catch {
+    return null;
+  }
+}
+
+function esTextoIgnorable(texto) {
+  if (!texto) return true;
+  const t = texto.toLowerCase().trim();
+  const bloqueados = [
+    'facebook',
+    'linkedin',
+    'whatsapp',
+    'twitter',
+    'x',
+    'telegram',
+    'compartir',
+    'más información',
+    'mas informacion',
+    'ver más',
+    'ver mas',
+    'ver convocatoria',
+    'leer más',
+  ];
+  return bloqueados.includes(t) || t.length < 5;
+}
+
 async function enviarAlertaCelular(mensaje) {
   const resultados = { whatsapp: false, telegram: false };
 
-  // 1. Envío automático a tu WhatsApp personal vía CallMeBot (si configuraste variables en .env)
-  const phone = process.env.ADMIN_WHATSAPP_PHONE; // Ej: 51967576214
+  const phone = process.env.ADMIN_WHATSAPP_PHONE;
   const apiKey = process.env.CALLMEBOT_API_KEY;
   if (phone && apiKey) {
     try {
@@ -33,7 +83,6 @@ async function enviarAlertaCelular(mensaje) {
     }
   }
 
-  // 2. Respaldo gratuito e ilimitado por Bot de Telegram (Opcional en .env)
   const tgToken = process.env.TELEGRAM_BOT_TOKEN;
   const tgChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
   if (tgToken && tgChatId) {
@@ -75,61 +124,92 @@ export async function GET(request) {
     }
 
     const html = await response.text();
+    const textoPlanoPagina = limpiarTextoHtml(html);
 
-    // 1. Extraer el contador oficial ("Hay 29 vacante(s) de empleo del Sector Público")
-    const matchContador = html.match(/Hay\s+(\d+)\s+vacante\(s\)/i);
-    const contadorPortal = matchContador ? parseInt(matchContador[1], 10) : 0;
-
-    // 2. Extraer cada enlace de convocatoria vigente en la página
-    const regexEnlaces = /<a[^>]+href=["']([^"']*oportunidad-laboral-[^"']+\.html)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    // 1. Extraer enlaces reales de convocatorias (sin redes sociales)
+    const regexEnlaces = /<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
     const mapaOfertas = new Map();
 
     let match;
     while ((match = regexEnlaces.exec(html)) !== null) {
-      const rawHref = match[1].trim();
-      const urlCompleta = rawHref.startsWith('http')
-        ? rawHref
-        : `https://www.convocatoriasdetrabajo.com/${rawHref.replace(/^\//, '')}`;
+      const urlValida = normalizarUrlConvocatoria(match[1]);
+      if (!urlValida) continue;
 
       const textoAnchor = limpiarTextoHtml(match[2]);
-      const esGenerico =
-        !textoAnchor ||
-        textoAnchor.toLowerCase().includes('más información') ||
-        textoAnchor.toLowerCase().includes('mas informacion');
+      const ignorable = esTextoIgnorable(textoAnchor);
 
-      const existente = mapaOfertas.get(urlCompleta);
+      // Si el texto del enlace era un botón genérico, ignorarlo salvo que aún no exista la URL
+      const existente = mapaOfertas.get(urlValida);
       if (!existente) {
-        mapaOfertas.set(urlCompleta, {
-          url: urlCompleta,
-          titulo: esGenerico ? 'Convocatoria detectada en Pasco' : textoAnchor,
+        if (!ignorable) {
+          mapaOfertas.set(urlValida, {
+            url: urlValida,
+            titulo: textoAnchor,
+            esGenerico: false,
+          });
+        } else {
+          // Respaldo legible a partir del slug de la URL por si la tarjeta no tenía otro texto
+          const slug = urlValida
+            .split('/oportunidad-laboral-')[1]
+            ?.replace(/-\d+\.html$/i, '')
+            ?.replace(/-/g, ' ')
+            ?.toUpperCase();
+          mapaOfertas.set(urlValida, {
+            url: urlValida,
+            titulo: slug || 'Convocatoria en Pasco',
+            esGenerico: true,
+          });
+        }
+      } else if (!ignorable && (existente.esGenerico || textoAnchor.length > existente.titulo.length)) {
+        mapaOfertas.set(urlValida, {
+          url: urlValida,
+          titulo: textoAnchor,
+          esGenerico: false,
         });
-      } else if (!esGenerico && textoAnchor.length > existente.titulo.length) {
-        existente.titulo = textoAnchor;
       }
     }
 
-    const ofertasActuales = Array.from(mapaOfertas.values());
+    const ofertasActuales = Array.from(mapaOfertas.values()).map(({ url, titulo }) => ({
+      url,
+      titulo,
+    }));
+
+    // 2. Extraer el contador limpio sobre texto plano (soporta etiquetas HTML intermedias)
+    const matchContador =
+      textoPlanoPagina.match(/Hay\s+(\d+)\s+vacante/i) ||
+      textoPlanoPagina.match(/(\d+)\s+vacante\(s\)\s+de\s+empleo/i) ||
+      textoPlanoPagina.match(/(\d+)\s+vacantes?\s+(?:de\s+empleo|en\s+pasco|disponibles?)/i);
+
+    const contadorPortal = matchContador
+      ? parseInt(matchContador[1], 10)
+      : ofertasActuales.length;
+
+    // 3. Comparar contra historial en Firebase (limpiando cualquier red social previa)
     const docSnap = await db.collection('system').doc(DOC_REF).get();
     const estadoPrevio = docSnap.exists ? docSnap.data() : null;
 
-    const urlsVistas = new Set(estadoPrevio?.urlsConocidas || []);
-    const pendientesPrevias = Array.isArray(estadoPrevio?.nuevasPendientes)
-      ? estadoPrevio.nuevasPendientes
-      : [];
+    const urlsLimpiasPrevias = (estadoPrevio?.urlsConocidas || [])
+      .map(normalizarUrlConvocatoria)
+      .filter(Boolean);
+    const urlsVistas = new Set(urlsLimpiasPrevias);
 
-    // Detectar convocatorias que NO existían en la revisión anterior
+    const pendientesPreviasLimpias = (estadoPrevio?.nuevasPendientes || []).filter(
+      (item) => normalizarUrlConvocatoria(item?.url) && !esTextoIgnorable(item?.titulo)
+    );
+
     const recienDetectadas = estadoPrevio
       ? ofertasActuales.filter((item) => !urlsVistas.has(item.url))
       : [];
 
-    // Unir pendientes que el admin aún no ha revisado con las recién salidas
     const mapaPendientes = new Map();
-    [...recienDetectadas, ...pendientesPrevias].forEach((item) => {
-      if (item?.url) mapaPendientes.set(item.url, item);
+    [...recienDetectadas, ...pendientesPreviasLimpias].forEach((item) => {
+      const urlLimpia = normalizarUrlConvocatoria(item?.url);
+      if (urlLimpia) {
+        mapaPendientes.set(urlLimpia, { url: urlLimpia, titulo: item.titulo });
+      }
     });
     const nuevasPendientes = Array.from(mapaPendientes.values());
 
-    // Actualizar memoria en Firebase
     const todasLasUrls = Array.from(
       new Set([...urlsVistas, ...ofertasActuales.map((o) => o.url)])
     ).slice(-300);
@@ -148,7 +228,6 @@ export async function GET(request) {
       { merge: true }
     );
 
-    // Si hay convocatorias nuevas y la llamada viene del vigilante automático (notify=1), avisar al celular
     let alertaEnviada = null;
     if (enviarNotificacion && recienDetectadas.length > 0) {
       const resumen = recienDetectadas
@@ -184,7 +263,6 @@ export async function GET(request) {
   }
 }
 
-// Limpiar alertas pendientes cuando el administrador ya las revisó
 export async function POST() {
   try {
     await db.collection('system').doc(DOC_REF).set(
