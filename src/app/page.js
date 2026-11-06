@@ -173,7 +173,7 @@ const publicidades = [
   {
     id: 'publicidad-1',
     activo: true,
-    imagen: '/banner-prueba.jpg', // Imagen principal (se adapta sin recortes en PC y celular)
+    imagen: '/PromosDeluces.png', // Imagen principal (se adapta sin recortes en PC y celular)
     imagenMovil: '',              // Opcional: pon otra ruta solo si hiciste versión exclusiva para celular
     driveId: '',
     nombre: 'Deluces Films',
