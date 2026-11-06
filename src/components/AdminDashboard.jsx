@@ -53,6 +53,13 @@ export default function AdminDashboard() {
 
   const [mostrarVencidos, setMostrarVencidos] = useState(false);
 
+  // Estados para Canal de WhatsApp y Radar de Convocatorias Pasco
+  const CANAL_WHATSAPP_URL = 'https://whatsapp.com/channel/0029Vb8NSHbDJ6H4RX6Zqj25';
+  const [copiedId, setCopiedId] = useState(null);
+  const [radarInfo, setRadarInfo] = useState(null);
+  const [radarLoading, setRadarLoading] = useState(false);
+  const [mostrarTodasPortal, setMostrarTodasPortal] = useState(false);
+
   const [formData, setFormData] = useState({
     tipo: 'Estado',
     titulo: '',
@@ -173,10 +180,65 @@ export default function AdminDashboard() {
     });
   };
 
-  const importarConvocatoria = async () => {
+  // Revisar automáticamente si salieron nuevas convocatorias en Pasco
+  const verificarRadarPasco = async () => {
+    setRadarLoading(true);
+    try {
+      const res = await fetch('/api/admin/monitor-pasco', { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success) {
+        setRadarInfo(data);
+      }
+    } catch (err) {
+      console.error('Error consultando radar:', err);
+    } finally {
+      setRadarLoading(false);
+    }
+  };
+
+  const limpiarAlertasRadar = async () => {
+    await fetch('/api/admin/monitor-pasco', { method: 'POST' });
+    setRadarInfo((prev) => (prev ? { ...prev, nuevasPendientes: [] } : null));
+  };
+
+  useEffect(() => {
+    verificarRadarPasco();
+  }, []);
+
+  // Copiar oferta lista y abrir directo tu Canal de WhatsApp
+  const publicarEnCanalWhatsApp = async (job) => {
+    const baseUrl =
+      typeof window !== 'undefined' ? window.location.origin : 'https://www.chambafija.com';
+    const url = `${baseUrl}/oferta/${job._id}`;
+    const sueldoTexto = job.sueldo || 'A tratar';
+
+    const text =
+      `🚨 *NUEVA OFERTA EN PASCO*\n\n` +
+      `🏢 *${job.empresa || 'Anuncio Local'}*\n` +
+      `💼 Puesto: *${job.titulo}*\n` +
+      `💰 Remuneración: ${sueldoTexto}\n` +
+      `📍 Ubicación: ${job.ubicacion || 'Pasco'}\n\n` +
+      `📲 *Mira los requisitos y postula aquí:*\n${url}`;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(job._id);
+      setTimeout(() => setCopiedId(null), 4000);
+    } catch {
+      window.prompt('Copia el texto para tu canal:', text);
+    }
+
+    window.open(CANAL_WHATSAPP_URL, '_blank', 'noopener,noreferrer');
+  };
+
+  // ACTUALIZA tu función importarConvocatoria para que acepte links directos desde el Radar:
+  const importarConvocatoria = async (urlDirecta) => {
+    const enlaceObjetivo = typeof urlDirecta === 'string' ? urlDirecta : scrapeUrl;
+    if (typeof urlDirecta === 'string') setScrapeUrl(urlDirecta);
+
     setScrapeError('');
     setScrapeResult(null);
-    if (!scrapeUrl.trim()) {
+    if (!enlaceObjetivo.trim()) {
       setScrapeError('Pega primero el enlace de la convocatoria.');
       return;
     }
@@ -185,7 +247,7 @@ export default function AdminDashboard() {
       const response = await fetch('/api/admin/scrape-convocatoria', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: scrapeUrl.trim() })
+        body: JSON.stringify({ url: enlaceObjetivo.trim() })
       });
       let result = null;
       try {
@@ -574,6 +636,118 @@ export default function AdminDashboard() {
       </div>
 
       {activeTab === 'estado' && (
+        <div style={{
+          maxWidth: '1240px',
+          margin: '0 auto 14px auto',
+          background: radarInfo?.nuevasPendientes?.length > 0
+            ? 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)'
+            : '#FFFFFF',
+          border: radarInfo?.nuevasPendientes?.length > 0 ? '2px solid #F59E0B' : '1px solid #E2E8F0',
+          borderRadius: '20px',
+          padding: '16px 20px',
+          boxShadow: '0 8px 24px -8px rgba(11, 19, 43, 0.08)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <span style={{
+                background: '#0B132B',
+                color: '#06D6A0',
+                fontWeight: 800,
+                fontSize: '13px',
+                padding: '6px 14px',
+                borderRadius: '999px'
+              }}>
+                📡 Portal Pasco: {radarInfo ? `${radarInfo.contadorActual} vacantes` : 'Revisando...'}
+              </span>
+
+              {radarInfo?.nuevasPendientes?.length > 0 ? (
+                <span style={{ color: '#92400E', fontWeight: 800, fontSize: '13px' }}>
+                  🔔 ¡Hay {radarInfo.nuevasPendientes.length} convocatoria(s) nueva(s) por extraer!
+                </span>
+              ) : (
+                <span style={{ color: '#64748B', fontSize: '12px', fontWeight: 600 }}>
+                  ✅ Todo al día · Sin convocatorias nuevas pendientes
+                </span>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setMostrarTodasPortal(!mostrarTodasPortal)}
+                style={{ ...styles.btnManual, backgroundColor: '#F8FAFC' }}
+              >
+                {mostrarTodasPortal ? 'Ocultar lista actual' : '📋 Ver todas las vigentes'}
+              </button>
+
+              <button
+                type="button"
+                onClick={verificarRadarPasco}
+                disabled={radarLoading}
+                style={{ ...styles.btnManual, backgroundColor: '#0B132B', color: '#FFFFFF', borderColor: '#0B132B' }}
+              >
+                {radarLoading ? '⏳ Buscando...' : '🔄 Revisar ahora'}
+              </button>
+            </div>
+          </div>
+
+          {/* LISTA DE NUEVAS DETECTADAS O LISTA COMPLETA DEL PORTAL */}
+          {((radarInfo?.nuevasPendientes?.length > 0) || mostrarTodasPortal) && (
+            <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(148,163,184,0.3)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#334155', textTransform: 'uppercase' }}>
+                  {mostrarTodasPortal ? 'Convocatorias vigentes en portal externo' : 'Nuevas convocatorias detectadas'}
+                </span>
+                {radarInfo?.nuevasPendientes?.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={limpiarAlertasRadar}
+                    style={{ background: 'none', border: 'none', color: '#B45309', fontSize: '12px', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    ✓ Marcar todas como revisadas
+                  </button>
+                )}
+              </div>
+
+              {(mostrarTodasPortal ? radarInfo?.ofertasActuales : radarInfo?.nuevasPendientes)?.map((item) => (
+                <div key={item.url} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '10px',
+                  background: '#FFFFFF',
+                  padding: '10px 12px',
+                  borderRadius: '12px',
+                  border: '1px solid #E2E8F0',
+                  flexWrap: 'wrap'
+                }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#0B132B', flex: '1 1 240px' }}>
+                    {item.titulo}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => importarConvocatoria(item.url)}
+                    style={{
+                      background: '#06D6A0',
+                      color: '#0B132B',
+                      border: 'none',
+                      borderRadius: '10px',
+                      padding: '7px 14px',
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ⚡ Extraer en 1 clic
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'estado' && (
         <div style={{ maxWidth: '1240px', margin: '0 auto 20px auto', background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '20px', padding: '20px', boxShadow: '0 8px 24px -8px rgba(11, 19, 43, 0.06)' }}>
           <h3 style={{ margin: '0 0 6px', color: '#0B132B', fontSize: '16px', fontWeight: 800 }}>🌐 Importar convocatoria desde una URL</h3>
           <p style={{ margin: '0 0 14px', color: '#64748B', fontSize: '13px', fontWeight: 500 }}>
@@ -589,7 +763,7 @@ export default function AdminDashboard() {
             />
             <button
               type="button"
-              onClick={importarConvocatoria}
+              onClick={() => importarConvocatoria()}
               disabled={scrapeLoading}
               style={{ ...styles.btnPrimary, flex: '0 0 auto', padding: '11px 22px', opacity: scrapeLoading ? 0.65 : 1, cursor: scrapeLoading ? 'wait' : 'pointer' }}
             >
@@ -1046,17 +1220,36 @@ export default function AdminDashboard() {
                   <span style={styles.itemSalary}>{job.sueldo || 'A tratar'}</span>
                   <div style={styles.itemButtons}>
                     {!job.isExpired && (
-                      <button
-                        onClick={() => {
-                          const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://chambafija.vercel.app';
-                          const url = `${baseUrl}/oferta/${job._id}`;
-                          const text = `🚨 *Nueva Oferta*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
-                          window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-                        }}
-                        style={{ ...styles.btnEdit, backgroundColor: '#06D6A0', color: '#0B132B', borderColor: '#06D6A0', fontWeight: '800' }}
-                      >
-                        📲 Compartir
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => publicarEnCanalWhatsApp(job)}
+                          style={{
+                            ...styles.btnEdit,
+                            backgroundColor: copiedId === job._id ? '#0B132B' : '#06D6A0',
+                            color: copiedId === job._id ? '#06D6A0' : '#0B132B',
+                            borderColor: '#059669',
+                            fontWeight: '900',
+                          }}
+                          title="Copia el anuncio automáticamente y abre tu Canal de WhatsApp"
+                        >
+                          {copiedId === job._id ? '✅ ¡Copiado! Pega en tu Canal' : '📢 Publicar en Canal'}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.chambafija.com';
+                            const url = `${baseUrl}/oferta/${job._id}`;
+                            const text = `🚨 *Nueva Oferta*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
+                            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+                          }}
+                          style={styles.btnEdit}
+                          title="Enviar a un chat o grupo"
+                        >
+                          📲 Grupo
+                        </button>
+                      </>
                     )}
 
                     <button

@@ -157,194 +157,279 @@ const obtenerNumeroVacantes = (valor) => {
 };
 
 /* ============================================================
-   PUBLICIDADES
+   PUBLICIDADES (CARRUSEL COMERCIAL INTELIGENTE)
+   ============================================================
+   Formas de poner la imagen de un cliente:
+   Opción A (Recomendada - Súper rápida): Guarda la imagen en tu carpeta
+            public/banners/cliente1.jpg y pon imagen: '/banners/cliente1.jpg'
+   Opción B (Google Drive): Pon el ID del archivo en driveId: '1ABC...'
    ============================================================ */
 
 const publicidades = [
   {
     id: 'publicidad-1',
+    activo: false, // Cámbialo a true cuando tengas un cliente real
+    imagen: '',    // Ej: '/banners/polleria-kimbos.jpg' o link directo
     driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_1',
-    nombre: 'Publicidad 1',
+    nombre: 'Nombre del Negocio',
+    rubro: 'Restaurante · Chaupimarca',
+    promo: '🔥 Promo exclusiva viendo ChambaFija',
     whatsapp: '967576214',
-    mensaje:
-      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
-    activo: true,
+    mensaje: 'Hola, vi su publicidad en portada de ChambaFija y quisiera hacer un pedido / consulta.',
   },
   {
     id: 'publicidad-2',
+    activo: false,
+    imagen: '',
     driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_2',
     nombre: 'Publicidad 2',
+    rubro: 'Academia / Instituto',
+    promo: '🎓 Matrículas abiertas',
     whatsapp: '967576214',
-    mensaje:
-      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
-    activo: true,
-  },
-  {
-    id: 'publicidad-3',
-    driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_3',
-    nombre: 'Publicidad 3',
-    whatsapp: '967576214',
-    mensaje:
-      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
-    activo: true,
-  },
-  {
-    id: 'publicidad-4',
-    driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_4',
-    nombre: 'Publicidad 4',
-    whatsapp: '967576214',
-    mensaje:
-      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
-    activo: true,
-  },
-  {
-    id: 'publicidad-5',
-    driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_5',
-    nombre: 'Publicidad 5',
-    whatsapp: '967576214',
-    mensaje:
-      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
-    activo: true,
-  },
-  {
-    id: 'publicidad-6',
-    driveId: 'COLOCA_AQUI_EL_ID_DE_DRIVE_6',
-    nombre: 'Publicidad 6',
-    whatsapp: '967576214',
-    mensaje:
-      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
-    activo: true,
+    mensaje: 'Hola, vi su publicidad en ChambaFija y quisiera más información.',
   },
 ];
 
-/* ============================================================
-   COMPONENTE PUBLICIDAD
-   ============================================================ */
-
-const PublicidadCard = ({ publicidad }) => {
-  const [error, setError] = useState(false);
-
-  if (
-    !publicidad ||
-    !publicidad.activo ||
-    !publicidad.driveId ||
-    publicidad.driveId.startsWith('COLOCA_AQUI')
-  ) {
-    return null;
+const obtenerUrlImagenBanner = (pub) => {
+  if (pub.imagen && pub.imagen.trim() !== '') {
+    return pub.imagen.trim();
   }
-
-  if (error) return null;
-
-  const imagenUrl = `https://drive.google.com/thumbnail?id=${encodeURIComponent(
-    publicidad.driveId
-  )}&sz=w2000`;
-
-  const numero = String(publicidad.whatsapp || '').replace(/\D/g, '');
-
-  const whatsappUrl = numero
-    ? `https://wa.me/51${numero}?text=${encodeURIComponent(
-        publicidad.mensaje ||
-          'Hola, vi su publicidad en ChambaFija y quisiera más información.'
-      )}`
-    : '#';
-
-  return (
-    <a
-      href={whatsappUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`Publicidad de ${publicidad.nombre}`}
-      className="group relative block w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-100 shadow-md hover:shadow-xl transition-all duration-300"
-    >
-      <div className="relative w-full h-[125px] sm:h-[165px] md:h-[195px] lg:h-[225px]">
-        <img
-          src={imagenUrl}
-          alt={publicidad.nombre}
-          loading="lazy"
-          onError={() => setError(true)}
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-        />
-
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0B132B]/75 via-[#0B132B]/20 to-transparent pointer-events-none" />
-
-        <div className="absolute top-3 left-3">
-          <span className="inline-flex items-center gap-1.5 bg-[#0B132B]/85 backdrop-blur-md text-white text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider px-3 py-1.5 rounded-full border border-white/10 shadow-lg">
-            📢 Espacio Patrocinado
-          </span>
-        </div>
-
-        {numero && (
-          <div className="absolute bottom-3 right-3">
-            <span className="inline-flex items-center gap-1.5 bg-[#06D6A0] text-[#0B132B] text-[10px] sm:text-xs font-extrabold px-3.5 py-2 rounded-full shadow-lg transition-all duration-300 group-hover:bg-emerald-300 group-hover:scale-105">
-              📲 Contactar ahora
-            </span>
-          </div>
-        )}
-      </div>
-    </a>
-  );
+  if (pub.driveId && !pub.driveId.startsWith('COLOCA_AQUI')) {
+    return `https://drive.google.com/thumbnail?id=${encodeURIComponent(
+      pub.driveId
+    )}&sz=w2000`;
+  }
+  return '';
 };
 
 const PublicidadSection = ({ whatsappUrl }) => {
-  const anunciosActivos = publicidades.filter(
-    (publicidad) =>
-      publicidad.activo &&
-      publicidad.driveId &&
-      !publicidad.driveId.startsWith('COLOCA_AQUI')
+  const anunciosActivos = useMemo(
+    () =>
+      publicidades.filter(
+        (pub) => pub.activo && obtenerUrlImagenBanner(pub) !== ''
+      ),
+    []
   );
+
+  const [indiceActual, setIndiceActual] = useState(0);
+  const [pausado, setPausado] = useState(false);
+
+  useEffect(() => {
+    if (anunciosActivos.length <= 1 || pausado) return;
+
+    const intervalo = window.setInterval(() => {
+      setIndiceActual((prev) => (prev + 1) % anunciosActivos.length);
+    }, 5000);
+
+    return () => window.clearInterval(intervalo);
+  }, [anunciosActivos.length, pausado]);
 
   const hayPublicidad = anunciosActivos.length > 0;
 
   return (
     <section className="w-full max-w-6xl mx-auto px-4 mt-6 sm:mt-8">
       {hayPublicidad ? (
-        <div className="w-full space-y-4">
-          {anunciosActivos.map((publicidad) => (
-            <PublicidadCard key={publicidad.id} publicidad={publicidad} />
-          ))}
-        </div>
-      ) : (
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0B132B] via-[#132042] to-[#0B132B] border border-slate-800 shadow-[0_12px_32px_-12px_rgba(11,19,43,0.45)]">
-          <div className="absolute -left-16 -top-16 w-56 h-56 rounded-full bg-[#06D6A0]/15 blur-3xl pointer-events-none" />
-          <div className="absolute -right-16 -bottom-16 w-56 h-56 rounded-full bg-blue-500/15 blur-3xl pointer-events-none" />
+        <div
+          className="space-y-2.5"
+          onMouseEnter={() => setPausado(true)}
+          onMouseLeave={() => setPausado(false)}
+        >
+          {/* CARRUSEL PRINCIPAL */}
+          <div className="relative overflow-hidden rounded-3xl border border-slate-200/90 bg-[#0B132B] shadow-[0_14px_34px_-12px_rgba(11,19,43,0.35)]">
+            {(() => {
+              const actual = anunciosActivos[indiceActual] || anunciosActivos[0];
+              const imgUrl = obtenerUrlImagenBanner(actual);
+              const numero = String(actual.whatsapp || '').replace(/\D/g, '');
+              const linkCliente = numero
+                ? `https://wa.me/51${numero}?text=${encodeURIComponent(
+                    actual.mensaje ||
+                      'Hola, vi su anuncio en ChambaFija y quisiera información.'
+                  )}`
+                : '#';
 
-          <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-5 px-6 py-6 sm:px-8 sm:py-7">
-            <div className="flex items-center gap-4 sm:gap-5 text-center sm:text-left">
-              <div className="hidden sm:flex shrink-0 w-14 h-14 rounded-2xl bg-[#06D6A0]/15 border border-[#06D6A0]/30 items-center justify-center text-2xl shadow-inner">
-                📢
-              </div>
+              return (
+                <a
+                  href={linkCliente}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative block w-full h-[160px] sm:h-[210px] md:h-[250px] overflow-hidden"
+                >
+                  <img
+                    src={imgUrl}
+                    alt={actual.nombre}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+                  />
 
-              <div>
-                <span className="inline-block text-[#06D6A0] text-[10px] font-extrabold uppercase tracking-widest mb-1">
-                  Publicidad Local en Pasco
-                </span>
+                  {/* Degradado elegante para lectura */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0B132B]/90 via-[#0B132B]/25 to-transparent" />
 
-                <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-white leading-tight">
-                  Haz que tu negocio llegue a miles de personas
-                </h2>
+                  {/* Etiquetas superiores */}
+                  <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 bg-[#0B132B]/85 backdrop-blur-md text-white text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full border border-white/15">
+                        ⭐ Destacado Comercial
+                      </span>
+                      {actual.promo && (
+                        <span className="hidden sm:inline-flex items-center bg-[#06D6A0] text-[#0B132B] text-[10px] font-extrabold px-3 py-1 rounded-full shadow-sm">
+                          {actual.promo}
+                        </span>
+                      )}
+                    </div>
 
-                <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl">
-                  Anuncia tu empresa, servicio, local o emprendimiento en la
-                  portada de ChambaFija.
-                </p>
-              </div>
+                    {anunciosActivos.length > 1 && (
+                      <span className="bg-[#0B132B]/80 backdrop-blur-md text-slate-200 text-[10px] font-extrabold px-2.5 py-1 rounded-full border border-white/10">
+                        {indiceActual + 1} / {anunciosActivos.length}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Información inferior del negocio + Botón directo */}
+                  <div className="absolute bottom-3.5 left-4 right-4 flex items-end justify-between gap-3">
+                    <div className="min-w-0 text-left">
+                      {actual.rubro && (
+                        <p className="text-[#06D6A0] text-[10px] sm:text-xs font-extrabold uppercase tracking-wider truncate">
+                          {actual.rubro}
+                        </p>
+                      )}
+                      <h3 className="text-white text-base sm:text-xl font-extrabold leading-tight truncate">
+                        {actual.nombre}
+                      </h3>
+                    </div>
+
+                    {numero && (
+                      <span className="shrink-0 inline-flex items-center gap-1.5 bg-[#06D6A0] group-hover:bg-emerald-300 text-[#0B132B] text-xs font-extrabold px-4 py-2.5 rounded-2xl shadow-lg transition-all group-hover:scale-105">
+                        📲 Contactar
+                      </span>
+                    )}
+                  </div>
+                </a>
+              );
+            })()}
+
+            {/* Flechas si hay más de 1 banner */}
+            {anunciosActivos.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setIndiceActual(
+                      (prev) =>
+                        (prev - 1 + anunciosActivos.length) %
+                        anunciosActivos.length
+                    )
+                  }
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#0B132B]/75 hover:bg-[#0B132B] text-white text-xs flex items-center justify-center border border-white/15 cursor-pointer"
+                  aria-label="Anterior"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setIndiceActual(
+                      (prev) => (prev + 1) % anunciosActivos.length
+                    )
+                  }
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#0B132B]/75 hover:bg-[#0B132B] text-white text-xs flex items-center justify-center border border-white/15 cursor-pointer"
+                  aria-label="Siguiente"
+                >
+                  ›
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* BARRA INFERIOR PERMANENTE PARA CAPTAR MÁS ANUNCIANTES */}
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 rounded-2xl bg-white border border-slate-200/80 text-xs shadow-2xs">
+            <div className="flex items-center gap-2">
+              {anunciosActivos.length > 1 && (
+                <div className="flex items-center gap-1.5 mr-2">
+                  {anunciosActivos.map((item, idx) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setIndiceActual(idx)}
+                      className={`h-2 rounded-full transition-all cursor-pointer ${
+                        idx === indiceActual
+                          ? 'w-6 bg-[#0B132B]'
+                          : 'w-2 bg-slate-300 hover:bg-slate-400'
+                      }`}
+                      aria-label={`Ir al anuncio ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
+              <span className="text-slate-600 font-semibold">
+                📢 ¿Tienes un negocio, restaurante o servicio en Pasco?
+              </span>
             </div>
 
             <a
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 bg-[#06D6A0] hover:bg-emerald-300 text-[#0B132B] font-extrabold text-xs sm:text-sm px-6 py-3.5 rounded-2xl shadow-lg shadow-[#06D6A0]/20 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
+              className="font-extrabold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1"
             >
-              📲 Quiero anunciar
+              Anuncia en portada aquí →
             </a>
+          </div>
+        </div>
+      ) : (
+        /* VITRINA ATRACTIVA CUANDO AÚN NO HAY BANNERS ACTIVOS */
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0B132B] via-[#132246] to-[#0B132B] border border-slate-800 shadow-[0_14px_34px_-12px_rgba(11,19,43,0.45)]">
+          <div className="absolute -left-16 -top-16 w-56 h-56 rounded-full bg-[#06D6A0]/15 blur-3xl pointer-events-none" />
+          <div className="absolute -right-16 -bottom-16 w-56 h-56 rounded-full bg-blue-500/15 blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6 px-6 py-6 sm:px-8 sm:py-7">
+            <div className="text-center lg:text-left space-y-2.5 max-w-2xl">
+              <div className="inline-flex items-center gap-2 bg-white/10 border border-[#06D6A0]/35 px-3 py-1 rounded-full">
+                <span className="w-2 h-2 rounded-full bg-[#06D6A0] animate-ping" />
+                <span className="text-[#06D6A0] text-[10px] font-extrabold uppercase tracking-widest">
+                  Vitrina Comercial Pasco · Espacios Disponibles
+                </span>
+              </div>
+
+              <h2 className="text-xl sm:text-2xl font-extrabold text-white leading-tight">
+                Pon el banner de tu negocio frente a miles de personas cada día
+              </h2>
+
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Ideal para restaurantes, clínicas, academias, tiendas e inmobiliarias. Tu imagen rotativa en portada con botón directo al WhatsApp de ventas.
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-1">
+                {['🍽️ Restaurantes', '🎓 Academias', '🏥 Consultorios', '🏪 Tiendas y Servicios'].map(
+                  (tag) => (
+                    <span
+                      key={tag}
+                      className="text-[11px] font-bold text-slate-200 bg-white/5 border border-white/10 px-3 py-1 rounded-xl"
+                    >
+                      {tag}
+                    </span>
+                  )
+                )}
+              </div>
+            </div>
+
+            <div className="w-full sm:w-auto shrink-0 flex flex-col items-center gap-2">
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#06D6A0] hover:bg-emerald-300 text-[#0B132B] font-extrabold text-xs sm:text-sm px-7 py-4 rounded-2xl shadow-lg shadow-[#06D6A0]/25 transition-all duration-300 hover:-translate-y-0.5"
+              >
+                📲 Publicitar mi negocio
+              </a>
+              <span className="text-[10px] text-slate-400 font-semibold">
+                Diseño de banner adaptable a celular y PC
+              </span>
+            </div>
           </div>
         </div>
       )}
     </section>
   );
 };
-
 /* ============================================================
    CAMPO CLASIFICADO
    ============================================================ */
