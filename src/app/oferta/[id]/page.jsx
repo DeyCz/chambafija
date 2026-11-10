@@ -276,10 +276,6 @@ export default async function OfertaPage({ params }) {
         .filter(Boolean)
     : [];
 
-  const primerTelefono = contactosLimpios[0]
-    ? contactosLimpios[0].replace(/\D/g, '').replace(/^(?!51)/, '51')
-    : '';
-
   const enlacesExtrasValidos = Array.isArray(job.enlacesExtras)
     ? job.enlacesExtras.filter((l) => l && l.url && String(l.url).trim() !== '')
     : [];
@@ -287,7 +283,7 @@ export default async function OfertaPage({ params }) {
   const camposClasificado = esClasificado ? obtenerCamposClasificado(job) : [];
 
   return (
-    <div className="bg-[#F4F7FB] text-[#0B132B] min-h-screen flex flex-col justify-between font-sans selection:bg-[#06D6A0] selection:text-[#0B132B] pb-20 sm:pb-0">
+    <div className="bg-[#F4F7FB] text-[#0B132B] min-h-screen flex flex-col justify-between font-sans selection:bg-[#06D6A0] selection:text-[#0B132B]">
       {/* =====================================================
           HEADER STICKY CORREGIDO (CERO SUPERPOSICIONES EN MÓVIL)
           ===================================================== */}
@@ -568,7 +564,7 @@ export default async function OfertaPage({ params }) {
                   </div>
                 </div>
 
-                {/* ¿CÓMO POSTULAR? (FECHA Y HORA EN DOS LÍNEAS CLARAS) */}
+                {/* ¿CÓMO POSTULAR? */}
                 <div className="bg-[#F8FAFC] rounded-2xl border border-slate-200/90 overflow-hidden">
                   <div className="bg-[#0B132B] text-white font-extrabold px-4 py-2.5 text-[11px] sm:text-xs uppercase tracking-wider flex items-center gap-2">
                     <span>🗓️</span> Cronograma y Cómo Postular
@@ -793,50 +789,6 @@ export default async function OfertaPage({ params }) {
           </Link>
         </section>
       </main>
-
-      {/* =====================================================
-          BARRA FLOTANTE INFERIOR EN CELULARES (ACCESO RÁPIDO)
-          ===================================================== */}
-      <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 py-2.5 shadow-[0_-8px_20px_-6px_rgba(11,19,43,0.12)] flex items-center gap-2">
-        {esEstado && job.enlaceBases ? (
-          <a
-            href={job.enlaceBases}
-            target="_blank"
-            rel="noreferrer"
-            className="flex-1 bg-[#0B132B] text-[#06D6A0] font-extrabold text-xs py-3 px-4 rounded-xl text-center truncate"
-          >
-            📄 Descargar Bases (PDF)
-          </a>
-        ) : primerTelefono ? (
-          <a
-            href={`https://wa.me/${primerTelefono}?text=${encodeURIComponent(
-              `Hola, vi el anuncio de "${job.titulo}" en *ChambaFija*.`
-            )}`}
-            target="_blank"
-            rel="noreferrer"
-            className="flex-1 bg-[#06D6A0] text-[#0B132B] font-extrabold text-xs py-3 px-4 rounded-xl text-center truncate"
-          >
-            📲 Contactar por WhatsApp
-          </a>
-        ) : (
-          <Link
-            href="/"
-            className="flex-1 bg-[#0B132B] text-white font-extrabold text-xs py-3 px-4 rounded-xl text-center"
-          >
-            🔎 Ver todas las ofertas
-          </Link>
-        )}
-
-        <a
-          href={whatsappUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="bg-slate-100 text-[#0B132B] border border-slate-200 font-extrabold text-xs py-3 px-3.5 rounded-xl shrink-0"
-          title="Compartir en WhatsApp"
-        >
-          📤 Compartir
-        </a>
-      </div>
 
       {/* =====================================================
           FOOTER CON CANALES OFICIALES
