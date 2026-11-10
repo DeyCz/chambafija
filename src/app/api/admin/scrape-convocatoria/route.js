@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 import * as cheerio from "cheerio";
 
@@ -35,6 +34,19 @@ function normalizar(valor = "") {
     .replace(/[¿?¡!]/g, "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+// Elimina del DOM los vínculos de llamada a la acción ("POSTULA AQUÍ", "CLICK AQUÍ", etc.)
+function eliminarVinculosPostulacion($) {
+  $("a").each((_, el) => {
+    const textoNorm = normalizar($(el).text()).replace(/^[•*\-–—👉▶\s]+|[•*\-–—\s]+$/g, "");
+    if (
+      /^(?:(?:haz|hacer|dale|dar)\s+)?(?:clic|click|postula|postular|postule|ingresa|ingresar|ingrese|inscribete|inscribirse|registrate|registrarse|entra|entrar|ir|ver|accede|acceder)(?:\s+al\s+(?:link|enlace|formulario|sistema))?(?:\s+aqui)?$/i.test(textoNorm) ||
+      /^(?:aqui|link|enlace|postula|postular|formulario\s+de\s+postulacion)$/i.test(textoNorm)
+    ) {
+      $(el).remove();
+    }
+  });
 }
 
 // Lee el DOM conservando la separación de párrafos, encabezados y viñetas.
@@ -105,8 +117,45 @@ function esCorte(linea, etiquetas = []) {
   });
 }
 
+// Limpia el texto de "¿Cómo postular?" omitiendo vínculos como "POSTULA AQUÍ", "CLICK AQUÍ", etc.
+function limpiarTextoComoPostular(texto = "") {
+  let linea = limpiar(texto);
+  if (!linea) return "";
+
+  // 1. Borrar combinaciones completas como "En el Link convocatorias CAS: POSTULA AQUÍ" o "CLICK AQUÍ"
+  linea = linea.replace(
+    /(?:en\s+el\s+|a\s+trav[eé]s\s+del\s+|mediante\s+el\s+)?(?:siguiente\s+)?(?:link|enlace).*?[:\-]?\s*(?:(?:haz|hacer|dale)\s+)?(?:clic|click|postula|postular|postule|ingresa|ingresar|ingrese|inscr[íi]bete|inscribirse|reg[íi]strate|registrarse|entra|ir)\s+aqu[íi]/gi,
+    ""
+  );
+
+  // 2. Borrar frases de vínculo entre paréntesis o corchetes: "(CLICK AQUÍ)", "[POSTULA AQUÍ]"
+  linea = linea.replace(
+    /[\(\[\{]\s*(?:(?:haz|hacer|dale)\s+)?(?:clic|click|postula|postular|postule|ingresa|ingresar|ingrese|inscr[íi]bete|inscribirse|reg[íi]strate|registrarse|entra|ir|ver)?\s*aqu[íi]\s*[\)\]\}]/gi,
+    ""
+  );
+
+  // 3. Borrar frases sueltas ("POSTULA AQUÍ", "CLICK AQUÍ", "CLIC AQUÍ", "INGRESA AQUÍ", "INSCRÍBETE AQUÍ", etc.)
+  linea = linea.replace(
+    /(?:(?:haz|hacer|dale)\s+)?(?:clic|click|postula|postular|postule|ingresa|ingresar|ingrese|inscr[íi]bete|inscribirse|reg[íi]strate|registrarse|entra|ir)\s+aqu[íi]/gi,
+    ""
+  );
+
+  // 4. Borrar texto residual al final si quedó huérfano tras quitar el vínculo (ej. "En el Link convocatorias CAS:")
+  linea = linea.replace(
+    /(?:en\s+el\s+|a\s+trav[eé]s\s+del\s+|mediante\s+el\s+)?(?:siguiente\s+)?(?:link|enlace)(?:\s+de\s+[\w\sáéíóúñ]+)?\s*[:\-]?\s*$/gi,
+    ""
+  );
+
+  // 5. Limpiar paréntesis vacíos, dos puntos o guiones sueltos al final
+  linea = linea
+    .replace(/\(\s*\)|\[\s*\]/g, "")
+    .replace(/[:\-–—]\s*$/g, "")
+    .trim();
+
+  return linea;
+}
+
 // Extrae exclusivamente el contenido posterior a un encabezado.
-// Agrupa líneas continuas y elimina de forma nativa los textos residuales de postulación.
 function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
   const objetivo = normalizar(etiqueta).replace(/[:?¿]/g, "").trim();
   let inicio = -1;
@@ -122,6 +171,9 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
 
       const dosPuntos = combinado.indexOf(":");
       primeraParte = dosPuntos >= 0 ? limpiar(combinado.slice(dosPuntos + 1)) : "";
+      if (objetivo.includes("como postular")) {
+        primeraParte = limpiarTextoComoPostular(primeraParte);
+      }
       inicio = i;
       ultimaLineaEncabezado = i + cantidad - 1;
       break;
@@ -136,37 +188,26 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
   for (let i = ultimaLineaEncabezado + 1; i < lineas.length; i++) {
     let linea = limpiar(lineas[i]);
     if (!linea) continue;
-    
+
     if (esCorte(linea, detenerEn)) break;
 
     const normal = normalizar(linea).replace(/^[•*\-–—\s]+/, "");
-    
+
     // Filtro estándar de cortes del sistema
     if (/^(publicidad|recomendaciones para postular|descarga aqui las bases|resultados de la convocatoria|te sugerimos|convocatorias destacadas)$/.test(normal)) {
       break;
     }
 
-    // LIMPIEZA AVANZADA DE FRASES DE ACCIÓN EN "¿CÓMO POSTULAR?"
+    // LIMPIEZA AVANZADA DE VÍNCULOS EN "¿CÓMO POSTULAR?"
     if (objetivo.includes("como postular")) {
-      // 1. Borrar combinaciones completas como "En el Link convocatorias CAS: POSTULA AQUÍ"
-      linea = linea.replace(/(?:en\s+el\s+)?(?:link|enlace).*?[:\-]?\s*(?:clic|postula|ingresa|inscr[íi]bete)\s+aqu[íi]/gi, "");
-      
-      // 2. Borrar frases sueltas (se elimina \b para evitar el fallo con la tilde de AQUÍ)
-      linea = linea.replace(/(?:clic|postula|ingresa|inscr[íi]bete)\s+aqu[íi]/gi, "");
-      
-      // 3. Borrar texto residual al final si quedó huérfano, como "En el Link convocatorias CAS:"
-      linea = linea.replace(/(?:en\s+el\s+)?(?:link|enlace).*?[:\-]\s*$/gi, "");
-      
-      // 4. Limpiar espacios o dos puntos que hayan quedado sueltos al final
-      linea = linea.replace(/[:\-]\s*$/g, "").trim();
-      
-      // Si la línea quedó completamente vacía tras la limpieza, la saltamos
-      if (!linea) continue;
+      linea = limpiarTextoComoPostular(linea);
+      if (!linea || /^[•*\-–—.\s]*$/.test(linea)) continue;
     }
 
     // Comprobamos si la línea actual inicia con una viñeta clásica o guion
     const esNuevaVineta = /^[•*\-–—]/.test(linea);
     const lineaLimpia = linea.replace(/^[•*\-–—.]\s*/, "");
+    if (!lineaLimpia) continue;
 
     if (esNuevaVineta || parrafoActual === "") {
       if (parrafoActual) {
@@ -185,29 +226,21 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
   return limpiar(partesAgrupadas.join("\n"));
 }
 
-
-
 // Entidad: toma solo el nombre limpio, ignorando "Convocatoria" y cortando en separadores
 function extraerEntidad($) {
   const h1 = limpiar($("h1").first().text());
   const titulo = limpiar($("title").text());
   const origen = h1 || titulo;
 
-  // Busca "Convocatoria", omite palabras de conexión y captura hasta encontrar un separador (: - | ») o número
   const match = origen.match(/convocatoria\s+(?:de\s+(?:trabajo|pr[áa]cticas|empleo)\s+)?(?:en\s+la\s+|en\s+el\s+|en\s+)?(.+?)(?:[:\-|>»]|\d{4}|$)/i);
 
   if (match) {
     let entidad = limpiar(match[1]);
-    // Limpiar si se colaron palabras innecesarias al final
     entidad = entidad.split(/\s+(?:para|n[°º]|cas)\s+/i)[0];
-    // 1. Quitamos modalidades que se hayan colado en el nombre (728, 276, CAS, etc.)
     entidad = entidad.replace(/\b(728|276|CAS|CAP|PAC|FAG)\b/gi, '').trim();
-    // 2. Quitamos cualquier guion, coma o espacio suelto que haya quedado al final (Ej: "MUNICIPALIDAD DE PALCAZÚ - ")
     entidad = entidad.replace(/[-–—_.,|>;:]+$/, "").trim();
     return limpiar(entidad);
   }
-
-
 
   return "";
 }
@@ -223,7 +256,6 @@ function extraerTituloPuesto($, lineas) {
   for (const lineaOriginal of candidatos) {
     const linea = limpiar(lineaOriginal);
 
-    // Detección más flexible (ignora espacios extra, saltos y caracteres basura antes del nombre del puesto)
     const match = linea.match(
       /\b(CAS|728|276|CAP|PAC|FAG)\s*N\s*[°º.xX]?\s*(\d{1,4})\s*(?:[-–—_:]\s*C[ÓO]DIGO\s*[\w/-]+)?\s*[-–—_:.]*\s*(.+)$/i
     );
@@ -236,22 +268,19 @@ function extraerTituloPuesto($, lineas) {
 
     let puesto = limpiar(match[3]);
 
-    // Limpieza agresiva del final del título (corta si detecta que empieza a hablar de plazas, requisitos o la entidad)
     puesto = puesto.split(
       /\s+(?:Compartir en|Claves del|Requisitos|Formación|1 plaza|\d+\s+plaza|lugar de|gobierno regional|municipalidad|diresa|ugel)/i
     )[0];
 
-    // Quita rayas, puntos, comas o símbolos raros al final del puesto
     puesto = puesto.replace(/[-–—_.,|>;:]+$/, "").trim();
 
-    if (!puesto || puesto.length < 4) continue; // Si solo capturó basura corta, sigue buscando
+    if (!puesto || puesto.length < 4) continue;
 
     const numero = String(Number(match[2])).padStart(3, "0");
 
     return `${tipoModalidad} N° ${numero} - ${puesto}`.toLocaleUpperCase("es-PE");
   }
 
-  // Si no encuentra el formato clásico "CAS N° 001 - Puesto", intenta buscar la palabra "PUESTO:" o "CARGO:"
   for (const linea of candidatos) {
     const match = linea.match(/(?:PUESTO|CARGO|PERFIL)(?:\s+A\s+CONTRATAR)?\s*[:.-]\s*(.+)/i);
     if (match && match[1].length > 4) {
@@ -263,8 +292,6 @@ function extraerTituloPuesto($, lineas) {
 
   return "";
 }
-
-
 
 // Normaliza importes con punto o coma decimal.
 function normalizarImporte(valor) {
@@ -408,106 +435,84 @@ function extraerFechas(lineas) {
 }
 
 // Obtiene la última hora del horario de atención como hora límite.
-// Ampliada para detectar formatos sin am/pm y variaciones como "hasta 17:15" o "-17:15"
 function extraerHora(textoComoPostular) {
   const texto = String(textoComoPostular || "").toLowerCase();
-  
-  // Buscar formatos con am/pm explícitos (ej. 5:30 pm, 17:00 hrs)
+
   const encontradosConSufijo = [...texto.matchAll(/(\d{1,2})[:.](\d{2})\s*(a\.?\s*m\.?|p\.?\s*m\.?|am|pm|hrs|horas)/gi)];
-  
-  // Buscar formatos de límite explícito, incluso si no tienen sufijo (ej. "hasta 17:15", "- 16:30")
   const encontradosSinSufijo = [...texto.matchAll(/(?:hasta(?:\s+las)?|al|[-–—])\s*(\d{1,2})[:.](\d{2})/gi)];
 
-  // Juntamos todos los hallazgos
   const todosEncontrados = [...encontradosConSufijo, ...encontradosSinSufijo];
 
   if (!todosEncontrados.length) return "";
 
-  // Tomamos el último horario mencionado, que suele ser la hora de cierre
   const ultimo = todosEncontrados[todosEncontrados.length - 1];
 
   let hora = Number(ultimo[1]);
   const minuto = Number(ultimo[2]);
 
-  // Si se encontró un sufijo (am/pm), lo analizamos
   if (ultimo[3]) {
     const sufijo = ultimo[3].replace(/[.\s]/g, "");
     if (sufijo === "pm" && hora < 12) hora += 12;
     if (sufijo === "am" && hora === 12) hora = 0;
   } else {
-    // Si no hay sufijo explícito, pero la hora es menor a 8 (ej. "hasta las 5:00"), 
-    // en el contexto de postulaciones públicas, asumimos que es PM (17:00).
     if (hora > 0 && hora <= 8) {
       hora += 12;
     }
   }
 
-  // Validación final para horas ilógicas
   if (hora > 23 || minuto > 59) return "";
 
   return `${String(hora).padStart(2, "0")}:${String(minuto).padStart(2, "0")}`;
 }
 
-
-
 // Extrae los enlaces estrictamente del espacio "Descarga aquí las Bases"
-// y recorta los prefijos para dejar los títulos completamente limpios.
 function extraerEnlaces($) {
   let enlaceBases = "";
   const enlacesExtras = [];
   const urlsVistas = new Set();
   let enSeccionBases = false;
 
-  // Recorremos la estructura leyendo de arriba a abajo
   $('h1, h2, h3, h4, h5, h6, p, strong, b, div, a').each((_, el) => {
     const tag = el.name.toLowerCase();
-    
-    // Si no es enlace, verificamos si es un título que abre o cierra la sección
+
     if (tag !== 'a') {
       const texto = normalizar($(el).text());
-      
-      // La restricción de longitud (< 100) evita que lea bloques gigantes de texto a la vez
+
       if (texto.length < 100) {
         if (texto.includes("descarga aqui las bases") || texto.includes("descargar bases")) {
-          enSeccionBases = true; // ¡Se enciende la recolección!
-        } 
+          enSeccionBases = true;
+        }
         else if (enSeccionBases && (
-          texto.includes("resultados de la") || 
-          texto.includes("te sugerimos") || 
-          texto.includes("recomendaciones para") || 
+          texto.includes("resultados de la") ||
+          texto.includes("te sugerimos") ||
+          texto.includes("recomendaciones para") ||
           texto.includes("convocatorias destacadas")
         )) {
-          enSeccionBases = false; // ¡Se apaga la recolección!
+          enSeccionBases = false;
         }
       }
-    } 
-    // Si ES un enlace y estamos DENTRO de la sección permitida
+    }
     else if (tag === 'a' && enSeccionBases) {
       const href = $(el).attr("href");
-      
-      // Ignorar links vacíos, de redes sociales o anclas
+
       if (!href || href.startsWith("javascript:") || href.startsWith("#") || href.includes("facebook.com") || href.includes("whatsapp")) {
         return;
       }
 
-      // Evitar guardar el mismo PDF dos veces
       if (urlsVistas.has(href)) return;
 
       const tituloOriginal = limpiar($(el).text());
-      
-      // 🚀 MAGIA: Limpiamos los prefijos exactos que pediste (insensible a mayúsculas)
+
       const tituloLimpio = tituloOriginal
         .replace(/^(?:Descarga aqu[íi][:|-]?\s+|Descargar[:|-]?\s+|Ver aqu[íi][:|-]?\s+|Ver[:|-]?\s+|Revisar[:|-]?\s+)/i, "")
         .trim();
-      
+
       const tituloNorm = normalizar(tituloOriginal);
 
-      // El primer enlace de Bases va directo a la variable principal (no necesita título)
       if (!enlaceBases && (tituloNorm.includes("bases") || tituloNorm.includes("convocatoria"))) {
         enlaceBases = href;
         urlsVistas.add(href);
-      } 
-      // El resto de enlaces (Instructivos, Declaraciones, Videos) van a los extra
+      }
       else if (tituloLimpio !== "") {
         enlacesExtras.push({ titulo: tituloLimpio, url: href });
         urlsVistas.add(href);
@@ -595,6 +600,12 @@ export async function POST(request) {
 
     $("script, style, noscript, nav, footer, iframe, form, aside").remove();
 
+    // 1. Extraemos primero los enlaces de Bases y Anexos mientras todos los <a> existen
+    const { enlaceBases, enlacesExtras } = extraerEnlaces($);
+
+    // 2. Eliminamos los vínculos tipo botón ("POSTULA AQUÍ", "CLICK AQUÍ", etc.) antes de extraer texto
+    eliminarVinculosPostulacion($);
+
     const lineas = obtenerLineas($);
 
     const entidad = extraerEntidad($);
@@ -630,7 +641,7 @@ export async function POST(request) {
         "Condiciones del contrato",
         "Cómo postular",
       ],
-      "🎓" // Emoji para Formación Académica
+      "🎓"
     );
 
     // EXPERIENCIA: termina antes del encabezado de Cursos.
@@ -644,7 +655,7 @@ export async function POST(request) {
         "Cómo postular",
         "Recomendaciones para postular",
       ],
-      "💼" // Emoji para Experiencia Requerida
+      "💼"
     );
 
     // CURSOS: inicia exactamente después del título indicado.
@@ -659,7 +670,7 @@ export async function POST(request) {
         "Descarga aquí las Bases",
         "Resultados de la convocatoria",
       ],
-      "📚" // Emoji para Cursos / Especialización
+      "📚"
     );
 
     const comoPostular = extraerSeccion(
@@ -675,14 +686,9 @@ export async function POST(request) {
       "📌"
     );
 
-
     const fechas = extraerFechas(lineas);
     const remuneracion = extraerRemuneracion(lineas);
     const horaVencimiento = extraerHora(comoPostular);
-
-    // Llamamos a la nueva función quirúrgica
-    const { enlaceBases, enlacesExtras } = extraerEnlaces($);
-
 
     const data = {
       empresa: entidad || "",
@@ -690,7 +696,7 @@ export async function POST(request) {
       modalidad: modalidadMatch
         ? modalidadMatch[1].replace(/\s+/g, " ").trim()
         : "",
-      ubicacion: "",
+      ubicacion: "Pasco", // Rellena "Pasco" por defecto
       vacantes,
       sueldo: remuneracion,
       fechaInicio: fechas.fechaInicio,
@@ -702,7 +708,6 @@ export async function POST(request) {
       especializacion,
       comoPostular,
 
-      // NUEVO: Ahora inyectamos los links encontrados automáticamente
       enlaceBases: enlaceBases,
       enlacesExtras: enlacesExtras.length > 0 ? enlacesExtras : [{ titulo: "", url: "" }],
       descripcion: "",

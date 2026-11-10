@@ -31,6 +31,8 @@ const logosInstitucionales = {
   "MUNICIPALIDAD DE HUACHON": "https://tse4.mm.bing.net/th/id/OIP.ius3TEpxkUSrtMi7ViewngHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
 };
 
+const STORAGE_REVISADAS_KEY = 'chambafija_portal_pasco_revisadas';
+
 function normalizarNombreLogo(nombre) {
   if (!nombre) return "";
   return nombre
@@ -59,6 +61,7 @@ export default function AdminDashboard() {
   const [radarInfo, setRadarInfo] = useState(null);
   const [radarLoading, setRadarLoading] = useState(false);
   const [mostrarTodasPortal, setMostrarTodasPortal] = useState(false);
+  const [revisadasPortal, setRevisadasPortal] = useState([]);
 
   const [formData, setFormData] = useState({
     tipo: 'Estado',
@@ -103,6 +106,52 @@ export default function AdminDashboard() {
     'Oxapampa, Pasco',
     'Villa Rica, Pasco'
   ];
+
+  // Cargar historial local de convocatorias ya revisadas/extraídas
+  useEffect(() => {
+    try {
+      const guardadas = localStorage.getItem(STORAGE_REVISADAS_KEY);
+      if (guardadas) {
+        const parsed = JSON.parse(guardadas);
+        if (Array.isArray(parsed)) setRevisadasPortal(parsed);
+      }
+    } catch (e) {
+      console.error('No se pudo leer el estado de revisadas:', e);
+    }
+  }, []);
+
+  const guardarRevisadasEnStorage = (listaUrls) => {
+    setRevisadasPortal(listaUrls);
+    try {
+      localStorage.setItem(STORAGE_REVISADAS_KEY, JSON.stringify(listaUrls.slice(-200)));
+    } catch (e) {
+      console.error('No se pudo guardar el estado de revisadas:', e);
+    }
+  };
+
+  const marcarConvocatoriaComoRevisada = async (urlRevisada) => {
+    if (!urlRevisada) return;
+
+    const nuevasRevisadas = revisadasPortal.includes(urlRevisada)
+      ? revisadasPortal
+      : [...revisadasPortal, urlRevisada];
+
+    guardarRevisadasEnStorage(nuevasRevisadas);
+
+    // Si con esta convocatoria ya se revisaron todas las nuevas pendientes, sincronizamos con el backend
+    const pendientesActuales = radarInfo?.nuevasPendientes || [];
+    const quedanSinRevisar = pendientesActuales.filter(
+      (item) => !nuevasRevisadas.includes(item.url)
+    );
+
+    if (pendientesActuales.length > 0 && quedanSinRevisar.length === 0) {
+      try {
+        await fetch('/api/admin/monitor-pasco', { method: 'POST' });
+      } catch (err) {
+        console.error('Error sincronizando radar:', err);
+      }
+    }
+  };
 
   const ordenarPorFechaCreacion = (registros) => {
     return [...registros].sort((a, b) => {
@@ -197,6 +246,10 @@ export default function AdminDashboard() {
   };
 
   const limpiarAlertasRadar = async () => {
+    const urlsPendientes = (radarInfo?.nuevasPendientes || []).map((i) => i.url);
+    const combinadas = Array.from(new Set([...revisadasPortal, ...urlsPendientes]));
+    guardarRevisadasEnStorage(combinadas);
+
     await fetch('/api/admin/monitor-pasco', { method: 'POST' });
     setRadarInfo((prev) => (prev ? { ...prev, nuevasPendientes: [] } : null));
   };
@@ -231,10 +284,13 @@ export default function AdminDashboard() {
     window.open(CANAL_WHATSAPP_URL, '_blank', 'noopener,noreferrer');
   };
 
-  // ACTUALIZA tu función importarConvocatoria para que acepte links directos desde el Radar:
+  // Importa la convocatoria y, si viene desde el Portal Pasco, la marca automáticamente como revisada
   const importarConvocatoria = async (urlDirecta) => {
     const enlaceObjetivo = typeof urlDirecta === 'string' ? urlDirecta : scrapeUrl;
-    if (typeof urlDirecta === 'string') setScrapeUrl(urlDirecta);
+    if (typeof urlDirecta === 'string') {
+      setScrapeUrl(urlDirecta);
+      marcarConvocatoriaComoRevisada(urlDirecta);
+    }
 
     setScrapeError('');
     setScrapeResult(null);
@@ -302,7 +358,7 @@ export default function AdminDashboard() {
       logo: logoAsignado,
       modalidad: modalidad || 'CAS',
       titulo: d.titulo || '',
-      ubicacion: '',
+      ubicacion: d.ubicacion || 'Pasco', // Rellena "Pasco" por defecto al pasar al formulario
       vacantes: d.vacantes || '1',
       sueldo: d.sueldo || '',
       fechaInicio: d.fechaInicio || '',
@@ -319,7 +375,7 @@ export default function AdminDashboard() {
       descripcion: d.descripcion || ''
     }));
     setScrapeUrl('');      // Limpia el input del enlace para pegar el siguiente
-    setScrapeResult(null); // Opcional: cierra también el cuadro de vista previa ya copiado
+    setScrapeResult(null); // Cierra el cuadro de vista previa ya copiado
     setScrapeError('');
     window.setTimeout(() => {
       document.getElementById('formulario-convocatoria')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -594,6 +650,12 @@ export default function AdminDashboard() {
     .filter(job => mostrarVencidos ? job.isExpired : !job.isExpired)
     .reverse();
 
+  // Cálculo de convocatorias pendientes reales descontando las ya extraídas/revisadas
+  const nuevasPendientesLista = radarInfo?.nuevasPendientes || [];
+  const pendientesSinRevisar = nuevasPendientesLista.filter(
+    (item) => !revisadasPortal.includes(item.url)
+  );
+
   return (
     <div style={styles.wrapper}>
       <div style={styles.tabNav}>
@@ -639,10 +701,10 @@ export default function AdminDashboard() {
         <div style={{
           maxWidth: '1240px',
           margin: '0 auto 14px auto',
-          background: radarInfo?.nuevasPendientes?.length > 0
+          background: pendientesSinRevisar.length > 0
             ? 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)'
             : '#FFFFFF',
-          border: radarInfo?.nuevasPendientes?.length > 0 ? '2px solid #F59E0B' : '1px solid #E2E8F0',
+          border: pendientesSinRevisar.length > 0 ? '2px solid #F59E0B' : '1px solid #E2E8F0',
           borderRadius: '20px',
           padding: '16px 20px',
           boxShadow: '0 8px 24px -8px rgba(11, 19, 43, 0.08)'
@@ -660,12 +722,12 @@ export default function AdminDashboard() {
                 📡 Portal Pasco: {radarInfo ? `${radarInfo.contadorActual} vacantes` : 'Revisando...'}
               </span>
 
-              {radarInfo?.nuevasPendientes?.length > 0 ? (
+              {pendientesSinRevisar.length > 0 ? (
                 <span style={{ color: '#92400E', fontWeight: 800, fontSize: '13px' }}>
-                  🔔 ¡Hay {radarInfo.nuevasPendientes.length} convocatoria(s) nueva(s) por extraer!
+                  🔔 ¡Hay {pendientesSinRevisar.length} convocatoria(s) nueva(s) por extraer!
                 </span>
               ) : (
-                <span style={{ color: '#64748B', fontSize: '12px', fontWeight: 600 }}>
+                <span style={{ color: '#059669', fontSize: '12px', fontWeight: 700 }}>
                   ✅ Todo al día · Sin convocatorias nuevas pendientes
                 </span>
               )}
@@ -692,56 +754,82 @@ export default function AdminDashboard() {
           </div>
 
           {/* LISTA DE NUEVAS DETECTADAS O LISTA COMPLETA DEL PORTAL */}
-          {((radarInfo?.nuevasPendientes?.length > 0) || mostrarTodasPortal) && (
+          {((nuevasPendientesLista.length > 0) || mostrarTodasPortal) && (
             <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(148,163,184,0.3)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '11px', fontWeight: 800, color: '#334155', textTransform: 'uppercase' }}>
                   {mostrarTodasPortal ? 'Convocatorias vigentes en portal externo' : 'Nuevas convocatorias detectadas'}
                 </span>
-                {radarInfo?.nuevasPendientes?.length > 0 && (
+                {nuevasPendientesLista.length > 0 && (
                   <button
                     type="button"
                     onClick={limpiarAlertasRadar}
                     style={{ background: 'none', border: 'none', color: '#B45309', fontSize: '12px', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline' }}
                   >
-                    ✓ Marcar todas como revisadas
+                    ✓ Marcar todas como revisadas y limpiar lista
                   </button>
                 )}
               </div>
 
-              {(mostrarTodasPortal ? radarInfo?.ofertasActuales : radarInfo?.nuevasPendientes)?.map((item) => (
-                <div key={item.url} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: '10px',
-                  background: '#FFFFFF',
-                  padding: '10px 12px',
-                  borderRadius: '12px',
-                  border: '1px solid #E2E8F0',
-                  flexWrap: 'wrap'
-                }}>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#0B132B', flex: '1 1 240px' }}>
-                    {item.titulo}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => importarConvocatoria(item.url)}
-                    style={{
-                      background: '#06D6A0',
-                      color: '#0B132B',
-                      border: 'none',
-                      borderRadius: '10px',
-                      padding: '7px 14px',
-                      fontSize: '11px',
-                      fontWeight: 800,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    ⚡ Extraer en 1 clic
-                  </button>
-                </div>
-              ))}
+              {(mostrarTodasPortal ? radarInfo?.ofertasActuales : nuevasPendientesLista)?.map((item) => {
+                const yaRevisada = revisadasPortal.includes(item.url);
+                return (
+                  <div key={item.url} style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '10px',
+                    background: yaRevisada ? '#F0FDF4' : '#FFFFFF',
+                    padding: '10px 12px',
+                    borderRadius: '12px',
+                    border: yaRevisada ? '1px solid #86EFAC' : '1px solid #E2E8F0',
+                    flexWrap: 'wrap',
+                    transition: 'all 0.2s ease'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 240px', flexWrap: 'wrap' }}>
+                      {yaRevisada && (
+                        <span style={{
+                          background: '#DCFCE7',
+                          color: '#166534',
+                          border: '1px solid #86EFAC',
+                          fontSize: '10px',
+                          fontWeight: 800,
+                          padding: '2px 8px',
+                          borderRadius: '999px',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          ✅ REVISADA
+                        </span>
+                      )}
+                      <span style={{
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        color: yaRevisada ? '#166534' : '#0B132B',
+                        textDecoration: yaRevisada ? 'none' : 'none'
+                      }}>
+                        {item.titulo}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => importarConvocatoria(item.url)}
+                      style={{
+                        background: yaRevisada ? '#E2E8F0' : '#06D6A0',
+                        color: yaRevisada ? '#475569' : '#0B132B',
+                        border: yaRevisada ? '1px solid #CBD5E1' : 'none',
+                        borderRadius: '10px',
+                        padding: '7px 14px',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {yaRevisada ? '✓ Ya extraída (Re-extraer)' : '⚡ Extraer en 1 clic'}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -894,7 +982,7 @@ export default function AdminDashboard() {
               </button>
 
               <p style={{ margin: '10px 0 0', color: '#475569', fontSize: '12px', fontWeight: 600, lineHeight: 1.5 }}>
-                Los datos pasarán al formulario para que puedas corregirlos. El sistema detectará automáticamente el logo y los anexos. No se guardará nada hasta que pulses publicar.
+                Los datos pasarán al formulario con Ubicación "Pasco" por defecto. El sistema detectará automáticamente el logo y los anexos. No se guardará nada hasta que pulses publicar.
               </p>
             </div>
           )}

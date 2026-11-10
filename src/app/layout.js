@@ -30,10 +30,15 @@ export const metadata = {
   authors: [{ name: 'Chamba Fija Pasco' }],
   creator: 'Chamba Fija',
   publisher: 'Chamba Fija',
+  // Configuración oficial del Favicon para el buscador de Google
   icons: {
-    icon: '/icon.png',
-    shortcut: '/icon.png',
-    apple: '/icon.png',
+    icon: [
+      { url: '/icon.png', type: 'image/png', sizes: '192x192' },
+    ],
+    shortcut: ['/icon.png'],
+    apple: [
+      { url: '/icon.png', sizes: '180x180', type: 'image/png' },
+    ],
   },
   openGraph: {
     title: 'Chamba Fija Pasco | Bolsa de Trabajo y Convocatorias',
