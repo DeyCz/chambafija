@@ -29,6 +29,12 @@ const logosInstitucionales = {
   "FONCODES": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg9joxXl4OXlX1j3oxAYN30JT3aYMXqqm_HWGOYH7DJDZXnIhyphenhyphen5w1NlSOCa9f0tvkyOY7E9r1bw7lDePTZc7o2M1vbvUOvSPgxgKjbHZQQYagh6ZB8b8HxCu5pNcsscj-oDgdDvznao-bY/s1600/045+FONCODES.jpg",
   "PALCAZU": "https://tse4.mm.bing.net/th/id/OIP.icg2crlw0PCguydXp5np5gHaHd?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
   "MUNICIPALIDAD DE HUACHON": "https://tse4.mm.bing.net/th/id/OIP.ius3TEpxkUSrtMi7ViewngHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+  "MINISTERIO DE ECONOMÍA":"https://1.bp.blogspot.com/-KnlBhwr54SM/X6CW3sUPuyI/AAAAAAABl2U/m2fvItgr0Z0mFDM3UIAJ9TBXNbmM1RarQCLcBGAsYHQ/s960/mef-logo.jpg",
+  "INPE":"https://seeklogo.com/images/I/inpe-logo-F5FED77255-seeklogo.com.png",
+  "MINISTERIO DE EDUCACIÓN":"https://1.bp.blogspot.com/-nbaSzHWxPq8/X6COHCuKUyI/AAAAAAABl18/OfmJeOu7ovE0EXWlqmUEmm47MTeTvZe5ACLcBGAsYHQ/s567/minedu-logo.jpg",
+  "INDECI": "https://caen.edu.pe/wp-content/uploads/2022/02/logo-indeci-1024x1024.jpg",
+  "PROCURADURÍA DEL ESTADO": "https://tse3.mm.bing.net/th/id/OIP.v2iASVqLxVt8xWpG7zpeOQAAAA?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+  "PROGRAMA WARMI ÑAN":"https://www.convocatoriasdetrabajo.com/imagenes/organizaciones/th-imagen-PROGRAMA-NACIONAL-PREVENCION-ERRADICACION-VIOLENCIA-CONTRA-MUJERES-E-INTEGRANTES-GRUPO-FAMILIAR.jpg",
 };
 
 const STORAGE_REVISADAS_KEY = 'chambafija_portal_pasco_revisadas';
