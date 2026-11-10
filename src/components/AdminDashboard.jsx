@@ -45,7 +45,34 @@ function normalizarNombreLogo(nombre) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toUpperCase()
+    .replace(/\s+/g, " ")
     .trim();
+}
+
+// Busca el logo normalizando tanto el nombre extraído como las claves del diccionario (soporta Ñ, tildes y palabras intermedias)
+function buscarLogoInstitucional(nombreEmpresa) {
+  const nombreNorm = normalizarNombreLogo(nombreEmpresa);
+  if (!nombreNorm) return "";
+
+  // 1. Coincidencia directa normalizando también la clave del diccionario
+  for (const [key, urlLogo] of Object.entries(logosInstitucionales)) {
+    const keyNorm = normalizarNombreLogo(key);
+    if (keyNorm && (nombreNorm.includes(keyNorm) || keyNorm.includes(nombreNorm))) {
+      return urlLogo;
+    }
+  }
+
+  // 2. Coincidencia por palabras clave (ej. si extrae "PROGRAMA NACIONAL WARMI ÑAN" y en la lista dice "PROGRAMA WARMI ÑAN")
+  const palabrasIgnoradas = new Set(["DE", "DEL", "LA", "EL", "LOS", "LAS", "EN", "Y", "PARA", "PROGRAMA", "NACIONAL"]);
+  for (const [key, urlLogo] of Object.entries(logosInstitucionales)) {
+    const keyNorm = normalizarNombreLogo(key);
+    const palabrasClave = keyNorm.split(/\s+/).filter(p => p.length > 2 && !palabrasIgnoradas.has(p));
+    if (palabrasClave.length > 0 && palabrasClave.every(palabra => nombreNorm.includes(palabra))) {
+      return urlLogo;
+    }
+  }
+
+  return "";
 }
 
 export default function AdminDashboard() {
@@ -221,13 +248,9 @@ export default function AdminDashboard() {
       };
 
       if (name === 'empresa') {
-        const nombreNormalizado = normalizarNombreLogo(value);
-        const logoEncontrado = Object.keys(logosInstitucionales).find(key =>
-          nombreNormalizado.includes(key)
-        );
-
+        const logoEncontrado = buscarLogoInstitucional(value);
         if (logoEncontrado) {
-          newData.logo = logosInstitucionales[logoEncontrado];
+          newData.logo = logoEncontrado;
         }
       }
 
@@ -348,7 +371,7 @@ export default function AdminDashboard() {
     setCustomLocation(true);
 
     const empresaDetectada = d.empresa || '';
-    let logoAsignado = '';
+    const logoAsignado = buscarLogoInstitucional(empresaDetectada);
     const nombreNormalizado = normalizarNombreLogo(empresaDetectada);
     const logoEncontrado = Object.keys(logosInstitucionales).find(key =>
       nombreNormalizado.includes(key)
