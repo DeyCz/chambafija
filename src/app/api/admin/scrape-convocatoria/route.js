@@ -16,6 +16,32 @@ const MESES = {
   sep: "09", set: "09", oct: "10", nov: "11", dic: "12",
 };
 
+// Diccionario de distritos de la región Pasco (prioriza los distritos estándar de tu selector)
+const DISTRITOS_PASCO = [
+  { etiqueta: "Chaupimarca, Pasco", claves: ["chaupimarca"] },
+  { etiqueta: "Yanacancha, Pasco", claves: ["yanacancha"] },
+  { etiqueta: "Simón Bolívar, Pasco", claves: ["simon bolivar", "rancas", "paragsha"] },
+  { etiqueta: "Pallanchacra, Pasco", claves: ["pallanchacra"] },
+  { etiqueta: "Yarusyacán, Pasco", claves: ["yarusyacan", "san francisco de asis de yarusyacan"] },
+  { etiqueta: "Oxapampa, Pasco", claves: ["oxapampa"] },
+  { etiqueta: "Villa Rica, Pasco", claves: ["villa rica"] },
+  { etiqueta: "Vicco, Pasco", claves: ["distrital de vicco", "municipio de vicco", "vicco"] },
+  { etiqueta: "Huachón, Pasco", claves: ["huachon"] },
+  { etiqueta: "Puerto Bermúdez, Pasco", claves: ["puerto bermudez"] },
+  { etiqueta: "Palcazú, Pasco", claves: ["palcazu", "iscozacin"] },
+  { etiqueta: "Huayllay, Pasco", claves: ["huayllay"] },
+  { etiqueta: "Tinyahuarco, Pasco", claves: ["tinyahuarco", "colquijirca", "smelter"] },
+  { etiqueta: "Ninacaca, Pasco", claves: ["ninacaca"] },
+  { etiqueta: "Paucartambo, Pasco", claves: ["paucartambo"] },
+  { etiqueta: "Huariaca, Pasco", claves: ["huariaca"] },
+  { etiqueta: "Ticlacayán, Pasco", claves: ["ticlacayan"] },
+  { etiqueta: "Pozuzo, Pasco", claves: ["pozuzo"] },
+  { etiqueta: "Chontabamba, Pasco", claves: ["chontabamba"] },
+  { etiqueta: "Huancabamba, Pasco", claves: ["huancabamba"] },
+  { etiqueta: "Constitución, Pasco", claves: ["constitucion"] },
+  { etiqueta: "Yanahuanca, Pasco", claves: ["yanahuanca", "daniel alcides carrion"] },
+];
+
 function limpiar(valor = "") {
   return String(valor)
     .replace(/\u00a0/g, " ")
@@ -117,36 +143,30 @@ function esCorte(linea, etiquetas = []) {
   });
 }
 
-// Limpia el texto de "¿Cómo postular?" omitiendo vínculos como "POSTULA AQUÍ", "CLICK AQUÍ", etc.
 function limpiarTextoComoPostular(texto = "") {
   let linea = limpiar(texto);
   if (!linea) return "";
 
-  // 1. Borrar combinaciones completas como "En el Link convocatorias CAS: POSTULA AQUÍ" o "CLICK AQUÍ"
   linea = linea.replace(
     /(?:en\s+el\s+|a\s+trav[eé]s\s+del\s+|mediante\s+el\s+)?(?:siguiente\s+)?(?:link|enlace).*?[:\-]?\s*(?:(?:haz|hacer|dale)\s+)?(?:clic|click|postula|postular|postule|ingresa|ingresar|ingrese|inscr[íi]bete|inscribirse|reg[íi]strate|registrarse|entra|ir)\s+aqu[íi]/gi,
     ""
   );
 
-  // 2. Borrar frases de vínculo entre paréntesis o corchetes: "(CLICK AQUÍ)", "[POSTULA AQUÍ]"
   linea = linea.replace(
     /[\(\[\{]\s*(?:(?:haz|hacer|dale)\s+)?(?:clic|click|postula|postular|postule|ingresa|ingresar|ingrese|inscr[íi]bete|inscribirse|reg[íi]strate|registrarse|entra|ir|ver)?\s*aqu[íi]\s*[\)\]\}]/gi,
     ""
   );
 
-  // 3. Borrar frases sueltas ("POSTULA AQUÍ", "CLICK AQUÍ", "CLIC AQUÍ", "INGRESA AQUÍ", "INSCRÍBETE AQUÍ", etc.)
   linea = linea.replace(
     /(?:(?:haz|hacer|dale)\s+)?(?:clic|click|postula|postular|postule|ingresa|ingresar|ingrese|inscr[íi]bete|inscribirse|reg[íi]strate|registrarse|entra|ir)\s+aqu[íi]/gi,
     ""
   );
 
-  // 4. Borrar texto residual al final si quedó huérfano tras quitar el vínculo (ej. "En el Link convocatorias CAS:")
   linea = linea.replace(
     /(?:en\s+el\s+|a\s+trav[eé]s\s+del\s+|mediante\s+el\s+)?(?:siguiente\s+)?(?:link|enlace)(?:\s+de\s+[\w\sáéíóúñ]+)?\s*[:\-]?\s*$/gi,
     ""
   );
 
-  // 5. Limpiar paréntesis vacíos, dos puntos o guiones sueltos al final
   linea = linea
     .replace(/\(\s*\)|\[\s*\]/g, "")
     .replace(/[:\-–—]\s*$/g, "")
@@ -155,7 +175,6 @@ function limpiarTextoComoPostular(texto = "") {
   return linea;
 }
 
-// Extrae exclusivamente el contenido posterior a un encabezado.
 function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
   const objetivo = normalizar(etiqueta).replace(/[:?¿]/g, "").trim();
   let inicio = -1;
@@ -193,18 +212,15 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
 
     const normal = normalizar(linea).replace(/^[•*\-–—\s]+/, "");
 
-    // Filtro estándar de cortes del sistema
     if (/^(publicidad|recomendaciones para postular|descarga aqui las bases|resultados de la convocatoria|te sugerimos|convocatorias destacadas)$/.test(normal)) {
       break;
     }
 
-    // LIMPIEZA AVANZADA DE VÍNCULOS EN "¿CÓMO POSTULAR?"
     if (objetivo.includes("como postular")) {
       linea = limpiarTextoComoPostular(linea);
       if (!linea || /^[•*\-–—.\s]*$/.test(linea)) continue;
     }
 
-    // Comprobamos si la línea actual inicia con una viñeta clásica o guion
     const esNuevaVineta = /^[•*\-–—]/.test(linea);
     const lineaLimpia = linea.replace(/^[•*\-–—.]\s*/, "");
     if (!lineaLimpia) continue;
@@ -226,7 +242,6 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
   return limpiar(partesAgrupadas.join("\n"));
 }
 
-// Entidad: detecta tanto "ENTIDAD > Convocatoria..." como "Convocatoria ENTIDAD..." y el pie de comunicados
 function extraerEntidad($, lineas = []) {
   const fuentes = [
     limpiar($("h1").first().text()),
@@ -234,14 +249,12 @@ function extraerEntidad($, lineas = []) {
   ].filter(Boolean);
 
   for (const origen of fuentes) {
-    // Caso 1: "PROGRAMA WARMI ÑAN > Convocatoria CAS N°..."
     const antesDeFlecha = origen.match(/^(.+?)\s*[>»]\s*convocatoria/i);
     if (antesDeFlecha) {
       const entidad = limpiar(antesDeFlecha[1]).replace(/[-–—_.,|>;:]+$/, "").trim();
       if (entidad.length >= 2) return entidad;
     }
 
-    // Caso 2: "Convocatoria PROGRAMA WARMI ÑAN CAS N°..."
     const match = origen.match(
       /convocatoria\s+(?:de\s+(?:trabajo|pr[áa]cticas|empleo)\s+)?(?:en\s+la\s+|en\s+el\s+|en\s+|de\s+la\s+|del\s+|de\s+)?(.+?)(?:[:\-|>»]|\d{4}|$)/i
     );
@@ -254,7 +267,6 @@ function extraerEntidad($, lineas = []) {
     }
   }
 
-  // Caso 3: Respaldo desde la línea "comunicados de las convocatorias de ENTIDAD"
   for (const linea of lineas) {
     const m = linea.match(/convocatorias\s+(?:vigentes\s+)?de\s+([A-ZÁÉÍÓÚÑ0-9\s()-]{3,80}?)(?:[.]|$)/i);
     if (m) {
@@ -266,7 +278,40 @@ function extraerEntidad($, lineas = []) {
   return "";
 }
 
-// Puesto: busca el encabezado CAS, 728 o 276 y extrae TODO el texto hasta toparse con una sección nueva.
+// NUEVO: Detecta automáticamente el distrito exacto de Pasco
+function extraerUbicacion(entidad = "", titulo = "", lineas = []) {
+  const buscarDistritoEnTexto = (texto) => {
+    const norm = ` ${normalizar(texto).replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ")} `;
+    for (const item of DISTRITOS_PASCO) {
+      for (const clave of item.claves) {
+        if (norm.includes(` ${clave} `)) {
+          return item.etiqueta;
+        }
+      }
+    }
+    return "";
+  };
+
+  // 1. Prioridad máxima: línea de "Lugar de prestación del servicio" o "Lugar de trabajo"
+  const lineaLugar = lineas.find((l) =>
+    /(?:lugar\s+de\s+prestaci[oó]n|lugar\s+de\s+trabajo|ubicaci[oó]n\s*:|sede\s*:)/i.test(l)
+  );
+  if (lineaLugar) {
+    const detectadoEnLugar = buscarDistritoEnTexto(lineaLugar);
+    if (detectadoEnLugar) return detectadoEnLugar;
+  }
+
+  // 2. Segunda prioridad: nombre de la entidad o título del puesto (ej. "MUNICIPALIDAD DE VICCO")
+  const detectadoEnCabecera = buscarDistritoEnTexto(`${entidad} ${titulo}`);
+  if (detectadoEnCabecera) return detectadoEnCabecera;
+
+  // 3. Tercera prioridad: cuerpo de la convocatoria
+  const detectadoEnCuerpo = buscarDistritoEnTexto(lineas.slice(0, 80).join(" "));
+  if (detectadoEnCuerpo) return detectadoEnCuerpo;
+
+  return "Pasco";
+}
+
 function extraerTituloPuesto($, lineas) {
   const encabezados = $("h1,h2,h3,h4,h5,p,strong,b,span")
     .map((_, el) => limpiar($(el).text()))
@@ -314,7 +359,6 @@ function extraerTituloPuesto($, lineas) {
   return "";
 }
 
-// Normaliza importes con punto o coma decimal.
 function normalizarImporte(valor) {
   let numero = String(valor || "").replace(/[^\d.,]/g, "");
 
@@ -392,7 +436,6 @@ function fechaISO(dia, mesTexto, anio) {
   return `${y}-${mes}-${String(d).padStart(2, "0")}`;
 }
 
-// Reconoce rangos entre meses distintos, como 30 de octubre y 02 de noviembre.
 function extraerFechas(lineas) {
   const texto = lineas.join(" ").replace(/\s+/g, " ");
 
@@ -455,7 +498,6 @@ function extraerFechas(lineas) {
   };
 }
 
-// Obtiene la última hora del horario de atención como hora límite.
 function extraerHora(textoComoPostular) {
   const texto = String(textoComoPostular || "").toLowerCase();
 
@@ -486,7 +528,6 @@ function extraerHora(textoComoPostular) {
   return `${String(hora).padStart(2, "0")}:${String(minuto).padStart(2, "0")}`;
 }
 
-// Extrae los enlaces estrictamente del espacio "Descarga aquí las Bases"
 function extraerEnlaces($) {
   let enlaceBases = "";
   const enlacesExtras = [];
@@ -621,16 +662,15 @@ export async function POST(request) {
 
     $("script, style, noscript, nav, footer, iframe, form, aside").remove();
 
-    // 1. Extraemos primero los enlaces de Bases y Anexos mientras todos los <a> existen
     const { enlaceBases, enlacesExtras } = extraerEnlaces($);
 
-    // 2. Eliminamos los vínculos tipo botón ("POSTULA AQUÍ", "CLICK AQUÍ", etc.) antes de extraer texto
     eliminarVinculosPostulacion($);
 
     const lineas = obtenerLineas($);
 
-    const entidad = extraerEntidad($);
+    const entidad = extraerEntidad($, lineas);
     const titulo = extraerTituloPuesto($, lineas);
+    const ubicacionDetectada = extraerUbicacion(entidad, titulo, lineas);
 
     const modalidadTexto = [
       limpiar($("title").text()),
@@ -652,7 +692,6 @@ export async function POST(request) {
         ?.match(/\b(\d{1,4})\b/)?.[1] ||
       "";
 
-    // FORMACIÓN: termina cuando comienza Experiencia.
     const formacion = extraerSeccion(
       lineas,
       "Formación Académica",
@@ -665,7 +704,6 @@ export async function POST(request) {
       "🎓"
     );
 
-    // EXPERIENCIA: termina antes del encabezado de Cursos.
     const experiencia = extraerSeccion(
       lineas,
       "Experiencia",
@@ -679,7 +717,6 @@ export async function POST(request) {
       "💼"
     );
 
-    // CURSOS: inicia exactamente después del título indicado.
     const especializacion = extraerSeccion(
       lineas,
       "Cursos y/o programas de especialización",
@@ -717,7 +754,7 @@ export async function POST(request) {
       modalidad: modalidadMatch
         ? modalidadMatch[1].replace(/\s+/g, " ").trim()
         : "",
-      ubicacion: "Pasco", // Rellena "Pasco" por defecto
+      ubicacion: ubicacionDetectada, // Distrito exacto detectado o "Pasco"
       vacantes,
       sueldo: remuneracion,
       fechaInicio: fechas.fechaInicio,

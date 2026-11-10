@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 /* ============================================================
-   FORMATO DE FECHAS
+   FORMATO DE FECHAS Y ETIQUETAS AUTOMÁTICAS
    ============================================================ */
 
 const formatTimeStr = (hora) => {
@@ -55,6 +55,74 @@ const formatDateRange = (inicio, fin, hora) => {
   }
 
   return '';
+};
+
+// Detecta si la oferta fue publicada en las últimas 36 horas ("🕒 Reciente")
+const esOfertaReciente = (job) => {
+  let timestamp = 0;
+
+  if (job.createdAt) {
+    const parsed = new Date(job.createdAt).getTime();
+    if (!Number.isNaN(parsed)) timestamp = parsed;
+  } else if (job.fechaPublicacion) {
+    const parsed = new Date(job.fechaPublicacion).getTime();
+    if (!Number.isNaN(parsed)) timestamp = parsed;
+  } else if (job._id && /^[a-fA-F0-9]{24}$/.test(String(job._id))) {
+    timestamp = parseInt(String(job._id).substring(0, 8), 16) * 1000;
+  }
+
+  if (!timestamp) return false;
+
+  const horasTranscurridas = (Date.now() - timestamp) / (1000 * 60 * 60);
+  return horasTranscurridas >= 0 && horasTranscurridas <= 36;
+};
+
+// Detecta si la oferta vence hoy o en los próximos 2 días ("🔥 ¡Cierra hoy!" / "⏳ Cierra pronto")
+const obtenerEstadoCierre = (job) => {
+  if (!job.fechaVencimiento) return null;
+
+  const fechaString = String(job.fechaVencimiento).split('T')[0];
+  const partes = fechaString.split('-').map(Number);
+  if (partes.length !== 3) return null;
+
+  const [year, month, day] = partes;
+  const hoy = new Date();
+  const inicioHoy = new Date(
+    hoy.getFullYear(),
+    hoy.getMonth(),
+    hoy.getDate()
+  ).getTime();
+  const inicioVenc = new Date(year, month - 1, day).getTime();
+
+  if (Number.isNaN(inicioVenc)) return null;
+
+  const diasRestantes = Math.round(
+    (inicioVenc - inicioHoy) / (1000 * 60 * 60 * 24)
+  );
+
+  if (diasRestantes === 0) {
+    return {
+      texto: '🔥 ¡Cierra hoy!',
+      clases:
+        'bg-rose-600 text-white border border-rose-700 animate-pulse',
+    };
+  }
+
+  if (diasRestantes === 1) {
+    return {
+      texto: '⏳ Cierra mañana',
+      clases: 'bg-amber-100 text-amber-900 border border-amber-300',
+    };
+  }
+
+  if (diasRestantes === 2) {
+    return {
+      texto: '⏳ Cierra pronto',
+      clases: 'bg-amber-50 text-amber-800 border border-amber-200',
+    };
+  }
+
+  return null;
 };
 
 /* ============================================================
@@ -157,20 +225,10 @@ const obtenerNumeroVacantes = (valor) => {
 };
 
 /* ============================================================
-   PUBLICIDADES (CARRUSEL COMERCIAL INTELIGENTE)
-   ============================================================
-   Formas de poner la imagen de un cliente:
-   Opción A (Recomendada - Súper rápida): Guarda la imagen en tu carpeta
-            public/banners/cliente1.jpg y pon imagen: '/banners/cliente1.jpg'
-   Opción B (Google Drive): Pon el ID del archivo en driveId: '1ABC...'
-   ============================================================ */
-
-/* ============================================================
    PUBLICIDADES (VITRINA SIN RECORTES PC + CELULAR)
    ============================================================ */
 
 const publicidades = [
-  
   {
     id: 'publicidad-1',
     activo: true,
@@ -181,19 +239,21 @@ const publicidades = [
     rubro: 'Ayuda Social',
     promo: '',
     whatsapp: '943794468',
-    mensaje: 'Hola, vi su publicidad en ChambaFija y quisiera más información.',
+    mensaje:
+      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
   },
   {
     id: 'publicidad-2',
     activo: true,
-    imagen: '/PromosDelucesV4.jpg', // Imagen principal (se adapta sin recortes en PC y celular)
-    imagenMovil: '',              // Opcional: pon otra ruta solo si hiciste versión exclusiva para celular
+    imagen: '/PromosDelucesV4.jpg',
+    imagenMovil: '',
     driveId: '',
     nombre: 'Deluces Films',
     rubro: 'Fotografía y Video Profesional',
     promo: '🔥 Promo exclusiva viendo ChambaFija',
     whatsapp: '967576214',
-    mensaje: 'Hola, vi su publicidad en portada de ChambaFija y quisiera solicitar una cotización.',
+    mensaje:
+      'Hola, vi su publicidad en portada de ChambaFija y quisiera solicitar una cotización.',
   },
 ];
 
@@ -246,7 +306,6 @@ const PublicidadSection = ({ whatsappUrl }) => {
           onMouseEnter={() => setPausado(true)}
           onMouseLeave={() => setPausado(false)}
         >
-          {/* TARJETA COMERCIAL AUTO-ADAPTABLE (CERO BORDES VACÍOS) */}
           <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-[#0B132B] shadow-[0_14px_34px_-12px_rgba(11,19,43,0.32)]">
             {(() => {
               const actual =
@@ -272,7 +331,6 @@ const PublicidadSection = ({ whatsappUrl }) => {
                   rel="noopener noreferrer"
                   className="group block w-full"
                 >
-                  {/* CONTENEDOR QUE SE AJUSTA AL 100% DEL BORDE DE CUALQUIER IMAGEN */}
                   <div className="relative w-full overflow-hidden bg-[#0B132B]">
                     <picture className="block w-full">
                       <source media="(max-width: 639px)" srcSet={imgMovil} />
@@ -296,7 +354,6 @@ const PublicidadSection = ({ whatsappUrl }) => {
                     )}
                   </div>
 
-                  {/* BARRA INFERIOR DE CONTACTO */}
                   <div className="bg-[#0B132B] border-t border-white/10 px-4 py-3 sm:px-6 sm:py-3.5 flex items-center justify-between gap-3">
                     <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
                       <span className="inline-flex items-center gap-1 bg-white/10 text-[#06D6A0] text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg border border-[#06D6A0]/30 shrink-0">
@@ -363,7 +420,6 @@ const PublicidadSection = ({ whatsappUrl }) => {
             )}
           </div>
 
-          {/* BARRA INFERIOR PARA CAPTAR NUEVOS ANUNCIANTES */}
           <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 rounded-2xl bg-white border border-slate-200/80 text-xs shadow-2xs">
             <div className="flex items-center gap-2">
               {anunciosActivos.length > 1 && (
@@ -399,7 +455,6 @@ const PublicidadSection = ({ whatsappUrl }) => {
           </div>
         </div>
       ) : (
-        /* VITRINA CUANDO NO HAY BANNERS ACTIVOS */
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0B132B] via-[#132246] to-[#0B132B] border border-slate-800 shadow-[0_14px_34px_-12px_rgba(11,19,43,0.45)]">
           <div className="absolute -left-16 -top-16 w-56 h-56 rounded-full bg-[#06D6A0]/15 blur-3xl pointer-events-none" />
           <div className="absolute -right-16 -bottom-16 w-56 h-56 rounded-full bg-blue-500/15 blur-3xl pointer-events-none" />
@@ -418,7 +473,9 @@ const PublicidadSection = ({ whatsappUrl }) => {
               </h2>
 
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Ideal para restaurantes, clínicas, academias, tiendas e inmobiliarias. Tu imagen rotativa en portada con botón directo al WhatsApp de ventas.
+                Ideal para restaurantes, clínicas, academias, tiendas e
+                inmobiliarias. Tu imagen rotativa en portada con botón directo
+                al WhatsApp de ventas.
               </p>
             </div>
 
@@ -438,7 +495,6 @@ const PublicidadSection = ({ whatsappUrl }) => {
     </section>
   );
 };
-
 
 /* ============================================================
    CAMPO CLASIFICADO
@@ -543,6 +599,47 @@ export default function Home() {
   const whatsappVIPUrl =
     `https://api.whatsapp.com/send?phone=${numeroWhatsApp}` +
     `&text=${encodeURIComponent(mensajeVIP)}`;
+
+  /* WHATSAPP REPORTE DE SEGURIDAD */
+  const mensajeReporte =
+    'Hola, quiero reportar una consulta o anuncio sospechoso en ChambaFija.';
+
+  const whatsappReporteUrl =
+    `https://api.whatsapp.com/send?phone=${numeroWhatsApp}` +
+    `&text=${encodeURIComponent(mensajeReporte)}`;
+
+  /* ==========================================================
+     COMPARTIR OFERTA POR WHATSAPP (PARA VISITANTES)
+     ========================================================== */
+
+  const compartirOfertaWhatsApp = (job, event) => {
+    if (event) event.stopPropagation();
+
+    const baseUrl =
+      typeof window !== 'undefined'
+        ? window.location.origin
+        : 'https://www.chambafija.com';
+
+    const shareUrl = `${baseUrl}/oferta/${job._id}`;
+    const entidadTexto =
+      job.tipo === 'Clasificado'
+        ? job.categoriaClasificado || 'Anuncio Clasificado'
+        : job.empresa || 'Anuncio Local';
+
+    const texto =
+      `🚨 *Mira esta oportunidad en ChambaFija Pasco*\n\n` +
+      `🏢 *${entidadTexto}*\n` +
+      `💼 *${job.titulo}*\n` +
+      `💰 ${job.sueldo || 'A tratar'}\n` +
+      `📍 ${job.ubicacion || 'Pasco'}\n\n` +
+      `👉 *Ver detalles y postular aquí:*\n${shareUrl}`;
+
+    window.open(
+      `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`,
+      '_blank',
+      'noopener,noreferrer'
+    );
+  };
 
   /* ==========================================================
      OBTENER ANUNCIOS
@@ -1072,10 +1169,14 @@ export default function Home() {
   };
 
   /* ==========================================================
-     TARJETA DE ANUNCIO (DISEÑO EJECUTIVO SIN DESBORDES)
+     TARJETA DE ANUNCIO (CON INSIGNIAS Y BOTÓN DE COMPARTIR)
      ========================================================== */
 
   const JobCard = ({ job }) => {
+    const reciente = esOfertaReciente(job);
+    const estadoCierre = obtenerEstadoCierre(job);
+    const verificado = job.tipo !== 'Estado' && job.verificado !== false;
+
     /* 1. TARJETA DE CLASIFICADOS */
     if (job.tipo === 'Clasificado') {
       const categoria = job.categoriaClasificado || 'Otros';
@@ -1095,24 +1196,48 @@ export default function Home() {
           />
 
           <div>
-            <div className="flex items-center justify-between gap-2 mb-4">
-              <span
-                className="text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider inline-flex items-center gap-1.5 whitespace-nowrap"
-                style={{
-                  backgroundColor: config.fondo,
-                  color: config.color,
-                  border: `1px solid ${config.borde}`,
-                }}
-              >
-                <span>{config.icono}</span>
-                <span>{categoria}</span>
-              </span>
-
-              {job.esVip && (
-                <span className="text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-300/80 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
-                  ⭐ VIP
+            <div className="flex flex-wrap items-center justify-between gap-1.5 mb-4">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span
+                  className="text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider inline-flex items-center gap-1.5 whitespace-nowrap"
+                  style={{
+                    backgroundColor: config.fondo,
+                    color: config.color,
+                    border: `1px solid ${config.borde}`,
+                  }}
+                >
+                  <span>{config.icono}</span>
+                  <span>{categoria}</span>
                 </span>
-              )}
+
+                {verificado && (
+                  <span className="text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                    ✅ Verificado
+                  </span>
+                )}
+
+                {reciente && (
+                  <span className="text-[10px] font-extrabold bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                    🕒 Reciente
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                {estadoCierre && (
+                  <span
+                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded-lg whitespace-nowrap ${estadoCierre.clases}`}
+                  >
+                    {estadoCierre.texto}
+                  </span>
+                )}
+
+                {job.esVip && (
+                  <span className="text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-300/80 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+                    ⭐ VIP
+                  </span>
+                )}
+              </div>
             </div>
 
             <h3 className="text-base sm:text-[17px] font-extrabold text-[#0B132B] mb-3.5 leading-snug group-hover:text-slate-700 transition-colors">
@@ -1155,18 +1280,31 @@ export default function Home() {
 
             <p className="text-[11px] text-slate-400 font-semibold mb-4">
               📅 Publicado:{' '}
-              {formatearFechaPub(job.fechaInicio || job.fechaPublicacion)}
+              {formatearFechaPub(
+                job.fechaInicio || job.fechaPublicacion || job.createdAt
+              )}
             </p>
           </div>
 
-          <button
-            onClick={() => setSelectedJob(job)}
-            className="w-full text-white text-xs font-extrabold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-xs hover:opacity-95 active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
-            style={{ backgroundColor: config.color }}
-          >
-            <span>📲 Ver detalles y contactar</span>
-            <span>→</span>
-          </button>
+          <div className="flex items-center gap-2 mt-auto">
+            <button
+              onClick={() => setSelectedJob(job)}
+              className="flex-1 text-white text-xs font-extrabold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-xs hover:opacity-95 active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+              style={{ backgroundColor: config.color }}
+            >
+              <span>📲 Ver detalles y contactar</span>
+              <span>→</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => compartirOfertaWhatsApp(job, e)}
+              title="Compartir este anuncio por WhatsApp"
+              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-extrabold py-3.5 px-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center shrink-0"
+            >
+              📤
+            </button>
+          </div>
         </article>
       );
     }
@@ -1182,7 +1320,6 @@ export default function Home() {
             : 'border-slate-200/90 hover:border-slate-300 shadow-[0_2px_12px_-3px_rgba(11,19,43,0.06)]'
         }`}
       >
-        {/* Franja superior corporativa */}
         <div
           className={`absolute inset-x-0 top-0 h-1 ${
             job.esVip
@@ -1194,27 +1331,51 @@ export default function Home() {
         />
 
         <div>
-          {/* NIVEL 1: ETIQUETA DE SECTOR + INSIGNIA VIP (SIN FECHAS LARGAS AQUÍ) */}
-          <div className="flex items-center justify-between gap-2 mb-4">
-            <span
-              className={`inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap ${
-                esEstado
-                  ? 'bg-blue-50 text-blue-700 border border-blue-200/80'
-                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
-              }`}
-            >
-              <span>{esEstado ? '🏛️' : '💼'}</span>
-              <span>{esEstado ? 'Sector Público' : 'Empleo Local'}</span>
-            </span>
-
-            {job.esVip && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-300/80 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
-                ⭐ VIP
+          {/* NIVEL 1: ETIQUETAS DE SECTOR + VERIFICADO + RECIENTE + CIERRE PRONTO + VIP */}
+          <div className="flex flex-wrap items-center justify-between gap-1.5 mb-4">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span
+                className={`inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap ${
+                  esEstado
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200/80'
+                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
+                }`}
+              >
+                <span>{esEstado ? '🏛️' : '💼'}</span>
+                <span>{esEstado ? 'Sector Público' : 'Empleo Local'}</span>
               </span>
-            )}
+
+              {verificado && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                  ✅ Verificado
+                </span>
+              )}
+
+              {reciente && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                  🕒 Reciente
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {estadoCierre && (
+                <span
+                  className={`inline-flex items-center text-[10px] font-extrabold px-2 py-0.5 rounded-lg whitespace-nowrap ${estadoCierre.clases}`}
+                >
+                  {estadoCierre.texto}
+                </span>
+              )}
+
+              {job.esVip && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-300/80 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+                  ⭐ VIP
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* NIVEL 2: ESCUDO + NOMBRE DE ENTIDAD DE ANCHO COMPLETO */}
+          {/* NIVEL 2: ESCUDO + NOMBRE DE ENTIDAD */}
           <div className="flex items-center gap-3.5 mb-3.5 pb-3.5 border-b border-slate-100">
             {job.logo ? (
               <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 p-1.5 shadow-2xs flex items-center justify-center shrink-0 overflow-hidden">
@@ -1284,7 +1445,7 @@ export default function Home() {
             )}
           </div>
 
-          {/* NIVEL 5: BARRA DE CIERRE DE ANCHO COMPLETO (CERO COLISIONES) */}
+          {/* NIVEL 5: BARRA DE CIERRE */}
           {esEstado && job.fechaVencimiento && (
             <div className="mb-4 px-3 py-2 rounded-xl bg-rose-50/90 border border-rose-200/80 text-rose-700 text-[11px] font-bold flex flex-wrap items-center justify-center text-center leading-snug">
               {formatDateRange(
@@ -1296,21 +1457,32 @@ export default function Home() {
           )}
         </div>
 
-        <button
-          onClick={() => setSelectedJob(job)}
-          className={`w-full text-xs font-extrabold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-xs cursor-pointer flex items-center justify-center gap-2 active:scale-[0.99] ${
-            esEstado
-              ? 'bg-[#0B132B] hover:bg-[#162447] text-white'
-              : 'bg-[#0B132B] hover:bg-emerald-600 text-white'
-          }`}
-        >
-          <span>
-            {esEstado ? 'Ver Convocatoria Oficial' : 'Ver Detalles y Postular'}
-          </span>
-          <span className="text-[#06D6A0] group-hover:text-white transition-colors">
-            →
-          </span>
-        </button>
+        <div className="flex items-center gap-2 mt-auto">
+          <button
+            onClick={() => setSelectedJob(job)}
+            className={`flex-1 text-xs font-extrabold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-xs cursor-pointer flex items-center justify-center gap-2 active:scale-[0.99] ${
+              esEstado
+                ? 'bg-[#0B132B] hover:bg-[#162447] text-white'
+                : 'bg-[#0B132B] hover:bg-emerald-600 text-white'
+            }`}
+          >
+            <span>
+              {esEstado ? 'Ver Convocatoria Oficial' : 'Ver Detalles y Postular'}
+            </span>
+            <span className="text-[#06D6A0] group-hover:text-white transition-colors">
+              →
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => compartirOfertaWhatsApp(job, e)}
+            title="Compartir esta oferta por WhatsApp"
+            className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-extrabold py-3.5 px-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center shrink-0"
+          >
+            📤
+          </button>
+        </div>
       </article>
     );
   };
@@ -1557,7 +1729,7 @@ export default function Home() {
 
       <main
         id="resultados-anuncios"
-        className="max-w-6xl mx-auto px-4 pb-24 w-full flex-grow scroll-mt-24"
+        className="max-w-6xl mx-auto px-4 pb-16 w-full flex-grow scroll-mt-24"
       >
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1844,6 +2016,40 @@ export default function Home() {
       </main>
 
       {/* ======================================================
+          BLOQUE DE POSTULACIÓN SEGURA Y ANTIFRAUDE
+          ====================================================== */}
+
+      <section className="max-w-6xl mx-auto px-4 pb-12 w-full">
+        <div className="bg-gradient-to-r from-[#0B132B] via-[#132246] to-[#0B132B] text-white rounded-3xl p-6 sm:p-7 border border-emerald-500/30 shadow-[0_14px_34px_-12px_rgba(11,19,43,0.35)] flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+          <div className="space-y-2 max-w-3xl">
+            <div className="inline-flex items-center gap-2 bg-[#06D6A0]/15 text-[#06D6A0] text-[11px] font-extrabold px-3 py-1 rounded-full border border-[#06D6A0]/30 uppercase tracking-wider">
+              🛡️ Postulación 100% Segura en Pasco
+            </div>
+
+            <h3 className="text-base sm:text-lg font-extrabold text-white leading-snug">
+              En ChambaFija nunca te pediremos dinero por postular
+            </h3>
+
+            <p className="text-xs sm:text-[13px] text-slate-300 leading-relaxed font-medium">
+              Los anuncios de negocios locales cuentan con revisión previa y las
+              convocatorias públicas enlazan directamente a las bases oficiales
+              del Estado. Nunca realices pagos adelantados por exámenes médicos,
+              cursos o trámites de ingreso.
+            </p>
+          </div>
+
+          <a
+            href={whatsappReporteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full md:w-auto text-center shrink-0 bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-extrabold px-5 py-3.5 rounded-2xl transition-all"
+          >
+            🚨 Reportar un aviso
+          </a>
+        </div>
+      </section>
+
+      {/* ======================================================
           MODAL DETALLE
           ====================================================== */}
 
@@ -1871,9 +2077,10 @@ export default function Home() {
                       selectedJob.categoriaClasificado || 'Otros'
                     )
                   : null;
+              const estadoCierreModal = obtenerEstadoCierre(selectedJob);
 
               return (
-                <div className="pr-12 mb-3">
+                <div className="pr-12 mb-3 flex flex-wrap items-center gap-2">
                   <span
                     className="inline-flex items-center gap-1.5 text-[10px] font-extrabold px-3.5 py-1.5 rounded-lg uppercase tracking-wider"
                     style={
@@ -1905,6 +2112,27 @@ export default function Home() {
                         }`
                       : '💼 Empleo Privado Local'}
                   </span>
+
+                  {selectedJob.tipo !== 'Estado' &&
+                    selectedJob.verificado !== false && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg">
+                        ✅ Anunciante Verificado
+                      </span>
+                    )}
+
+                  {esOfertaReciente(selectedJob) && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-1 rounded-lg">
+                      🕒 Reciente
+                    </span>
+                  )}
+
+                  {estadoCierreModal && (
+                    <span
+                      className={`inline-flex items-center text-[10px] font-extrabold px-2.5 py-1 rounded-lg ${estadoCierreModal.clases}`}
+                    >
+                      {estadoCierreModal.texto}
+                    </span>
+                  )}
                 </div>
               );
             })()}
@@ -2131,7 +2359,8 @@ export default function Home() {
                             <span className="font-bold text-[#0B132B] text-sm">
                               {formatearFechaPub(
                                 selectedJob.fechaInicio ||
-                                  selectedJob.fechaPublicacion
+                                  selectedJob.fechaPublicacion ||
+                                  selectedJob.createdAt
                               )}
                             </span>
                           </div>
@@ -2214,12 +2443,20 @@ export default function Home() {
               )}
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-100">
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-4 border-t border-slate-100">
               <button
                 onClick={() => setSelectedJob(null)}
-                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold py-3.5 rounded-xl transition-all cursor-pointer"
+                className="sm:w-28 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold py-3.5 px-4 rounded-xl transition-all cursor-pointer"
               >
                 Cerrar
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => compartirOfertaWhatsApp(selectedJob, e)}
+                className="sm:w-auto bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-extrabold py-3.5 px-4 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                📤 Compartir
               </button>
 
               {selectedJob.tipo === 'Estado' ? (
@@ -2228,7 +2465,7 @@ export default function Home() {
                     href={selectedJob.enlaceBases}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex-1 text-center bg-[#0B132B] hover:bg-slate-800 text-[#06D6A0] text-xs font-extrabold py-3.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                    className="flex-1 text-center bg-[#0B132B] hover:bg-slate-800 text-[#06D6A0] text-xs font-extrabold py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
                   >
                     📄 Descargar Bases Oficiales
                   </a>

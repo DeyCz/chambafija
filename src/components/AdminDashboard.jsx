@@ -50,19 +50,16 @@ function normalizarNombreLogo(nombre) {
     .trim();
 }
 
-// Busca el logo normalizando tanto el texto como las claves (soporta Ñ, tildes, guiones de URL y palabras intermedias)
 function buscarLogoInstitucional(texto) {
   const nombreNorm = normalizarNombreLogo(texto);
   if (!nombreNorm) return "";
 
   const textoConEspacios = ` ${nombreNorm} `;
 
-  // Ordenamos las claves de la más específica (más larga) a la más corta para evitar falsos positivos con siglas
   const entradasOrdenadas = Object.entries(logosInstitucionales).sort(
     (a, b) => b[0].length - a[0].length
   );
 
-  // 1. Coincidencia por frase completa normalizada
   for (const [key, urlLogo] of entradasOrdenadas) {
     const keyNorm = normalizarNombreLogo(key);
     if (keyNorm && textoConEspacios.includes(` ${keyNorm} `)) {
@@ -70,7 +67,6 @@ function buscarLogoInstitucional(texto) {
     }
   }
 
-  // 2. Coincidencia por palabras clave (ej. "PROGRAMA NACIONAL WARMI ÑAN" -> detecta "WARMI" y "NAN")
   const palabrasIgnoradas = new Set([
     "DE", "DEL", "LA", "EL", "LOS", "LAS", "EN", "Y", "PARA", "PROGRAMA", "NACIONAL", "DISTRITAL", "PROVINCIAL"
   ]);
@@ -105,6 +101,7 @@ export default function AdminDashboard() {
   const [scrapeError, setScrapeError] = useState('');
 
   const [mostrarVencidos, setMostrarVencidos] = useState(false);
+  const [busquedaHistorial, setBusquedaHistorial] = useState('');
 
   // Estados para Canal de WhatsApp y Radar de Convocatorias Pasco
   const CANAL_WHATSAPP_URL = 'https://whatsapp.com/channel/0029Vb8NSHbDJ6H4RX6Zqj25';
@@ -138,6 +135,7 @@ export default function AdminDashboard() {
     horaVencimiento: '',
     fechaPublicacion: '',
     esVip: false,
+    verificado: true,
     area: '',
     categoriaClasificado: 'Locales en alquiler',
     tipoLocal: '', ambientes: '', banos: '', garantia: '',
@@ -158,7 +156,6 @@ export default function AdminDashboard() {
     'Villa Rica, Pasco'
   ];
 
-  // Cargar historial local de convocatorias ya revisadas/extraídas
   useEffect(() => {
     try {
       const guardadas = localStorage.getItem(STORAGE_REVISADAS_KEY);
@@ -171,7 +168,6 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  // Auto-detectar logo cada vez que cambie formData.empresa (por extracción o escritura manual)
   useEffect(() => {
     if (!formData.empresa) return;
     const logoDetectado = buscarLogoInstitucional(formData.empresa);
@@ -262,6 +258,7 @@ export default function AdminDashboard() {
     setFormData(prev => ({ ...prev, tipo: nuevoTipo }));
     fetchJobs();
     setMostrarVencidos(false);
+    setBusquedaHistorial('');
   }, [activeTab]);
 
   const handleChange = (e) => {
@@ -284,7 +281,6 @@ export default function AdminDashboard() {
     });
   };
 
-  // Revisar automáticamente si salieron nuevas convocatorias en Pasco
   const verificarRadarPasco = async () => {
     setRadarLoading(true);
     try {
@@ -313,7 +309,6 @@ export default function AdminDashboard() {
     verificarRadarPasco();
   }, []);
 
-  // Copiar oferta lista y abrir directo tu Canal de WhatsApp
   const publicarEnCanalWhatsApp = async (job) => {
     const baseUrl =
       typeof window !== 'undefined' ? window.location.origin : 'https://www.chambafija.com';
@@ -339,8 +334,97 @@ export default function AdminDashboard() {
     window.open(CANAL_WHATSAPP_URL, '_blank', 'noopener,noreferrer');
   };
 
-  // Importa la convocatoria y, si viene desde el Portal Pasco, la marca automáticamente como revisada
-  const importarConvocatoria = async (urlDirecta) => {
+  // NUEVO: Contactar al anunciante por WhatsApp para ofrecerle renovación o ascenso a VIP
+  const contactarRenovacionWhatsApp = (job) => {
+    const primerContacto = (job.contacto || '')
+      .split(',')[0]
+      .replace(/\D/g, '')
+      .trim();
+
+    if (!primerContacto) {
+      alert('Este registro no tiene un número de WhatsApp guardado.');
+      return;
+    }
+
+    const numeroFinal = primerContacto.startsWith('51')
+      ? primerContacto
+      : `51${primerContacto}`;
+
+    const mensaje =
+      `¡Hola! 👋 Te saludamos de *ChambaFija Pasco* (https://www.chambafija.com).\n\n` +
+      `Vimos que tu anuncio de *${job.titulo}*${job.empresa ? ` (${job.empresa})` : ''} cumplió su periodo de publicación.\n\n` +
+      `¿Aún requieres personal / sigue disponible el anuncio? Cuéntanos si deseas que lo *renovemos por 1 semana más* o si prefieres activarlo como *⭐ Destacado VIP* en los primeros lugares. ¡Quedamos atentos!`;
+
+    window.open(
+      `https://api.whatsapp.com/send?phone=${numeroFinal}&text=${encodeURIComponent(mensaje)}`,
+      '_blank',
+      'noopener,noreferrer'
+    );
+  };
+
+  // NUEVO: Acepta datos directos (para el paso en 1 solo clic desde el Radar) o usa scrapeResult
+  const pasarImportacionAlFormulario = (datosDirectos = null, urlOrigenParam = '') => {
+    const d = datosDirectos || scrapeResult?.data;
+    if (!d) return;
+
+    const modalidadRaw = String(d.modalidad || '').toLowerCase();
+    let modalidad = '';
+    if (modalidadRaw.includes('728')) modalidad = '728';
+    else if (modalidadRaw.includes('276')) modalidad = '276';
+    else if (modalidadRaw.includes('práct') || modalidadRaw.includes('pract')) modalidad = 'Prácticas';
+    else if (modalidadRaw.includes('locación') || modalidadRaw.includes('locacion')) modalidad = 'Locación';
+    else if (modalidadRaw.includes('cas')) modalidad = 'CAS';
+
+    setActiveTab('estado');
+    setEditingId(null);
+
+    const ubicacionFinal = d.ubicacion || 'Pasco';
+    // Si el distrito detectado está en la lista desplegable estándar, usamos el select; si no, el campo manual
+    setCustomLocation(!standardLocations.includes(ubicacionFinal));
+
+    const empresaDetectada = d.empresa || '';
+    const urlUsada = urlOrigenParam || scrapeResult?.urlOrigen || scrapeUrl || '';
+
+    const logoAsignado =
+      buscarLogoInstitucional(empresaDetectada) ||
+      buscarLogoInstitucional(d.titulo) ||
+      buscarLogoInstitucional(urlUsada);
+
+    setFormData(prev => ({
+      ...prev,
+      tipo: 'Estado',
+      empresa: empresaDetectada,
+      logo: logoAsignado,
+      modalidad: modalidad || 'CAS',
+      titulo: d.titulo || '',
+      ubicacion: ubicacionFinal,
+      vacantes: d.vacantes || '1',
+      sueldo: d.sueldo || '',
+      fechaInicio: d.fechaInicio || '',
+      fechaVencimiento: d.fechaVencimiento || '',
+      horaVencimiento: d.horaVencimiento || '',
+      formacion: d.formacion || '',
+      experiencia: d.experiencia || '',
+      especializacion: d.especializacion || '',
+      comoPostular: d.comoPostular || '',
+      enlaceBases: d.enlaceBases || '',
+      enlacesExtras: (d.enlacesExtras && d.enlacesExtras.length > 0 && d.enlacesExtras[0].url !== "")
+        ? d.enlacesExtras
+        : [{ titulo: '', url: '' }],
+      descripcion: d.descripcion || ''
+    }));
+
+    setScrapeUrl('');
+    setScrapeResult(null);
+    setScrapeError('');
+
+    window.setTimeout(() => {
+      document.getElementById('formulario-convocatoria')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
+
+  // NUEVO: Si pasarDirectoAlFormulario es true (botón "⚡ Extraer en 1 clic"), llena el formulario de inmediato
+  const importarConvocatoria = async (urlDirecta, pasarDirectoAlFormulario = false) => {
     const enlaceObjetivo = typeof urlDirecta === 'string' ? urlDirecta : scrapeUrl;
     if (typeof urlDirecta === 'string') {
       setScrapeUrl(urlDirecta);
@@ -373,70 +457,19 @@ export default function AdminDashboard() {
         throw new Error(result?.mensaje || `No se pudo importar la convocatoria (HTTP ${response.status}).`);
       }
 
-      setScrapeResult({
-        ...result,
-        urlOrigen: enlaceObjetivo.trim()
-      });
+      if (pasarDirectoAlFormulario && result.data) {
+        pasarImportacionAlFormulario(result.data, enlaceObjetivo.trim());
+      } else {
+        setScrapeResult({
+          ...result,
+          urlOrigen: enlaceObjetivo.trim()
+        });
+      }
     } catch (error) {
       setScrapeError(error.message || 'Ocurrió un error al importar.');
     } finally {
       setScrapeLoading(false);
     }
-  };
-
-  const pasarImportacionAlFormulario = () => {
-    if (!scrapeResult?.data) return;
-    const d = scrapeResult.data;
-    const modalidadRaw = String(d.modalidad || '').toLowerCase();
-    let modalidad = '';
-    if (modalidadRaw.includes('728')) modalidad = '728';
-    else if (modalidadRaw.includes('276')) modalidad = '276';
-    else if (modalidadRaw.includes('práct') || modalidadRaw.includes('pract')) modalidad = 'Prácticas';
-    else if (modalidadRaw.includes('locación') || modalidadRaw.includes('locacion')) modalidad = 'Locación';
-    else if (modalidadRaw.includes('cas')) modalidad = 'CAS';
-
-    setActiveTab('estado');
-    setEditingId(null);
-    setCustomLocation(true);
-
-    const empresaDetectada = d.empresa || '';
-    const urlUsada = scrapeResult.urlOrigen || scrapeUrl || '';
-
-    // Busca el logo por entidad extraída, o como respaldo por el título o la URL de la convocatoria
-    const logoAsignado =
-      buscarLogoInstitucional(empresaDetectada) ||
-      buscarLogoInstitucional(d.titulo) ||
-      buscarLogoInstitucional(urlUsada);
-
-    setFormData(prev => ({
-      ...prev,
-      tipo: 'Estado',
-      empresa: empresaDetectada,
-      logo: logoAsignado,
-      modalidad: modalidad || 'CAS',
-      titulo: d.titulo || '',
-      ubicacion: d.ubicacion || 'Pasco',
-      vacantes: d.vacantes || '1',
-      sueldo: d.sueldo || '',
-      fechaInicio: d.fechaInicio || '',
-      fechaVencimiento: d.fechaVencimiento || '',
-      horaVencimiento: d.horaVencimiento || '',
-      formacion: d.formacion || '',
-      experiencia: d.experiencia || '',
-      especializacion: d.especializacion || '',
-      comoPostular: d.comoPostular || '',
-      enlaceBases: d.enlaceBases || '',
-      enlacesExtras: (d.enlacesExtras && d.enlacesExtras.length > 0 && d.enlacesExtras[0].url !== "")
-        ? d.enlacesExtras
-        : [{ titulo: '', url: '' }],
-      descripcion: d.descripcion || ''
-    }));
-    setScrapeUrl('');
-    setScrapeResult(null);
-    setScrapeError('');
-    window.setTimeout(() => {
-      document.getElementById('formulario-convocatoria')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
   };
 
   const handleExtraLinkChange = (index, field, value) => {
@@ -532,6 +565,7 @@ export default function AdminDashboard() {
       fechaPublicacion: job.fechaPublicacion || '',
       horaVencimiento: job.horaVencimiento || '',
       esVip: job.esVip || false,
+      verificado: job.verificado !== false,
       area: job.area || '',
       categoriaClasificado: job.categoriaClasificado || 'Locales en alquiler',
       tipoLocal: job.tipoLocal || '', ambientes: job.ambientes || '', banos: job.banos || '', garantia: job.garantia || '',
@@ -579,6 +613,7 @@ export default function AdminDashboard() {
       fechaPublicacion: '',
       horaVencimiento: '',
       esVip: false,
+      verificado: true,
       area: '',
       categoriaClasificado: 'Locales en alquiler',
       tipoLocal: '', ambientes: '', banos: '', garantia: '',
@@ -703,11 +738,22 @@ export default function AdminDashboard() {
     return { ...job, isExpired };
   });
 
+  // Filtrado por estado (Activos/Vencidos) + Buscador interno del historial
+  const terminoBusqueda = busquedaHistorial.trim().toLowerCase();
   const displayJobsList = processedJobs
     .filter(job => mostrarVencidos ? job.isExpired : !job.isExpired)
+    .filter(job => {
+      if (!terminoBusqueda) return true;
+      return (
+        (job.titulo && job.titulo.toLowerCase().includes(terminoBusqueda)) ||
+        (job.empresa && job.empresa.toLowerCase().includes(terminoBusqueda)) ||
+        (job.ubicacion && job.ubicacion.toLowerCase().includes(terminoBusqueda)) ||
+        (job.contacto && job.contacto.toLowerCase().includes(terminoBusqueda)) ||
+        (job.categoriaClasificado && job.categoriaClasificado.toLowerCase().includes(terminoBusqueda))
+      );
+    })
     .reverse();
 
-  // Cálculo de convocatorias pendientes reales descontando las ya extraídas/revisadas
   const nuevasPendientesLista = radarInfo?.nuevasPendientes || [];
   const pendientesSinRevisar = nuevasPendientesLista.filter(
     (item) => !revisadasPortal.includes(item.url)
@@ -810,7 +856,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* LISTA DE NUEVAS DETECTADAS O LISTA COMPLETA DEL PORTAL */}
           {((nuevasPendientesLista.length > 0) || mostrarTodasPortal) && (
             <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(148,163,184,0.3)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -869,7 +914,8 @@ export default function AdminDashboard() {
 
                     <button
                       type="button"
-                      onClick={() => importarConvocatoria(item.url)}
+                      onClick={() => importarConvocatoria(item.url, true)}
+                      disabled={scrapeLoading}
                       style={{
                         background: yaRevisada ? '#E2E8F0' : '#06D6A0',
                         color: yaRevisada ? '#475569' : '#0B132B',
@@ -878,10 +924,10 @@ export default function AdminDashboard() {
                         padding: '7px 14px',
                         fontSize: '11px',
                         fontWeight: 800,
-                        cursor: 'pointer'
+                        cursor: scrapeLoading ? 'wait' : 'pointer'
                       }}
                     >
-                      {yaRevisada ? '✓ Ya extraída (Re-extraer)' : '⚡ Extraer en 1 clic'}
+                      {yaRevisada ? '✓ Ya extraída (Pasar de nuevo)' : '⚡ Extraer en 1 clic'}
                     </button>
                   </div>
                 );
@@ -895,7 +941,7 @@ export default function AdminDashboard() {
         <div style={{ maxWidth: '1240px', margin: '0 auto 20px auto', background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '20px', padding: '20px', boxShadow: '0 8px 24px -8px rgba(11, 19, 43, 0.06)' }}>
           <h3 style={{ margin: '0 0 6px', color: '#0B132B', fontSize: '16px', fontWeight: 800 }}>🌐 Importar convocatoria desde una URL</h3>
           <p style={{ margin: '0 0 14px', color: '#64748B', fontSize: '13px', fontWeight: 500 }}>
-            Pega el enlace de detalle. La información se extrae como borrador y no se publica automáticamente.
+            Pega el enlace de detalle o usa el botón de 1 clic arriba para enviarlo directo al formulario.
           </p>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
             <input
@@ -907,11 +953,19 @@ export default function AdminDashboard() {
             />
             <button
               type="button"
+              onClick={() => importarConvocatoria(scrapeUrl, true)}
+              disabled={scrapeLoading}
+              style={{ ...styles.btnPrimary, flex: '0 0 auto', padding: '11px 20px', backgroundColor: '#06D6A0', color: '#0B132B', opacity: scrapeLoading ? 0.65 : 1, cursor: scrapeLoading ? 'wait' : 'pointer' }}
+            >
+              {scrapeLoading ? '⏳ Extrayendo...' : '⚡ Extraer y Llenar Formulario'}
+            </button>
+            <button
+              type="button"
               onClick={() => importarConvocatoria()}
               disabled={scrapeLoading}
-              style={{ ...styles.btnPrimary, flex: '0 0 auto', padding: '11px 22px', opacity: scrapeLoading ? 0.65 : 1, cursor: scrapeLoading ? 'wait' : 'pointer' }}
+              style={{ ...styles.btnPrimary, flex: '0 0 auto', padding: '11px 18px', opacity: scrapeLoading ? 0.65 : 1, cursor: scrapeLoading ? 'wait' : 'pointer' }}
             >
-              {scrapeLoading ? '⏳ Analizando...' : '🔎 Extraer datos'}
+              🔎 Vista previa
             </button>
           </div>
           {scrapeError && <p style={{ color: '#DC2626', margin: '10px 0 0', fontSize: '13px', fontWeight: 700 }}>{scrapeError}</p>}
@@ -942,19 +996,6 @@ export default function AdminDashboard() {
                 </span>
               </div>
 
-              <p style={{
-                margin: '0 0 14px',
-                padding: '10px 12px',
-                color: '#92400E',
-                background: '#FFFBEB',
-                border: '1px solid #FDE68A',
-                borderRadius: '10px',
-                fontSize: '12px',
-                fontWeight: 700
-              }}>
-                ⚠️ {scrapeResult.advertencia || 'Revisa fechas, remuneración, requisitos y procedimiento antes de guardar.'}
-              </p>
-
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))',
@@ -964,6 +1005,7 @@ export default function AdminDashboard() {
                 {[
                   ['Entidad pública', scrapeResult.data?.empresa, '#EFF6FF', '#1D4ED8', '#BFDBFE'],
                   ['Puesto', scrapeResult.data?.titulo, '#ECFDF5', '#047857', '#A7F3D0'],
+                  ['Ubicación detectada', scrapeResult.data?.ubicacion, '#FEF3C7', '#92400E', '#FDE68A'],
                   ['Modalidad', scrapeResult.data?.modalidad, '#F5F3FF', '#6D28D9', '#DDD6FE'],
                   ['Vacantes', scrapeResult.data?.vacantes, '#FDF2F8', '#BE185D', '#FBCFE8'],
                   ['Remuneración', scrapeResult.data?.sueldo, '#ECFEFF', '#0E7490', '#A5F3FC'],
@@ -989,45 +1031,7 @@ export default function AdminDashboard() {
                 ))}
               </div>
 
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
-                gap: '10px',
-                marginBottom: '14px'
-              }}>
-                {[
-                  ['Formación académica', scrapeResult.data?.formacion, '#EFF6FF', '#1D4ED8', '#BFDBFE'],
-                  ['Experiencia requerida', scrapeResult.data?.experiencia, '#F5F3FF', '#6D28D9', '#DDD6FE'],
-                  ['Cursos / especialización', scrapeResult.data?.especializacion, '#ECFDF5', '#047857', '#A7F3D0'],
-                  ['¿Cómo postular?', scrapeResult.data?.comoPostular, '#FFFBEB', '#B45309', '#FDE68A']
-                ].map(([label, value, fondo, color, borde]) => (
-                  <div key={label} style={{
-                    background: fondo,
-                    border: `1px solid ${borde}`,
-                    borderRadius: '12px',
-                    padding: '12px',
-                    minWidth: 0
-                  }}>
-                    <div style={{ color, fontSize: '11px', fontWeight: 800, marginBottom: '6px' }}>
-                      {label}
-                    </div>
-                    <div style={{
-                      color: '#0B132B',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      lineHeight: 1.55,
-                      whiteSpace: 'pre-wrap',
-                      overflowWrap: 'anywhere',
-                      maxHeight: '190px',
-                      overflowY: 'auto'
-                    }}>
-                      {value || 'No detectado. Completar manualmente.'}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <button type="button" onClick={pasarImportacionAlFormulario} style={{
+              <button type="button" onClick={() => pasarImportacionAlFormulario()} style={{
                 ...styles.btnPrimary,
                 flex: '1 1 100%',
                 background: 'linear-gradient(90deg, #06D6A0 0%, #34D399 100%)',
@@ -1036,10 +1040,6 @@ export default function AdminDashboard() {
               }}>
                 ⬇️ Pasar datos al formulario
               </button>
-
-              <p style={{ margin: '10px 0 0', color: '#475569', fontSize: '12px', fontWeight: 600, lineHeight: 1.5 }}>
-                Los datos pasarán al formulario con Ubicación "Pasco" por defecto. El sistema detectará automáticamente el logo y los anexos. No se guardará nada hasta que pulses publicar.
-              </p>
             </div>
           )}
         </div>
@@ -1054,7 +1054,6 @@ export default function AdminDashboard() {
           </div>
 
           <form onSubmit={handleSubmit} style={styles.form}>
-            {/* ================= ESTADO ================= */}
             {activeTab === 'estado' ? (
               <>
                 <div style={styles.row}>
@@ -1261,7 +1260,6 @@ export default function AdminDashboard() {
                 </div>
               </>
             ) : (
-              /* ================= CLASIFICADOS ================= */
               <>
                 <div style={{ backgroundColor: categoriaActual.fondo, border: `1px solid ${categoriaActual.borde}`, borderLeft: `5px solid ${categoriaActual.color}`, borderRadius: '16px', padding: '16px', marginBottom: '4px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
@@ -1290,6 +1288,22 @@ export default function AdminDashboard() {
               <label style={styles.label}>Descripción / Notas</label>
               <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} style={styles.textarea} />
             </div>
+
+            {activeTab !== 'estado' && (
+              <div style={{ ...styles.vipContainer, backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }}>
+                <input
+                  type="checkbox"
+                  id="verificado"
+                  name="verificado"
+                  checked={formData.verificado !== false}
+                  onChange={handleChange}
+                  style={{ accentColor: '#059669', width: '16px', height: '16px' }}
+                />
+                <label htmlFor="verificado" style={{ ...styles.vipLabel, color: '#065F46' }}>
+                  ✅ Mostrar sello de "Negocio / Anunciante Verificado"
+                </label>
+              </div>
+            )}
 
             <div style={styles.vipContainer}>
               <input type="checkbox" id="esVip" name="esVip" checked={formData.esVip} onChange={handleChange} style={{ accentColor: '#D97706', width: '16px', height: '16px' }} />
@@ -1329,15 +1343,46 @@ export default function AdminDashboard() {
             </button>
           </div>
 
+          {/* NUEVO: Buscador interno en el historial */}
+          <div style={{ position: 'relative', marginBottom: '12px' }}>
+            <input
+              type="text"
+              value={busquedaHistorial}
+              onChange={(e) => setBusquedaHistorial(e.target.value)}
+              placeholder="🔍 Buscar en el listado por puesto, negocio, distrito o WhatsApp..."
+              style={{ ...styles.input, paddingRight: '34px' }}
+            />
+            {busquedaHistorial && (
+              <button
+                type="button"
+                onClick={() => setBusquedaHistorial('')}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: '#64748B',
+                  fontWeight: 800,
+                  cursor: 'pointer'
+                }}
+                title="Limpiar búsqueda"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
           <div style={styles.scrollList}>
             {displayJobsList.length === 0 && (
               <p style={{ textAlign: 'center', color: '#64748B', fontSize: '13px', padding: '28px 0', fontWeight: 600 }}>
-                No hay anuncios {mostrarVencidos ? 'vencidos' : 'activos'} en esta categoría.
+                No se encontraron anuncios {mostrarVencidos ? 'vencidos' : 'activos'} {busquedaHistorial ? `para "${busquedaHistorial}"` : 'en esta categoría'}.
               </p>
             )}
 
             {displayJobsList.map((job) => (
-              <div key={job._id} style={{ ...styles.itemCard, opacity: job.isExpired ? 0.78 : 1, borderColor: job.esVip ? '#FBBF24' : '#E2E8F0' }}>
+              <div key={job._id} style={{ ...styles.itemCard, opacity: job.isExpired ? 0.85 : 1, borderColor: job.esVip ? '#FBBF24' : '#E2E8F0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                   <div>
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap' }}>
@@ -1349,9 +1394,17 @@ export default function AdminDashboard() {
                           ⭐ VIP
                         </span>
                       )}
+                      {job.tipo !== 'Estado' && job.verificado !== false && (
+                        <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#ECFDF5', color: '#065F46', border: '1px solid #A7F3D0', padding: '2px 8px', borderRadius: '999px' }}>
+                          ✅ Verificado
+                        </span>
+                      )}
                     </div>
                     <h3 style={styles.itemTitle}>{job.titulo}</h3>
-                    <p style={styles.itemMeta}><strong>{job.tipo === 'Clasificado' ? 'Clasificado' : job.empresa}</strong> • 📍 {job.ubicacion}</p>
+                    <p style={styles.itemMeta}>
+                      <strong>{job.tipo === 'Clasificado' ? 'Clasificado' : job.empresa}</strong> • 📍 {job.ubicacion}
+                      {job.contacto ? ` • 📱 ${job.contacto}` : ''}
+                    </p>
                   </div>
                   {job.isExpired && (
                     <span style={{ fontSize: '10px', fontWeight: '800', color: '#991B1B', backgroundColor: '#FEF2F2', padding: '4px 9px', borderRadius: '999px', border: '1px solid #FECACA', whiteSpace: 'nowrap' }}>
@@ -1396,6 +1449,24 @@ export default function AdminDashboard() {
                       </>
                     )}
 
+                    {/* NUEVO: Botón de Renovación por WhatsApp para negocios con contacto */}
+                    {job.contacto && (
+                      <button
+                        type="button"
+                        onClick={() => contactarRenovacionWhatsApp(job)}
+                        style={{
+                          ...styles.btnEdit,
+                          backgroundColor: '#FFFBEB',
+                          color: '#B45309',
+                          borderColor: '#FDE68A',
+                          fontWeight: '900'
+                        }}
+                        title="Escribir al dueño por WhatsApp para ofrecerle renovar su anuncio o pasar a VIP"
+                      >
+                        ♻️ Renovar WA
+                      </button>
+                    )}
+
                     <button
                       onClick={() => handleEdit(job)}
                       style={{ ...styles.btnEdit, borderColor: '#CBD5E1', backgroundColor: '#F8FAFC' }}
@@ -1435,7 +1506,7 @@ const styles = {
   btnGroup: { display: 'flex', gap: '10px', marginTop: '6px', flexWrap: 'wrap' },
   btnPrimary: { flex: '1 1 100%', padding: '14px', backgroundColor: '#0B132B', color: '#FFFFFF', border: 'none', borderRadius: '14px', fontWeight: '800', fontSize: '14px', cursor: 'pointer', boxShadow: '0 8px 18px -6px rgba(11,19,43,0.3)' },
   btnSecondary: { flex: '1 1 100%', padding: '13px', backgroundColor: '#64748B', color: '#FFFFFF', border: 'none', borderRadius: '14px', fontWeight: '800', fontSize: '13px', cursor: 'pointer' },
-  listHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #F1F5F9', paddingBottom: '12px', flexWrap: 'wrap', gap: '8px' },
+  listHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid #F1F5F9', paddingBottom: '12px', flexWrap: 'wrap', gap: '8px' },
   counterBadge: { fontSize: '12px', backgroundColor: '#0B132B', color: '#06D6A0', padding: '3px 11px', borderRadius: '999px', fontWeight: '800' },
   scrollList: { display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '72vh', overflowY: 'auto', paddingRight: '4px' },
   itemCard: { padding: '16px', borderRadius: '16px', backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(11,19,43,0.04)' },
