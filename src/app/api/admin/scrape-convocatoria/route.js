@@ -226,20 +226,41 @@ function extraerSeccion(lineas, etiqueta, detenerEn = [], icono = "✅") {
   return limpiar(partesAgrupadas.join("\n"));
 }
 
-// Entidad: toma solo el nombre limpio, ignorando "Convocatoria" y cortando en separadores
-function extraerEntidad($) {
-  const h1 = limpiar($("h1").first().text());
-  const titulo = limpiar($("title").text());
-  const origen = h1 || titulo;
+// Entidad: detecta tanto "ENTIDAD > Convocatoria..." como "Convocatoria ENTIDAD..." y el pie de comunicados
+function extraerEntidad($, lineas = []) {
+  const fuentes = [
+    limpiar($("h1").first().text()),
+    limpiar($("title").text()),
+  ].filter(Boolean);
 
-  const match = origen.match(/convocatoria\s+(?:de\s+(?:trabajo|pr[áa]cticas|empleo)\s+)?(?:en\s+la\s+|en\s+el\s+|en\s+)?(.+?)(?:[:\-|>»]|\d{4}|$)/i);
+  for (const origen of fuentes) {
+    // Caso 1: "PROGRAMA WARMI ÑAN > Convocatoria CAS N°..."
+    const antesDeFlecha = origen.match(/^(.+?)\s*[>»]\s*convocatoria/i);
+    if (antesDeFlecha) {
+      const entidad = limpiar(antesDeFlecha[1]).replace(/[-–—_.,|>;:]+$/, "").trim();
+      if (entidad.length >= 2) return entidad;
+    }
 
-  if (match) {
-    let entidad = limpiar(match[1]);
-    entidad = entidad.split(/\s+(?:para|n[°º]|cas)\s+/i)[0];
-    entidad = entidad.replace(/\b(728|276|CAS|CAP|PAC|FAG)\b/gi, '').trim();
-    entidad = entidad.replace(/[-–—_.,|>;:]+$/, "").trim();
-    return limpiar(entidad);
+    // Caso 2: "Convocatoria PROGRAMA WARMI ÑAN CAS N°..."
+    const match = origen.match(
+      /convocatoria\s+(?:de\s+(?:trabajo|pr[áa]cticas|empleo)\s+)?(?:en\s+la\s+|en\s+el\s+|en\s+|de\s+la\s+|del\s+|de\s+)?(.+?)(?:[:\-|>»]|\d{4}|$)/i
+    );
+    if (match) {
+      let entidad = limpiar(match[1]);
+      entidad = entidad.split(/\s+(?:para|n[°º]|cas)\s+/i)[0];
+      entidad = entidad.replace(/\b(728|276|CAS|CAP|PAC|FAG)\b/gi, "").trim();
+      entidad = entidad.replace(/[-–—_.,|>;:]+$/, "").trim();
+      if (entidad.length >= 2) return limpiar(entidad);
+    }
+  }
+
+  // Caso 3: Respaldo desde la línea "comunicados de las convocatorias de ENTIDAD"
+  for (const linea of lineas) {
+    const m = linea.match(/convocatorias\s+(?:vigentes\s+)?de\s+([A-ZÁÉÍÓÚÑ0-9\s()-]{3,80}?)(?:[.]|$)/i);
+    if (m) {
+      const entidad = limpiar(m[1]).replace(/[-–—_.,|>;:]+$/, "").trim();
+      if (entidad.length >= 2) return entidad;
+    }
   }
 
   return "";

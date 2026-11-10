@@ -6,7 +6,6 @@ const API_URL = '/api/jobs';
 
 // 1. DICCIONARIO DE LOGOS
 const logosInstitucionales = {
-  "INDECI": "https://yt3.ggpht.com/a/AGF-l7_I-6ge2y8wEBW0cGDJ5kLqdQU_If3LjFpb4A=s900-c-k-c0xffffffff-no-rj-mo",
   "PODER JUDICIAL": "https://seeklogo.com/images/P/poder-judicial-peru-logo-4159895347-seeklogo.com.png",
   "UNDAC": "https://th.bing.com/th/id/R.5d657ee7f84117237ea209992ae27772?rik=yqZ2%2bO5kaVD4uw&riu=http%3a%2f%2frepositorio.undac.edu.pe%2fimage%2flogo-UNDAC.png&ehk=V%2fyUwfTDF%2fsFxuuC1KZ5ECdtQMwXilQWvqTOrv4Y9%2b4%3d&risl=&pid=ImgRaw&r=0",
   "UNIVERSIDAD NACIONAL DANIEL ALCIDES CARRION": "https://th.bing.com/th/id/R.5d657ee7f84117237ea209992ae27772?rik=yqZ2%2bO5kaVD4uw&riu=http%3a%2f%2frepositorio.undac.edu.pe%2fimage%2flogo-UNDAC.png&ehk=V%2fyUwfTDF%2fsFxuuC1KZ5ECdtQMwXilQWvqTOrv4Y9%2b4%3d&risl=&pid=ImgRaw&r=0",
@@ -17,7 +16,7 @@ const logosInstitucionales = {
   "INEI": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjKyZTQz7Yq_XjhClSkhfoGJHiQ-JFpbeDZwYpdlTj3um6keFKyhFRx2hiS_v7MndjltV0YIMTAGsdztZauDR5eVHREsQswGA3O3eGxn23QoS-1W_gyPeNyt8WFMobDI1oS8epCfnoSCoEbeYtZGkDzT8CapjbLcx5fIib49RIgyA28_ihrcw7Fn5YQSoeX/s16000-rw/INEI%20logo%202025.webp",
   "SIS": "https://tse3.mm.bing.net/th/id/OIP.F3j4x2tMr76d9XgMxxKAwgHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
   "CONTRALORIA": "https://th.bing.com/th/id/R.291734d40a33200cbe2a331024a292a0?rik=KXsfPN1s9xvHgQ&riu=http%3a%2f%2fwww.iddss.org.pe%2fwp-content%2fuploads%2f2019%2f04%2fctre.jpg&ehk=IY98sXDjyGK4TMtfgpLKmbnwlu%2bkP5Y1UpgL2ZkeLJw%3d&risl=&pid=ImgRaw&r=0",
-  "PENSION 65":"https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhO3-8ffiRFO3IpZWFYl3cWQ0w2Zm2a794tAAXxh8uWs47V8svXwR42fAhi6Yp2ersffV-sC6W75tGa3ETmbpvJtTlDswimR2sahd7TRXbxpuhbyEaSjtkPEQHpNIf3AtR4x3ZgmB_P7QnB/s320/logo-pension65.png",
+  "PENSION 65": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhO3-8ffiRFO3IpZWFYl3cWQ0w2Zm2a794tAAXxh8uWs47V8svXwR42fAhi6Yp2ersffV-sC6W75tGa3ETmbpvJtTlDswimR2sahd7TRXbxpuhbyEaSjtkPEQHpNIf3AtR4x3ZgmB_P7QnB/s320/logo-pension65.png",
   "MUNICIPALIDAD DISTRITAL DE VICCO": "https://www.convocatoriascas.com/imagenes/organizaciones/imagen-MUNICIPALIDAD-DISTRITAL-DE-VICCO.jpg",
   "SUNAFIL": "https://tse2.mm.bing.net/th/id/OIP.dr2NB_51qHg3IMbtiph2mgAAAA?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
   "PAE": "https://www.convocatoriasdetrabajo.com/imagenes/organizaciones/th-imagen-PROGRAMA-DE-ALIMENTACION-ESCOLAR-PAE.jpg",
@@ -29,45 +28,64 @@ const logosInstitucionales = {
   "FONCODES": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEg9joxXl4OXlX1j3oxAYN30JT3aYMXqqm_HWGOYH7DJDZXnIhyphenhyphen5w1NlSOCa9f0tvkyOY7E9r1bw7lDePTZc7o2M1vbvUOvSPgxgKjbHZQQYagh6ZB8b8HxCu5pNcsscj-oDgdDvznao-bY/s1600/045+FONCODES.jpg",
   "PALCAZU": "https://tse4.mm.bing.net/th/id/OIP.icg2crlw0PCguydXp5np5gHaHd?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
   "MUNICIPALIDAD DE HUACHON": "https://tse4.mm.bing.net/th/id/OIP.ius3TEpxkUSrtMi7ViewngHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
-  "MINISTERIO DE ECONOMÍA":"https://1.bp.blogspot.com/-KnlBhwr54SM/X6CW3sUPuyI/AAAAAAABl2U/m2fvItgr0Z0mFDM3UIAJ9TBXNbmM1RarQCLcBGAsYHQ/s960/mef-logo.jpg",
-  "INPE":"https://seeklogo.com/images/I/inpe-logo-F5FED77255-seeklogo.com.png",
-  "MINISTERIO DE EDUCACIÓN":"https://1.bp.blogspot.com/-nbaSzHWxPq8/X6COHCuKUyI/AAAAAAABl18/OfmJeOu7ovE0EXWlqmUEmm47MTeTvZe5ACLcBGAsYHQ/s567/minedu-logo.jpg",
+  "MINISTERIO DE ECONOMÍA": "https://1.bp.blogspot.com/-KnlBhwr54SM/X6CW3sUPuyI/AAAAAAABl2U/m2fvItgr0Z0mFDM3UIAJ9TBXNbmM1RarQCLcBGAsYHQ/s960/mef-logo.jpg",
+  "INPE": "https://seeklogo.com/images/I/inpe-logo-F5FED77255-seeklogo.com.png",
+  "MINISTERIO DE EDUCACIÓN": "https://1.bp.blogspot.com/-nbaSzHWxPq8/X6COHCuKUyI/AAAAAAABl18/OfmJeOu7ovE0EXWlqmUEmm47MTeTvZe5ACLcBGAsYHQ/s567/minedu-logo.jpg",
   "INDECI": "https://caen.edu.pe/wp-content/uploads/2022/02/logo-indeci-1024x1024.jpg",
   "PROCURADURÍA DEL ESTADO": "https://tse3.mm.bing.net/th/id/OIP.v2iASVqLxVt8xWpG7zpeOQAAAA?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
-  "PROGRAMA WARMI ÑAN":"https://www.convocatoriasdetrabajo.com/imagenes/organizaciones/th-imagen-PROGRAMA-NACIONAL-PREVENCION-ERRADICACION-VIOLENCIA-CONTRA-MUJERES-E-INTEGRANTES-GRUPO-FAMILIAR.jpg",
+  "PROGRAMA WARMI ÑAN": "https://www.convocatoriasdetrabajo.com/imagenes/organizaciones/th-imagen-PROGRAMA-NACIONAL-PREVENCION-ERRADICACION-VIOLENCIA-CONTRA-MUJERES-E-INTEGRANTES-GRUPO-FAMILIAR.jpg",
+  "WARMI ÑAN": "https://www.convocatoriasdetrabajo.com/imagenes/organizaciones/th-imagen-PROGRAMA-NACIONAL-PREVENCION-ERRADICACION-VIOLENCIA-CONTRA-MUJERES-E-INTEGRANTES-GRUPO-FAMILIAR.jpg",
 };
 
 const STORAGE_REVISADAS_KEY = 'chambafija_portal_pasco_revisadas';
 
 function normalizarNombreLogo(nombre) {
   if (!nombre) return "";
-  return nombre
+  return String(nombre)
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toUpperCase()
+    .replace(/[^A-Z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-// Busca el logo normalizando tanto el nombre extraído como las claves del diccionario (soporta Ñ, tildes y palabras intermedias)
-function buscarLogoInstitucional(nombreEmpresa) {
-  const nombreNorm = normalizarNombreLogo(nombreEmpresa);
+// Busca el logo normalizando tanto el texto como las claves (soporta Ñ, tildes, guiones de URL y palabras intermedias)
+function buscarLogoInstitucional(texto) {
+  const nombreNorm = normalizarNombreLogo(texto);
   if (!nombreNorm) return "";
 
-  // 1. Coincidencia directa normalizando también la clave del diccionario
-  for (const [key, urlLogo] of Object.entries(logosInstitucionales)) {
+  const textoConEspacios = ` ${nombreNorm} `;
+
+  // Ordenamos las claves de la más específica (más larga) a la más corta para evitar falsos positivos con siglas
+  const entradasOrdenadas = Object.entries(logosInstitucionales).sort(
+    (a, b) => b[0].length - a[0].length
+  );
+
+  // 1. Coincidencia por frase completa normalizada
+  for (const [key, urlLogo] of entradasOrdenadas) {
     const keyNorm = normalizarNombreLogo(key);
-    if (keyNorm && (nombreNorm.includes(keyNorm) || keyNorm.includes(nombreNorm))) {
+    if (keyNorm && textoConEspacios.includes(` ${keyNorm} `)) {
       return urlLogo;
     }
   }
 
-  // 2. Coincidencia por palabras clave (ej. si extrae "PROGRAMA NACIONAL WARMI ÑAN" y en la lista dice "PROGRAMA WARMI ÑAN")
-  const palabrasIgnoradas = new Set(["DE", "DEL", "LA", "EL", "LOS", "LAS", "EN", "Y", "PARA", "PROGRAMA", "NACIONAL"]);
-  for (const [key, urlLogo] of Object.entries(logosInstitucionales)) {
+  // 2. Coincidencia por palabras clave (ej. "PROGRAMA NACIONAL WARMI ÑAN" -> detecta "WARMI" y "NAN")
+  const palabrasIgnoradas = new Set([
+    "DE", "DEL", "LA", "EL", "LOS", "LAS", "EN", "Y", "PARA", "PROGRAMA", "NACIONAL", "DISTRITAL", "PROVINCIAL"
+  ]);
+
+  for (const [key, urlLogo] of entradasOrdenadas) {
     const keyNorm = normalizarNombreLogo(key);
-    const palabrasClave = keyNorm.split(/\s+/).filter(p => p.length > 2 && !palabrasIgnoradas.has(p));
-    if (palabrasClave.length > 0 && palabrasClave.every(palabra => nombreNorm.includes(palabra))) {
+    const palabrasClave = keyNorm
+      .split(/\s+/)
+      .filter((p) => p.length > 2 && !palabrasIgnoradas.has(p));
+
+    if (
+      palabrasClave.length > 0 &&
+      (palabrasClave.length >= 2 || palabrasClave[0].length >= 5) &&
+      palabrasClave.every((palabra) => textoConEspacios.includes(` ${palabra} `))
+    ) {
       return urlLogo;
     }
   }
@@ -153,6 +171,15 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  // Auto-detectar logo cada vez que cambie formData.empresa (por extracción o escritura manual)
+  useEffect(() => {
+    if (!formData.empresa) return;
+    const logoDetectado = buscarLogoInstitucional(formData.empresa);
+    if (logoDetectado && formData.logo !== logoDetectado) {
+      setFormData((prev) => ({ ...prev, logo: logoDetectado }));
+    }
+  }, [formData.empresa]);
+
   const guardarRevisadasEnStorage = (listaUrls) => {
     setRevisadasPortal(listaUrls);
     try {
@@ -171,7 +198,6 @@ export default function AdminDashboard() {
 
     guardarRevisadasEnStorage(nuevasRevisadas);
 
-    // Si con esta convocatoria ya se revisaron todas las nuevas pendientes, sincronizamos con el backend
     const pendientesActuales = radarInfo?.nuevasPendientes || [];
     const quedanSinRevisar = pendientesActuales.filter(
       (item) => !nuevasRevisadas.includes(item.url)
@@ -347,7 +373,10 @@ export default function AdminDashboard() {
         throw new Error(result?.mensaje || `No se pudo importar la convocatoria (HTTP ${response.status}).`);
       }
 
-      setScrapeResult(result);
+      setScrapeResult({
+        ...result,
+        urlOrigen: enlaceObjetivo.trim()
+      });
     } catch (error) {
       setScrapeError(error.message || 'Ocurrió un error al importar.');
     } finally {
@@ -371,14 +400,13 @@ export default function AdminDashboard() {
     setCustomLocation(true);
 
     const empresaDetectada = d.empresa || '';
-    const logoAsignado = buscarLogoInstitucional(empresaDetectada);
-    const nombreNormalizado = normalizarNombreLogo(empresaDetectada);
-    const logoEncontrado = Object.keys(logosInstitucionales).find(key =>
-      nombreNormalizado.includes(key)
-    );
-    if (logoEncontrado) {
-      logoAsignado = logosInstitucionales[logoEncontrado];
-    }
+    const urlUsada = scrapeResult.urlOrigen || scrapeUrl || '';
+
+    // Busca el logo por entidad extraída, o como respaldo por el título o la URL de la convocatoria
+    const logoAsignado =
+      buscarLogoInstitucional(empresaDetectada) ||
+      buscarLogoInstitucional(d.titulo) ||
+      buscarLogoInstitucional(urlUsada);
 
     setFormData(prev => ({
       ...prev,
@@ -387,7 +415,7 @@ export default function AdminDashboard() {
       logo: logoAsignado,
       modalidad: modalidad || 'CAS',
       titulo: d.titulo || '',
-      ubicacion: d.ubicacion || 'Pasco', // Rellena "Pasco" por defecto al pasar al formulario
+      ubicacion: d.ubicacion || 'Pasco',
       vacantes: d.vacantes || '1',
       sueldo: d.sueldo || '',
       fechaInicio: d.fechaInicio || '',
@@ -403,8 +431,8 @@ export default function AdminDashboard() {
         : [{ titulo: '', url: '' }],
       descripcion: d.descripcion || ''
     }));
-    setScrapeUrl('');      // Limpia el input del enlace para pegar el siguiente
-    setScrapeResult(null); // Cierra el cuadro de vista previa ya copiado
+    setScrapeUrl('');
+    setScrapeResult(null);
     setScrapeError('');
     window.setTimeout(() => {
       document.getElementById('formulario-convocatoria')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -833,8 +861,7 @@ export default function AdminDashboard() {
                       <span style={{
                         fontSize: '12px',
                         fontWeight: 700,
-                        color: yaRevisada ? '#166534' : '#0B132B',
-                        textDecoration: yaRevisada ? 'none' : 'none'
+                        color: yaRevisada ? '#166534' : '#0B132B'
                       }}>
                         {item.titulo}
                       </span>
