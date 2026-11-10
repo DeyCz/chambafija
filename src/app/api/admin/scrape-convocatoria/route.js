@@ -16,6 +16,8 @@ const MESES = {
   sep: "09", set: "09", oct: "10", nov: "11", dic: "12",
 };
 
+
+
 // Diccionario de distritos de la región Pasco (prioriza los distritos estándar de tu selector)
 const DISTRITOS_PASCO = [
   { etiqueta: "Chaupimarca, Pasco", claves: ["chaupimarca"] },
@@ -29,7 +31,7 @@ const DISTRITOS_PASCO = [
   { etiqueta: "Huachón, Pasco", claves: ["huachon"] },
   { etiqueta: "Puerto Bermúdez, Pasco", claves: ["puerto bermudez"] },
   { etiqueta: "Palcazú, Pasco", claves: ["palcazu", "iscozacin"] },
-  { etiqueta: "Huayllay, Pasco", claves: ["huayllay"] },
+  { etiqueta: "Huayllay, Pasco", claves: ["huayllay", "cochamarca"] },
   { etiqueta: "Tinyahuarco, Pasco", claves: ["tinyahuarco", "colquijirca", "smelter"] },
   { etiqueta: "Ninacaca, Pasco", claves: ["ninacaca"] },
   { etiqueta: "Paucartambo, Pasco", claves: ["paucartambo"] },
