@@ -18,22 +18,10 @@ const formatTimeStr = (hora) => {
   return `${formattedHour}:${m} ${ampm}`;
 };
 
-const formatDateRange = (inicio, fin, hora) => {
-  const formatD = (d) => {
-    if (!d) return '';
-    const value = String(d).split('T')[0];
-    return value.includes('-') ? value.split('-').reverse().join('/') : value;
-  };
-
-  const horaFormateada = formatTimeStr(hora);
-
-  if (inicio && fin && inicio !== fin) {
-    return `Del ${formatD(inicio)} al ${formatD(fin)} (${horaFormateada})`;
-  }
-  if (fin) {
-    return `${formatD(fin)} (${horaFormateada})`;
-  }
-  return 'Ver cronograma en las bases';
+const formatDateShort = (d) => {
+  if (!d) return '';
+  const value = String(d).split('T')[0];
+  return value.includes('-') ? value.split('-').reverse().join('/') : value;
 };
 
 const formatearFechaPub = (fechaISO) => {
@@ -288,6 +276,10 @@ export default async function OfertaPage({ params }) {
         .filter(Boolean)
     : [];
 
+  const primerTelefono = contactosLimpios[0]
+    ? contactosLimpios[0].replace(/\D/g, '').replace(/^(?!51)/, '51')
+    : '';
+
   const enlacesExtrasValidos = Array.isArray(job.enlacesExtras)
     ? job.enlacesExtras.filter((l) => l && l.url && String(l.url).trim() !== '')
     : [];
@@ -295,31 +287,33 @@ export default async function OfertaPage({ params }) {
   const camposClasificado = esClasificado ? obtenerCamposClasificado(job) : [];
 
   return (
-    <div className="bg-[#F4F7FB] text-[#0B132B] min-h-screen flex flex-col justify-between font-sans selection:bg-[#06D6A0] selection:text-[#0B132B]">
+    <div className="bg-[#F4F7FB] text-[#0B132B] min-h-screen flex flex-col justify-between font-sans selection:bg-[#06D6A0] selection:text-[#0B132B] pb-20 sm:pb-0">
       {/* =====================================================
-          HEADER STICKY RESPONSIVE
+          HEADER STICKY CORREGIDO (CERO SUPERPOSICIONES EN MÓVIL)
           ===================================================== */}
-      <header className="bg-[#0B132B]/95 backdrop-blur-xl text-white sticky top-0 z-40 border-b border-white/10 shadow-[0_10px_30px_-10px_rgba(11,19,43,0.5)]">
-        <div className="max-w-3xl mx-auto px-3.5 sm:px-4 py-3 sm:py-3.5 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <Link href="/" className="flex items-center gap-2 group cursor-pointer shrink-0">
+      <header className="bg-[#0B132B]/95 backdrop-blur-xl text-white sticky top-0 z-40 border-b border-white/10 shadow-[0_8px_24px_-8px_rgba(11,19,43,0.5)]">
+        <div className="max-w-3xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3.5 flex items-center justify-between gap-2">
+          {/* LADO IZQUIERDO: LOGO COMPACTO EN MÓVIL */}
+          <div className="flex items-center gap-2 min-w-0 shrink">
+            <Link href="/" className="flex items-center group cursor-pointer shrink-0">
               <img
                 src="/logo.png"
                 alt="Chamba Fija Pasco"
-                className="h-8 sm:h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+                className="h-6 sm:h-9 w-auto max-w-[138px] sm:max-w-[200px] object-contain object-left group-hover:scale-[1.02] transition-transform duration-200"
               />
             </Link>
-            <span className="text-[10px] bg-white/10 text-[#06D6A0] px-2.5 py-1 rounded-full border border-[#06D6A0]/30 font-extrabold whitespace-nowrap tracking-wide">
+            <span className="hidden md:inline-flex text-[10px] bg-white/10 text-[#06D6A0] px-2.5 py-1 rounded-full border border-[#06D6A0]/30 font-extrabold whitespace-nowrap tracking-wide shrink-0">
               Pasco 🏔️
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* LADO DERECHO: BOTONES COMPACTOS Y ALINEADOS */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <a
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs bg-emerald-500/15 hover:bg-emerald-500/25 text-[#06D6A0] border border-[#06D6A0]/30 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-2xl font-extrabold transition-all flex items-center gap-1.5"
+              className="text-[11px] sm:text-xs bg-emerald-500/15 hover:bg-emerald-500/25 text-[#06D6A0] border border-[#06D6A0]/30 px-2.5 py-2 sm:px-3.5 sm:py-2.5 rounded-xl font-extrabold transition-all flex items-center gap-1"
               title="Compartir oferta por WhatsApp"
             >
               <span>📤</span>
@@ -328,9 +322,11 @@ export default async function OfertaPage({ params }) {
 
             <Link
               href="/"
-              className="text-xs bg-white/10 hover:bg-white/20 text-white border border-white/15 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl font-extrabold transition-all whitespace-nowrap"
+              className="text-[11px] sm:text-xs bg-white/10 hover:bg-white/20 text-white border border-white/15 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl font-extrabold transition-all whitespace-nowrap flex items-center gap-1"
             >
-              ← Ver más ofertas
+              <span>←</span>
+              <span className="sm:hidden">Inicio</span>
+              <span className="hidden sm:inline">Ver más ofertas</span>
             </Link>
           </div>
         </div>
@@ -339,9 +335,9 @@ export default async function OfertaPage({ params }) {
       {/* =====================================================
           CONTENIDO PRINCIPAL
           ===================================================== */}
-      <main className="max-w-3xl mx-auto px-3.5 sm:px-4 py-6 sm:py-10 w-full flex-grow space-y-6">
+      <main className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-9 w-full flex-grow space-y-5">
         <article
-          className={`bg-white rounded-3xl w-full p-5 sm:p-9 relative overflow-hidden shadow-[0_14px_40px_-12px_rgba(11,19,43,0.1)] border ${
+          className={`bg-white rounded-2xl sm:rounded-3xl w-full p-4 sm:p-8 relative overflow-hidden shadow-[0_12px_36px_-12px_rgba(11,19,43,0.09)] border ${
             job.esVip
               ? 'border-amber-400/90 ring-2 ring-amber-400/20'
               : 'border-slate-200/90'
@@ -361,11 +357,11 @@ export default async function OfertaPage({ params }) {
             }}
           />
 
-          {/* FILA 1: INSIGNIAS Y ETIQUETAS AUTOMÁTICAS */}
-          <div className="flex flex-wrap justify-between items-center gap-2 mb-5 pt-1">
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          {/* FILA 1: INSIGNIAS BIEN DISTRIBUIDAS */}
+          <div className="flex flex-wrap items-center justify-between gap-1.5 mb-4 pt-1">
+            <div className="flex flex-wrap items-center gap-1.5">
               <span
-                className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider"
+                className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap"
                 style={
                   esClasificado
                     ? {
@@ -387,20 +383,20 @@ export default async function OfertaPage({ params }) {
                 }
               >
                 {esEstado
-                  ? '🏛️ Convocatoria del Estado'
+                  ? '🏛️ Sector Público'
                   : esClasificado
                   ? `${configClasificado.icono} ${job.categoriaClasificado || 'Clasificado'}`
                   : '💼 Empleo Local'}
               </span>
 
               {verificado && (
-                <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg whitespace-nowrap">
                   ✅ Verificado
                 </span>
               )}
 
               {reciente && (
-                <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-1 rounded-full">
+                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-1 rounded-lg whitespace-nowrap">
                   🕒 Reciente
                 </span>
               )}
@@ -409,35 +405,35 @@ export default async function OfertaPage({ params }) {
             <div className="flex flex-wrap items-center gap-1.5">
               {estadoCierre && (
                 <span
-                  className={`text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full ${estadoCierre.clases}`}
+                  className={`text-[10px] font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap ${estadoCierre.clases}`}
                 >
                   {estadoCierre.texto}
                 </span>
               )}
 
               {job.esVip && (
-                <span className="text-[10px] sm:text-[11px] font-extrabold bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-900 border border-amber-300 px-3 py-1 rounded-full uppercase tracking-wider shadow-2xs">
-                  ⭐ Destacado
+                <span className="text-[10px] font-extrabold bg-amber-50 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+                  ⭐ VIP
                 </span>
               )}
             </div>
           </div>
 
-          {/* FILA 2: CABECERA CON LOGO VISIBLE EN MÓVIL Y PC + TÍTULO */}
-          <div className="flex items-start gap-3.5 sm:gap-4 mb-6 pb-6 border-b border-slate-200/80">
+          {/* FILA 2: ENTIDAD CON ESCUDO + TÍTULO DE ANCHO COMPLETO */}
+          <div className="mb-5 pb-5 border-b border-slate-200/80 space-y-3">
             {!esClasificado && (
-              <div className="shrink-0">
+              <div className="flex items-center gap-3">
                 {job.logo ? (
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-slate-200/90 p-1.5 shadow-2xs flex items-center justify-center overflow-hidden">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white border border-slate-200/90 p-1.5 shadow-2xs flex items-center justify-center shrink-0 overflow-hidden">
                     <img
                       src={job.logo}
                       alt={job.empresa || 'Empresa'}
-                      className="w-full h-full object-contain rounded-xl"
+                      className="w-full h-full object-contain"
                     />
                   </div>
                 ) : (
                   <div
-                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border flex items-center justify-center text-2xl font-bold ${
+                    className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl border flex items-center justify-center text-xl font-bold shrink-0 ${
                       esEstado
                         ? 'bg-blue-50 border-blue-100 text-blue-700'
                         : 'bg-emerald-50 border-emerald-100 text-emerald-700'
@@ -446,44 +442,48 @@ export default async function OfertaPage({ params }) {
                     {esEstado ? '🏛️' : '🏢'}
                   </div>
                 )}
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-extrabold text-slate-700 leading-snug break-words">
+                    {job.empresa || 'Anuncio Local'}
+                  </p>
+                  <p className="text-[11px] sm:text-xs text-slate-500 font-semibold mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                    <span>📍 {job.ubicacion || 'Cerro de Pasco'}</span>
+                    <span className="text-slate-300">•</span>
+                    <span>📅 {formatearFechaPub(job.fechaPublicacion || job.createdAt)}</span>
+                  </p>
+                </div>
               </div>
             )}
 
-            <div className="min-w-0 flex-1">
-              <h1 className="text-xl sm:text-3xl font-extrabold text-[#0B132B] tracking-tight leading-snug mb-3 break-words">
-                {job.titulo}
-              </h1>
+            <h1 className="text-lg sm:text-2xl md:text-[26px] font-extrabold text-[#0B132B] tracking-tight leading-snug break-words">
+              {job.titulo}
+            </h1>
 
-              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 font-bold">
-                {!esClasificado && (
-                  <span className="inline-flex items-center gap-1.5 bg-slate-100/90 text-[#0B132B] px-3 py-1.5 rounded-xl border border-slate-200/80 break-words">
-                    🏢 {job.empresa || 'Anuncio Local'}
-                  </span>
-                )}
-                <span className="inline-flex items-center gap-1.5 bg-slate-100/90 text-slate-600 px-3 py-1.5 rounded-xl border border-slate-200/80">
+            {esClasificado && (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 font-semibold">
+                <span className="bg-slate-100 text-[#0B132B] font-bold px-2.5 py-1 rounded-lg">
                   📍 {job.ubicacion || 'Cerro de Pasco'}
                 </span>
-                <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 font-semibold px-1">
-                  📅 Publicado: {formatearFechaPub(job.fechaPublicacion || job.createdAt)}
-                </span>
+                <span>📅 Publicado: {formatearFechaPub(job.fechaPublicacion || job.createdAt)}</span>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* FILA 3: TARJETAS DE RESUMEN RÁPIDO */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3.5 mb-6">
-            <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3.5">
+          {/* FILA 3: RESUMEN EJECUTIVO COMPACTO */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-5">
+            <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-3">
               <span className="block text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 mb-0.5">
                 💰 {esClasificado ? 'Precio' : 'Remuneración'}
               </span>
-              <span className="text-base sm:text-lg font-extrabold text-emerald-700 tabular-nums break-words">
+              <span className="text-sm sm:text-base font-extrabold text-emerald-700 tabular-nums break-words">
                 {sueldoFormateado}
               </span>
             </div>
 
             {!esClasificado ? (
               <>
-                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5">
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3">
                   <span className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-0.5">
                     📋 Modalidad
                   </span>
@@ -492,75 +492,75 @@ export default async function OfertaPage({ params }) {
                   </span>
                 </div>
 
-                <div className="col-span-2 sm:col-span-1 bg-blue-50/60 border border-blue-200/70 rounded-2xl p-3.5 flex sm:block items-center justify-between">
+                <div className="col-span-2 sm:col-span-1 bg-blue-50/60 border border-blue-200/70 rounded-xl p-3 flex sm:block items-center justify-between">
                   <span className="block text-[10px] font-extrabold uppercase tracking-wider text-blue-800 sm:mb-0.5">
-                    👥 Vacantes / Plazas
+                    👥 Vacantes
                   </span>
-                  <span className="text-sm sm:text-base font-extrabold text-blue-700 tabular-nums">
-                    {job.vacantes || '1'} {Number(job.vacantes) === 1 ? 'plaza' : 'plazas'}
+                  <span className="text-xs sm:text-sm font-extrabold text-blue-700 tabular-nums">
+                    {job.vacantes || '1'} {Number(job.vacantes) === 1 ? 'plaza disponible' : 'plazas disponibles'}
                   </span>
                 </div>
               </>
             ) : (
-              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5">
+              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3">
                 <span className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-0.5">
-                  📍 Ubicación
+                  📌 Categoría
                 </span>
                 <span className="text-xs sm:text-sm font-extrabold text-[#0B132B] break-words">
-                  {job.ubicacion || 'Pasco'}
+                  {job.categoriaClasificado || 'General'}
                 </span>
               </div>
             )}
           </div>
 
           {/* =====================================================
-              CUERPO DETALLADO SEGÚN TIPO DE OFERTA
+              DETALLE SEGÚN EL TIPO DE OFERTA
               ===================================================== */}
-          <div className="space-y-5 text-xs sm:text-sm text-slate-700 mb-8">
+          <div className="space-y-4 text-xs sm:text-sm text-slate-700 mb-6">
             {esEstado ? (
               <>
                 {/* REQUISITOS */}
-                <div className="bg-[#F8FAFC] rounded-2xl border border-slate-200/90 overflow-hidden shadow-2xs">
-                  <div className="bg-[#0B132B] text-white font-extrabold px-4 sm:px-5 py-3 text-xs uppercase tracking-wider flex items-center gap-2">
+                <div className="bg-[#F8FAFC] rounded-2xl border border-slate-200/90 overflow-hidden">
+                  <div className="bg-[#0B132B] text-white font-extrabold px-4 py-2.5 text-[11px] sm:text-xs uppercase tracking-wider flex items-center gap-2">
                     <span>📋</span> Requisitos del Puesto
                   </div>
-                  <div className="p-4 sm:p-5 space-y-3.5 font-medium leading-relaxed">
+                  <div className="p-3.5 sm:p-5 space-y-3 font-medium leading-relaxed">
                     {job.formacion && (
                       <div>
-                        <strong className="text-[#0B132B] block mb-1">
+                        <strong className="text-[#0B132B] block text-xs mb-1">
                           🎓 Formación Académica:
                         </strong>
-                        <p className="whitespace-pre-wrap bg-white p-3.5 rounded-xl border border-slate-200/70">
+                        <p className="whitespace-pre-wrap break-words bg-white p-3 rounded-xl border border-slate-200/70">
                           {job.formacion}
                         </p>
                       </div>
                     )}
                     {job.experiencia && (
                       <div>
-                        <strong className="text-[#0B132B] block mb-1">
-                          💼 Experiencia:
+                        <strong className="text-[#0B132B] block text-xs mb-1">
+                          💼 Experiencia Requerida:
                         </strong>
-                        <p className="whitespace-pre-wrap bg-white p-3.5 rounded-xl border border-slate-200/70">
+                        <p className="whitespace-pre-wrap break-words bg-white p-3 rounded-xl border border-slate-200/70">
                           {job.experiencia}
                         </p>
                       </div>
                     )}
                     {job.especializacion && (
                       <div>
-                        <strong className="text-[#0B132B] block mb-1">
-                          📚 Cursos y/o programas de especialización:
+                        <strong className="text-[#0B132B] block text-xs mb-1">
+                          📚 Cursos y/o Especialización:
                         </strong>
-                        <p className="whitespace-pre-wrap bg-white p-3.5 rounded-xl border border-slate-200/70">
+                        <p className="whitespace-pre-wrap break-words bg-white p-3 rounded-xl border border-slate-200/70">
                           {job.especializacion}
                         </p>
                       </div>
                     )}
                     {job.descripcion && (
                       <div>
-                        <strong className="text-[#0B132B] block mb-1">
-                          📝 Información adicional:
+                        <strong className="text-[#0B132B] block text-xs mb-1">
+                          📝 Notas adicionales:
                         </strong>
-                        <p className="whitespace-pre-wrap bg-white p-3.5 rounded-xl border border-slate-200/70">
+                        <p className="whitespace-pre-wrap break-words bg-white p-3 rounded-xl border border-slate-200/70">
                           {job.descripcion}
                         </p>
                       </div>
@@ -568,21 +568,31 @@ export default async function OfertaPage({ params }) {
                   </div>
                 </div>
 
-                {/* ¿CÓMO POSTULAR? */}
-                <div className="bg-[#F8FAFC] rounded-2xl border border-slate-200/90 overflow-hidden shadow-2xs">
-                  <div className="bg-[#0B132B] text-white font-extrabold px-4 sm:px-5 py-3 text-xs uppercase tracking-wider flex items-center gap-2">
-                    <span>🗓️</span> ¿Cómo postular?
+                {/* ¿CÓMO POSTULAR? (FECHA Y HORA EN DOS LÍNEAS CLARAS) */}
+                <div className="bg-[#F8FAFC] rounded-2xl border border-slate-200/90 overflow-hidden">
+                  <div className="bg-[#0B132B] text-white font-extrabold px-4 py-2.5 text-[11px] sm:text-xs uppercase tracking-wider flex items-center gap-2">
+                    <span>🗓️</span> Cronograma y Cómo Postular
                   </div>
-                  <div className="p-4 sm:p-5 space-y-3 font-medium leading-relaxed">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <strong className="text-[#0B132B]">Plazo para postular:</strong>
-                      <span className="font-extrabold text-rose-700 bg-rose-50 px-3 py-1 rounded-xl border border-rose-200/80">
-                        ⏳ {formatDateRange(job.fechaInicio, job.fechaVencimiento, job.horaVencimiento)}
-                      </span>
-                    </div>
+                  <div className="p-3.5 sm:p-5 space-y-3 font-medium leading-relaxed">
+                    {job.fechaVencimiento && (
+                      <div className="bg-rose-50 border border-rose-200/80 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-rose-800">
+                        <span className="text-xs font-extrabold">
+                          ⏳ Fecha límite:{' '}
+                          {job.fechaInicio && job.fechaInicio !== job.fechaVencimiento
+                            ? `Del ${formatDateShort(job.fechaInicio)} al ${formatDateShort(job.fechaVencimiento)}`
+                            : formatDateShort(job.fechaVencimiento)}
+                        </span>
+                        <span className="text-[11px] sm:text-xs font-extrabold text-rose-600">
+                          ⏰ Hora límite: {formatTimeStr(job.horaVencimiento)}
+                        </span>
+                      </div>
+                    )}
+
                     <div>
-                      <strong className="text-[#0B132B] block mb-1">Procedimiento:</strong>
-                      <p className="whitespace-pre-wrap bg-white p-3.5 rounded-xl border border-slate-200/70">
+                      <strong className="text-[#0B132B] block text-xs mb-1">
+                        📌 Procedimiento de postulación:
+                      </strong>
+                      <p className="whitespace-pre-wrap break-words bg-white p-3 rounded-xl border border-slate-200/70">
                         {job.comoPostular || 'Presentación de expediente según bases oficiales.'}
                       </p>
                     </div>
@@ -590,20 +600,20 @@ export default async function OfertaPage({ params }) {
                 </div>
 
                 {/* ENLACES OFICIALES Y BASES */}
-                <div className="bg-[#F8FAFC] rounded-2xl border border-slate-200/90 overflow-hidden shadow-2xs">
-                  <div className="bg-[#0B132B] text-white font-extrabold px-4 sm:px-5 py-3 text-xs uppercase tracking-wider flex items-center gap-2">
+                <div className="bg-[#F8FAFC] rounded-2xl border border-slate-200/90 overflow-hidden">
+                  <div className="bg-[#0B132B] text-white font-extrabold px-4 py-2.5 text-[11px] sm:text-xs uppercase tracking-wider flex items-center gap-2">
                     <span>🔗</span> Enlaces Oficiales y Bases del Concurso
                   </div>
-                  <div className="p-4 sm:p-5 space-y-2.5 font-medium">
+                  <div className="p-3.5 sm:p-5 space-y-2 font-medium">
                     {job.enlaceBases && (
                       <a
                         href={job.enlaceBases}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center justify-between gap-2 text-emerald-800 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 px-4 py-3 rounded-xl font-extrabold transition-colors"
+                        className="flex items-center justify-between gap-2 text-emerald-800 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 px-3.5 py-3 rounded-xl font-extrabold transition-colors"
                       >
                         <span className="flex items-center gap-2 min-w-0">
-                          <span>📄</span>
+                          <span className="shrink-0">📄</span>
                           <span className="truncate">
                             Ver Bases y Convocatoria Completa (PDF)
                           </span>
@@ -618,10 +628,10 @@ export default async function OfertaPage({ params }) {
                         href={link.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center justify-between gap-2 text-blue-800 bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200/80 px-4 py-3 rounded-xl font-extrabold transition-colors"
+                        className="flex items-center justify-between gap-2 text-blue-800 bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200/80 px-3.5 py-3 rounded-xl font-extrabold transition-colors"
                       >
                         <span className="flex items-center gap-2 min-w-0">
-                          <span>👉</span>
+                          <span className="shrink-0">👉</span>
                           <span className="truncate">
                             {link.titulo || `Ver documento oficial #${idx + 1}`}
                           </span>
@@ -631,7 +641,7 @@ export default async function OfertaPage({ params }) {
                     ))}
 
                     {!job.enlaceBases && enlacesExtrasValidos.length === 0 && (
-                      <p className="text-slate-400 italic">
+                      <p className="text-slate-400 italic text-xs">
                         No hay enlaces externos registrados para este proceso.
                       </p>
                     )}
@@ -643,7 +653,7 @@ export default async function OfertaPage({ params }) {
               <div className="space-y-4">
                 {camposClasificado.length > 0 && (
                   <div
-                    className="p-4 sm:p-5 rounded-2xl border"
+                    className="p-3.5 sm:p-5 rounded-2xl border"
                     style={{
                       backgroundColor: `${configClasificado.fondo}70`,
                       borderColor: configClasificado.borde,
@@ -659,7 +669,7 @@ export default async function OfertaPage({ params }) {
                       {camposClasificado.map(([label, valor]) => (
                         <div
                           key={label}
-                          className="bg-white p-3 rounded-xl border border-slate-200/80"
+                          className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200/80"
                         >
                           <span className="block text-[10px] text-slate-400 font-extrabold uppercase mb-0.5">
                             {label}
@@ -673,34 +683,34 @@ export default async function OfertaPage({ params }) {
                   </div>
                 )}
 
-                <div className="bg-[#F8FAFC] p-4 sm:p-5 rounded-2xl border border-slate-200/90">
-                  <h2 className="font-extrabold text-[#0B132B] mb-2">
+                <div className="bg-[#F8FAFC] p-3.5 sm:p-5 rounded-2xl border border-slate-200/90">
+                  <h2 className="font-extrabold text-[#0B132B] mb-2 text-xs sm:text-sm">
                     Descripción Detallada:
                   </h2>
-                  <p className="text-slate-600 leading-relaxed whitespace-pre-line bg-white p-4 rounded-xl border border-slate-200/70">
+                  <p className="text-slate-600 leading-relaxed whitespace-pre-line break-words bg-white p-3.5 rounded-xl border border-slate-200/70">
                     {job.descripcion || 'Contactar por WhatsApp para más detalles.'}
                   </p>
                 </div>
               </div>
             ) : (
               /* VISTA DE EMPLEO LOCAL PRIVADO */
-              <div className="bg-[#F8FAFC] p-4 sm:p-6 rounded-2xl border border-slate-200/90 space-y-4">
+              <div className="bg-[#F8FAFC] p-3.5 sm:p-5 rounded-2xl border border-slate-200/90 space-y-4">
                 {job.experiencia && (
                   <div>
-                    <h2 className="font-extrabold text-[#0B132B] mb-1.5">
+                    <h2 className="font-extrabold text-[#0B132B] mb-1.5 text-xs sm:text-sm">
                       💼 Experiencia o Requisitos:
                     </h2>
-                    <p className="text-slate-600 leading-relaxed whitespace-pre-line bg-white p-4 rounded-2xl border border-slate-200/70">
+                    <p className="text-slate-600 leading-relaxed whitespace-pre-line break-words bg-white p-3.5 rounded-xl border border-slate-200/70">
                       {job.experiencia}
                     </p>
                   </div>
                 )}
 
                 <div>
-                  <h2 className="font-extrabold text-[#0B132B] mb-1.5">
+                  <h2 className="font-extrabold text-[#0B132B] mb-1.5 text-xs sm:text-sm">
                     📋 Descripción del Puesto:
                   </h2>
-                  <p className="text-slate-600 leading-relaxed whitespace-pre-line bg-white p-4 rounded-2xl border border-slate-200/70">
+                  <p className="text-slate-600 leading-relaxed whitespace-pre-line break-words bg-white p-3.5 rounded-xl border border-slate-200/70">
                     {job.descripcion || 'Comunícate directamente por WhatsApp para postular.'}
                   </p>
                 </div>
@@ -709,22 +719,22 @@ export default async function OfertaPage({ params }) {
           </div>
 
           {/* =====================================================
-              BOTONES DE ACCIÓN PRINCIPALES
+              BOTONES DE ACCIÓN EN TARJETA
               ===================================================== */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-slate-200/80">
+          <div className="flex flex-col sm:flex-row gap-2.5 pt-5 border-t border-slate-200/80">
             {esEstado ? (
               job.enlaceBases ? (
                 <a
                   href={job.enlaceBases}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex-1 text-center bg-[#0B132B] hover:bg-[#162447] text-[#06D6A0] font-extrabold text-xs sm:text-sm py-4 px-5 rounded-2xl shadow-lg shadow-[#0B132B]/20 transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                  className="flex-1 text-center bg-[#0B132B] hover:bg-[#162447] text-[#06D6A0] font-extrabold text-xs sm:text-sm py-3.5 px-5 rounded-2xl shadow-lg shadow-[#0B132B]/20 transition-all flex items-center justify-center gap-2"
                 >
                   📄 Descargar Bases Oficiales (PDF)
                 </a>
               ) : null
             ) : contactosLimpios.length > 0 ? (
-              <div className="flex-1 flex flex-col sm:flex-row gap-2.5">
+              <div className="flex-1 flex flex-col sm:flex-row gap-2">
                 {contactosLimpios.map((num, i) => {
                   const soloDigitos = num.replace(/\D/g, '');
                   const telefonoFinal = soloDigitos.startsWith('51')
@@ -738,7 +748,7 @@ export default async function OfertaPage({ params }) {
                       )}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex-1 text-center bg-[#06D6A0] hover:bg-emerald-400 text-[#0B132B] font-extrabold text-xs sm:text-sm py-4 px-5 rounded-2xl shadow-lg shadow-[#06D6A0]/25 transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                      className="flex-1 text-center bg-[#06D6A0] hover:bg-emerald-400 text-[#0B132B] font-extrabold text-xs sm:text-sm py-3.5 px-5 rounded-2xl shadow-lg shadow-[#06D6A0]/25 transition-all flex items-center justify-center gap-2"
                     >
                       📲{' '}
                       {contactosLimpios.length === 1
@@ -750,12 +760,11 @@ export default async function OfertaPage({ params }) {
               </div>
             ) : null}
 
-            {/* BOTÓN COMPARTIR */}
             <a
               href={whatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="sm:w-auto text-center bg-slate-100 hover:bg-slate-200/80 text-[#0B132B] border border-slate-200/90 font-extrabold text-xs sm:text-sm py-4 px-6 rounded-2xl transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+              className="sm:w-auto text-center bg-slate-100 hover:bg-slate-200/80 text-[#0B132B] border border-slate-200/90 font-extrabold text-xs sm:text-sm py-3.5 px-5 rounded-2xl transition-all flex items-center justify-center gap-2"
             >
               📤 Compartir por WhatsApp
             </a>
@@ -763,16 +772,16 @@ export default async function OfertaPage({ params }) {
         </article>
 
         {/* BLOQUE DE POSTULACIÓN SEGURA */}
-        <section className="bg-gradient-to-r from-[#0B132B] via-[#132246] to-[#0B132B] text-white rounded-3xl p-5 sm:p-6 border border-emerald-500/30 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <span className="inline-flex items-center gap-1.5 bg-[#06D6A0]/15 text-[#06D6A0] text-[10px] font-extrabold px-2.5 py-1 rounded-full border border-[#06D6A0]/30 uppercase tracking-wider">
+        <section className="bg-gradient-to-r from-[#0B132B] via-[#132246] to-[#0B132B] text-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-emerald-500/30 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <span className="inline-flex items-center gap-1.5 bg-[#06D6A0]/15 text-[#06D6A0] text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-[#06D6A0]/30 uppercase tracking-wider">
               🛡️ Postulación 100% Segura
             </span>
             <h2 className="text-sm sm:text-base font-extrabold text-white">
               En ChambaFija nunca te pediremos dinero por postular
             </h2>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Toda postulación es directa con la empresa o mediante las bases oficiales de la entidad pública. No realices pagos adelantados por exámenes médicos o trámites.
+              Toda postulación es directa con la empresa o mediante las bases oficiales de la entidad pública. No realices pagos adelantados.
             </p>
           </div>
 
@@ -786,11 +795,55 @@ export default async function OfertaPage({ params }) {
       </main>
 
       {/* =====================================================
+          BARRA FLOTANTE INFERIOR EN CELULARES (ACCESO RÁPIDO)
+          ===================================================== */}
+      <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 py-2.5 shadow-[0_-8px_20px_-6px_rgba(11,19,43,0.12)] flex items-center gap-2">
+        {esEstado && job.enlaceBases ? (
+          <a
+            href={job.enlaceBases}
+            target="_blank"
+            rel="noreferrer"
+            className="flex-1 bg-[#0B132B] text-[#06D6A0] font-extrabold text-xs py-3 px-4 rounded-xl text-center truncate"
+          >
+            📄 Descargar Bases (PDF)
+          </a>
+        ) : primerTelefono ? (
+          <a
+            href={`https://wa.me/${primerTelefono}?text=${encodeURIComponent(
+              `Hola, vi el anuncio de "${job.titulo}" en *ChambaFija*.`
+            )}`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex-1 bg-[#06D6A0] text-[#0B132B] font-extrabold text-xs py-3 px-4 rounded-xl text-center truncate"
+          >
+            📲 Contactar por WhatsApp
+          </a>
+        ) : (
+          <Link
+            href="/"
+            className="flex-1 bg-[#0B132B] text-white font-extrabold text-xs py-3 px-4 rounded-xl text-center"
+          >
+            🔎 Ver todas las ofertas
+          </Link>
+        )}
+
+        <a
+          href={whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-slate-100 text-[#0B132B] border border-slate-200 font-extrabold text-xs py-3 px-3.5 rounded-xl shrink-0"
+          title="Compartir en WhatsApp"
+        >
+          📤 Compartir
+        </a>
+      </div>
+
+      {/* =====================================================
           FOOTER CON CANALES OFICIALES
           ===================================================== */}
-      <footer className="bg-[#0B132B] text-slate-400 text-xs px-4 py-10 text-center border-t border-slate-800/90 mt-auto">
-        <div className="max-w-3xl mx-auto space-y-5">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+      <footer className="bg-[#0B132B] text-slate-400 text-xs px-4 py-8 text-center border-t border-slate-800/90 mt-auto">
+        <div className="max-w-3xl mx-auto space-y-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5">
             <a
               href="https://whatsapp.com/channel/0029Vb8NSHbDJ6H4RX6Zqj25"
               target="_blank"
