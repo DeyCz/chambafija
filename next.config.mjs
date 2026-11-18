@@ -1,27 +1,38 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  compress: true,
+  poweredByHeader: false,
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 86400,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
   async headers() {
     return [
       {
-        // Aplicar estas cabeceras a todas las rutas de la aplicación
         source: '/(.*)',
         headers: [
           {
             key: 'X-Frame-Options',
-            value: 'DENY', // Protege contra Clickjacking
+            value: 'DENY',
           },
           {
             key: 'X-Content-Type-Options',
-            value: 'nosniff', // Evita MIME-sniffing
+            value: 'nosniff',
           },
           {
             key: 'Referrer-Policy',
             value: 'strict-origin-when-cross-origin',
           },
           {
-            // SOLUCIÓN A LA VULNERABILIDAD: Desactiva permisos de hardware sensibles no usados
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()',
+            value:
+              'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()',
           },
           {
             key: 'Content-Security-Policy',
@@ -31,19 +42,27 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
               "font-src 'self' data: https://fonts.gstatic.com;",
               "img-src 'self' data: blob: https:;",
-              // SOLUCIÓN: Agregamos chambafija.com y limpiamos las rutas viejas de Render y localhost
-              "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com wss://*.firebaseio.com https://chambafija.com https://www.chambafija.com https://www.google-analytics.com https://*.google-analytics.com;",              "frame-ancestors 'none';",
+              "connect-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com wss://*.firebaseio.com https://chambafija.com https://www.chambafija.com https://www.google-analytics.com https://*.google-analytics.com;",
+              "frame-ancestors 'none';",
             ].join(' '),
           },
         ],
       },
       {
-        // Corrección de CORS para recursos estáticos / fuentes
         source: '/_next/static/media/(.*)',
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
-            value: 'https://www.chambafija.vercel.app',
+            value: 'https://www.chambafija.com',
+          },
+        ],
+      },
+      {
+        source: '/:path*.(png|jpg|jpeg|webp|avif|svg|ico)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
           },
         ],
       },

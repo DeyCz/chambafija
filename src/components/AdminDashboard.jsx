@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import AdminPopupPanel from '@/components/AdminPopupPanel';
 
 // Conexión hacia tu backend en la nube
 const API_URL = '/api/jobs';
@@ -35,6 +36,7 @@ const logosInstitucionales = {
   "PROCURADURÍA DEL ESTADO": "https://tse3.mm.bing.net/th/id/OIP.v2iASVqLxVt8xWpG7zpeOQAAAA?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
   "PROGRAMA WARMI ÑAN": "https://www.convocatoriasdetrabajo.com/imagenes/organizaciones/th-imagen-PROGRAMA-NACIONAL-PREVENCION-ERRADICACION-VIOLENCIA-CONTRA-MUJERES-E-INTEGRANTES-GRUPO-FAMILIAR.jpg",
   "WARMI ÑAN": "https://www.convocatoriasdetrabajo.com/imagenes/organizaciones/th-imagen-PROGRAMA-NACIONAL-PREVENCION-ERRADICACION-VIOLENCIA-CONTRA-MUJERES-E-INTEGRANTES-GRUPO-FAMILIAR.jpg",
+  "AGROMERCADO": "https://www.convocatoriasdetrabajo.com/imagenes/organizaciones/th-imagen-AGROMERCADO.jpg",
 };
 
 const STORAGE_REVISADAS_KEY = 'chambafija_portal_pasco_revisadas';
@@ -252,6 +254,7 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
+    if (activeTab === 'popup') return;
     let nuevoTipo = 'Estado';
     if (activeTab === 'privado') nuevoTipo = 'Privado';
     if (activeTab === 'clasificados') nuevoTipo = 'Clasificado';
@@ -798,9 +801,29 @@ export default function AdminDashboard() {
         >
           📢 Clasificados
         </button>
+
+        <button
+          onClick={() => setActiveTab('popup')}
+          style={{
+            ...styles.tabBtn,
+            flex: '1 1 22%',
+            backgroundColor: activeTab === 'popup' ? '#D97706' : '#FFFFFF',
+            color: activeTab === 'popup' ? '#FFFFFF' : '#0B132B',
+            borderColor: activeTab === 'popup' ? '#D97706' : '#E2E8F0',
+            boxShadow: activeTab === 'popup' ? '0 8px 20px -6px rgba(217,119,6,0.35)' : '0 1px 3px rgba(11,19,43,0.04)',
+          }}
+        >
+          ⚡ Popup Publicidad
+        </button>
       </div>
 
-      {activeTab === 'estado' && (
+      
+
+      {activeTab === 'popup' ? (
+        <AdminPopupPanel />
+      ) : (
+        <>
+          {activeTab === 'estado' && (
         <div style={{
           maxWidth: '1240px',
           margin: '0 auto 14px auto',
@@ -1482,6 +1505,8 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+</>
+      )}
     </div>
   );
 }

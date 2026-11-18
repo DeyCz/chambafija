@@ -1,6 +1,17 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import Image from 'next/image';
+import PopupPublicidad from '@/components/PopupPublicidad';
+import { publicidadesPortada } from '@/data/publicidades';
 
 /* ============================================================
    FORMATO DE FECHAS Y ETIQUETAS AUTOMÁTICAS
@@ -23,11 +34,8 @@ const formatTimeStr = (hora) => {
 const formatDateRange = (inicio, fin, hora) => {
   const formatD = (d) => {
     if (!d) return '';
-
     const value = String(d).split('T')[0];
-
     if (!value.includes('-')) return value;
-
     return value.split('-').reverse().join('/');
   };
 
@@ -57,6 +65,18 @@ const formatDateRange = (inicio, fin, hora) => {
   return '';
 };
 
+const formatearFechaPub = (fechaISO) => {
+  if (!fechaISO) return 'Recientemente';
+  const fecha = new Date(fechaISO);
+  if (Number.isNaN(fecha.getTime())) return 'Recientemente';
+
+  return fecha.toLocaleDateString('es-PE', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+};
+
 // Detecta si la oferta fue publicada en las últimas 36 horas ("🕒 Reciente")
 const esOfertaReciente = (job) => {
   let timestamp = 0;
@@ -77,7 +97,7 @@ const esOfertaReciente = (job) => {
   return horasTranscurridas >= 0 && horasTranscurridas <= 36;
 };
 
-// Detecta si la oferta vence hoy o en los próximos 2 días ("🔥 ¡Cierra hoy!" / "⏳ Cierra pronto")
+// Detecta si la oferta vence hoy o en los próximos 2 días
 const obtenerEstadoCierre = (job) => {
   if (!job.fechaVencimiento) return null;
 
@@ -103,8 +123,7 @@ const obtenerEstadoCierre = (job) => {
   if (diasRestantes === 0) {
     return {
       texto: '🔥 ¡Cierra hoy!',
-      clases:
-        'bg-rose-600 text-white border border-rose-700 animate-pulse',
+      clases: 'bg-rose-600 text-white border border-rose-700 animate-pulse',
     };
   }
 
@@ -123,6 +142,41 @@ const obtenerEstadoCierre = (job) => {
   }
 
   return null;
+};
+
+const estaVigente = (job) => {
+  if (!job.fechaVencimiento) return true;
+
+  const fechaString = String(job.fechaVencimiento).split('T')[0];
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaString)) return true;
+
+  let hh = '23';
+  let mm = '59';
+
+  if (job.horaVencimiento) {
+    const [hours, minutes] = String(job.horaVencimiento).split(':');
+    const hNum = parseInt(hours, 10);
+    const mNum = parseInt(minutes, 10);
+    if (!Number.isNaN(hNum) && hNum >= 0 && hNum <= 23) {
+      hh = String(hNum).padStart(2, '0');
+    }
+    if (!Number.isNaN(mNum) && mNum >= 0 && mNum <= 59) {
+      mm = String(mNum).padStart(2, '0');
+    }
+  }
+
+  const fechaExp = new Date(`${fechaString}T${hh}:${mm}:59-05:00`);
+  return Number.isNaN(fechaExp.getTime()) || Date.now() <= fechaExp.getTime();
+};
+
+const obtenerNumeroVacantes = (valor) => {
+  if (typeof valor === 'number') {
+    return Number.isFinite(valor) && valor > 0 ? Math.floor(valor) : 0;
+  }
+  const coincidencia = String(valor ?? '').trim().match(/^\d+/);
+  if (!coincidencia) return 0;
+  const numero = parseInt(coincidencia[0], 10);
+  return numero > 0 ? numero : 0;
 };
 
 /* ============================================================
@@ -172,95 +226,99 @@ const getCategoriaConfig = (categoria) =>
   categoriasClasificados[categoria] || categoriasClasificados.Otros;
 
 /* ============================================================
-   CONTADOR DE VACANTES
+   CAMPO Y DATOS CLASIFICADOS
    ============================================================ */
 
-const estaVigente = (job) => {
-  if (!job.fechaVencimiento) return true;
+const CampoClasificado = ({ label, valor, icono }) => {
+  if (valor === undefined || valor === null || valor === '') return null;
 
-  const fechaString = String(job.fechaVencimiento).split('T')[0];
-  const partes = fechaString.split('-');
-
-  if (partes.length !== 3) return true;
-
-  const [year, month, day] = partes;
-
-  let h = 23;
-  let m = 59;
-
-  if (job.horaVencimiento) {
-    const [hours, minutes] = String(job.horaVencimiento).split(':');
-
-    const horaNumero = parseInt(hours, 10);
-    const minutoNumero = parseInt(minutes, 10);
-
-    if (!Number.isNaN(horaNumero)) h = horaNumero;
-    if (!Number.isNaN(minutoNumero)) m = minutoNumero;
-  }
-
-  const fechaExp = new Date(
-    Number(year),
-    Number(month) - 1,
-    Number(day),
-    h,
-    m,
-    59
+  return (
+    <div className="flex flex-col min-w-0">
+      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">
+        {icono} {label}
+      </span>
+      <span className="text-xs font-bold text-[#0B132B] break-words">
+        {String(valor)}
+      </span>
+    </div>
   );
-
-  return Number.isNaN(fechaExp.getTime()) || new Date() <= fechaExp;
 };
 
-const obtenerNumeroVacantes = (valor) => {
-  if (typeof valor === 'number') {
-    return Number.isFinite(valor) && valor > 0 ? Math.floor(valor) : 0;
+const renderDatosClasificado = (job, modo = 'card') => {
+  const categoria = job.categoriaClasificado || 'Otros';
+  const datos = [];
+
+  if (categoria === 'Locales en alquiler') {
+    datos.push(
+      <CampoClasificado key="tipoLocal" label="Tipo de local" valor={job.tipoLocal} icono="🏪" />,
+      <CampoClasificado key="area" label="Área" valor={job.area} icono="📐" />,
+      <CampoClasificado key="ambientes" label="Ambientes" valor={job.ambientes} icono="🚪" />,
+      <CampoClasificado key="banos" label="Baños" valor={job.banos} icono="🚿" />,
+      <CampoClasificado key="garantia" label="Garantía" valor={job.garantia} icono="🔐" />
+    );
+  } else if (categoria === 'Viviendas en alquiler') {
+    datos.push(
+      <CampoClasificado key="tipoVivienda" label="Tipo de vivienda" valor={job.tipoVivienda} icono="🏠" />,
+      <CampoClasificado key="area" label="Área" valor={job.area} icono="📐" />,
+      <CampoClasificado key="dormitorios" label="Dormitorios" valor={job.dormitorios} icono="🛏️" />,
+      <CampoClasificado key="banos" label="Baños" valor={job.banos} icono="🚿" />,
+      <CampoClasificado key="cochera" label="Cochera" valor={job.cochera} icono="🚗" />,
+      <CampoClasificado key="amoblado" label="Amoblado" valor={job.amoblado} icono="🛋️" />,
+      <CampoClasificado key="serviciosIncluidos" label="Servicios incluidos" valor={job.serviciosIncluidos} icono="💡" />,
+      <CampoClasificado key="garantia" label="Garantía" valor={job.garantia} icono="🔐" />
+    );
+  } else if (categoria === 'Vehículos') {
+    datos.push(
+      <CampoClasificado key="tipoVehiculo" label="Tipo" valor={job.tipoVehiculo} icono="🚗" />,
+      <CampoClasificado key="marca" label="Marca" valor={job.marca} icono="🏷️" />,
+      <CampoClasificado key="modelo" label="Modelo" valor={job.modelo} icono="🚘" />,
+      <CampoClasificado key="anio" label="Año" valor={job.anio} icono="📅" />,
+      <CampoClasificado key="kilometraje" label="Kilometraje" valor={job.kilometraje} icono="🛣️" />,
+      <CampoClasificado key="combustible" label="Combustible" valor={job.combustible} icono="⛽" />,
+      <CampoClasificado key="transmision" label="Transmisión" valor={job.transmision} icono="⚙️" />,
+      <CampoClasificado key="colorVehiculo" label="Color" valor={job.colorVehiculo} icono="🎨" />
+    );
+  } else if (categoria === 'Servicios') {
+    datos.push(
+      <CampoClasificado key="tipoServicio" label="Servicio" valor={job.tipoServicio} icono="🛠️" />,
+      <CampoClasificado key="modalidadServicio" label="Modalidad" valor={job.modalidadServicio} icono="💻" />,
+      <CampoClasificado key="zonaAtencion" label="Zona de atención" valor={job.zonaAtencion} icono="📍" />
+    );
+  } else if (categoria === 'Ventas') {
+    datos.push(
+      <CampoClasificado key="producto" label="Producto" valor={job.producto} icono="📦" />,
+      <CampoClasificado key="marcaProducto" label="Marca" valor={job.marcaProducto} icono="🏷️" />,
+      <CampoClasificado key="estadoProducto" label="Estado" valor={job.estadoProducto} icono="✨" />,
+      <CampoClasificado key="cantidad" label="Cantidad" valor={job.cantidad} icono="🔢" />
+    );
+  } else {
+    datos.push(
+      <CampoClasificado key="area" label="Área / Medida" valor={job.area} icono="📐" />
+    );
   }
 
-  const coincidencia = String(valor ?? '').trim().match(/^\d+/);
+  const items = datos.filter(Boolean);
+  if (!items.length) return null;
 
-  if (!coincidencia) return 0;
-
-  const numero = parseInt(coincidencia[0], 10);
-
-  return numero > 0 ? numero : 0;
+  return (
+    <div
+      className={
+        modo === 'modal'
+          ? 'grid grid-cols-1 sm:grid-cols-2 gap-4'
+          : 'grid grid-cols-2 gap-3'
+      }
+    >
+      {items}
+    </div>
+  );
 };
 
 /* ============================================================
-   PUBLICIDADES (VITRINA SIN RECORTES PC + CELULAR)
+   PUBLICIDADES DE PORTADA
    ============================================================ */
 
-const publicidades = [
-  {
-    id: 'publicidad-1',
-    activo: true,
-    imagen: '/PatitasSOSv1.jpg',
-    imagenMovil: '',
-    driveId: '',
-    nombre: 'Patitas SOS',
-    rubro: 'Ayuda Social',
-    promo: '',
-    whatsapp: '943794468',
-    mensaje:
-      'Hola, vi su publicidad en ChambaFija y quisiera más información.',
-  },
-  {
-    id: 'publicidad-2',
-    activo: true,
-    imagen: '/PromosDelucesV4.jpg',
-    imagenMovil: '',
-    driveId: '',
-    nombre: 'Deluces Films',
-    rubro: 'Fotografía y Video Profesional',
-    promo: '🔥 Promo exclusiva viendo ChambaFija',
-    whatsapp: '967576214',
-    mensaje:
-      'Hola, vi su publicidad en portada de ChambaFija y quisiera solicitar una cotización.',
-  },
-];
-
 const obtenerUrlImagenBanner = (pub) => {
-  if (pub.imagen && pub.imagen.trim() !== '') {
-    return pub.imagen.trim();
-  }
+  if (pub.imagen && pub.imagen.trim() !== '') return pub.imagen.trim();
   if (pub.driveId && !pub.driveId.startsWith('COLOCA_AQUI')) {
     return `https://drive.google.com/thumbnail?id=${encodeURIComponent(
       pub.driveId
@@ -269,12 +327,12 @@ const obtenerUrlImagenBanner = (pub) => {
   return '';
 };
 
-const PublicidadSection = ({ whatsappUrl }) => {
+const PublicidadSection = memo(function PublicidadSection({ whatsappUrl }) {
   const [erroresImg, setErroresImg] = useState({});
 
   const anunciosActivos = useMemo(
     () =>
-      publicidades.filter(
+      publicidadesPortada.filter(
         (pub) =>
           pub.activo &&
           !erroresImg[pub.id] &&
@@ -308,8 +366,7 @@ const PublicidadSection = ({ whatsappUrl }) => {
         >
           <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-[#0B132B] shadow-[0_14px_34px_-12px_rgba(11,19,43,0.32)]">
             {(() => {
-              const actual =
-                anunciosActivos[indiceActual] || anunciosActivos[0];
+              const actual = anunciosActivos[indiceActual] || anunciosActivos[0];
               const imgPc = obtenerUrlImagenBanner(actual);
               const imgMovil =
                 actual.imagenMovil && actual.imagenMovil.trim() !== ''
@@ -337,6 +394,8 @@ const PublicidadSection = ({ whatsappUrl }) => {
                       <img
                         src={imgPc}
                         alt={actual.nombre}
+                        decoding="async"
+                        fetchPriority={indiceActual === 0 ? 'high' : 'auto'}
                         onError={() =>
                           setErroresImg((prev) => ({
                             ...prev,
@@ -494,35 +553,18 @@ const PublicidadSection = ({ whatsappUrl }) => {
       )}
     </section>
   );
-};
-
-/* ============================================================
-   CAMPO CLASIFICADO
-   ============================================================ */
-
-const CampoClasificado = ({ label, valor, icono }) => {
-  if (valor === undefined || valor === null || valor === '') {
-    return null;
-  }
-
-  return (
-    <div className="flex flex-col min-w-0">
-      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">
-        {icono} {label}
-      </span>
-
-      <span className="text-xs font-bold text-[#0B132B] break-words">
-        {String(valor)}
-      </span>
-    </div>
-  );
-};
+});
 
 /* ============================================================
    TÍTULO DE SECCIÓN
    ============================================================ */
 
-const SectionTitle = ({ icon, title, subtitle, color = '#0B132B' }) => {
+const SectionTitle = memo(function SectionTitle({
+  icon,
+  title,
+  subtitle,
+  color = '#0B132B',
+}) {
   return (
     <div className="mb-6 mt-10 first:mt-2 flex items-center justify-between border-b border-slate-200/80 pb-4">
       <div className="flex items-center gap-3.5">
@@ -556,7 +598,370 @@ const SectionTitle = ({ icon, title, subtitle, color = '#0B132B' }) => {
       </div>
     </div>
   );
-};
+});
+
+/* ============================================================
+   TARJETA DE ANUNCIO (MEMOIZADA FUERA DE HOME PARA 0 LAG)
+   ============================================================ */
+
+const JobCard = memo(function JobCard({ job, onSelect, onShare }) {
+  const reciente = esOfertaReciente(job);
+  const estadoCierre = obtenerEstadoCierre(job);
+  const verificado = job.tipo !== 'Estado' && job.verificado !== false;
+
+  if (job.tipo === 'Clasificado') {
+    const categoria = job.categoriaClasificado || 'Otros';
+    const config = getCategoriaConfig(categoria);
+
+    return (
+      <article
+        className={`group bg-white rounded-2xl p-5 sm:p-6 border flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-14px_rgba(11,19,43,0.14)] ${
+          job.esVip
+            ? 'border-amber-400/90 ring-2 ring-amber-400/20 shadow-md'
+            : 'border-slate-200/90 shadow-[0_2px_12px_-3px_rgba(11,19,43,0.06)]'
+        }`}
+      >
+        <div
+          className="absolute inset-x-0 top-0 h-1"
+          style={{ backgroundColor: job.esVip ? '#F59E0B' : config.color }}
+        />
+
+        <div>
+          <div className="flex flex-wrap items-center justify-between gap-1.5 mb-4">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span
+                className="text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider inline-flex items-center gap-1.5 whitespace-nowrap"
+                style={{
+                  backgroundColor: config.fondo,
+                  color: config.color,
+                  border: `1px solid ${config.borde}`,
+                }}
+              >
+                <span>{config.icono}</span>
+                <span>{categoria}</span>
+              </span>
+
+              {verificado && (
+                <span className="text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                  ✅ Verificado
+                </span>
+              )}
+
+              {reciente && (
+                <span className="text-[10px] font-extrabold bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                  🕒 Reciente
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {estadoCierre && (
+                <span
+                  className={`text-[10px] font-extrabold px-2 py-0.5 rounded-lg whitespace-nowrap ${estadoCierre.clases}`}
+                >
+                  {estadoCierre.texto}
+                </span>
+              )}
+
+              {job.esVip && (
+                <span className="text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-300/80 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+                  ⭐ VIP
+                </span>
+              )}
+            </div>
+          </div>
+
+          <h3 className="text-base sm:text-[17px] font-extrabold text-[#0B132B] mb-3.5 leading-snug group-hover:text-slate-700 transition-colors">
+            {job.titulo}
+          </h3>
+
+          <div
+            className="p-3.5 rounded-xl border mb-4"
+            style={{
+              backgroundColor: `${config.fondo}75`,
+              borderColor: config.borde,
+            }}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <CampoClasificado
+                label="Ubicación"
+                valor={job.ubicacion || 'Pasco'}
+                icono="📍"
+              />
+              <CampoClasificado
+                label="Precio"
+                valor={job.sueldo || 'A tratar'}
+                icono="💰"
+              />
+            </div>
+
+            <div
+              className="mt-3 pt-3 border-t"
+              style={{ borderColor: config.borde }}
+            >
+              {renderDatosClasificado(job)}
+            </div>
+          </div>
+
+          {job.descripcion && (
+            <p className="text-xs text-slate-600 font-medium mb-3 line-clamp-2 leading-relaxed">
+              {job.descripcion}
+            </p>
+          )}
+
+          <p className="text-[11px] text-slate-400 font-semibold mb-4">
+            📅 Publicado:{' '}
+            {formatearFechaPub(
+              job.fechaInicio || job.fechaPublicacion || job.createdAt
+            )}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 mt-auto">
+          <button
+            onClick={() => onSelect(job)}
+            className="flex-1 text-white text-xs font-extrabold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-xs hover:opacity-95 active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
+            style={{ backgroundColor: config.color }}
+          >
+            <span>📲 Ver detalles y contactar</span>
+            <span>→</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => onShare(job, e)}
+            title="Compartir este anuncio por WhatsApp"
+            className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-extrabold py-3.5 px-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center shrink-0"
+          >
+            📤
+          </button>
+        </div>
+      </article>
+    );
+  }
+
+  const esEstado = job.tipo === 'Estado';
+
+  return (
+    <article
+      className={`group bg-white rounded-2xl p-5 sm:p-6 border flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-14px_rgba(11,19,43,0.14)] ${
+        job.esVip
+          ? 'border-amber-400/90 bg-gradient-to-b from-amber-50/30 via-white to-white ring-2 ring-amber-400/20 shadow-md'
+          : 'border-slate-200/90 hover:border-slate-300 shadow-[0_2px_12px_-3px_rgba(11,19,43,0.06)]'
+      }`}
+    >
+      <div
+        className={`absolute inset-x-0 top-0 h-1 ${
+          job.esVip
+            ? 'bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-500'
+            : esEstado
+            ? 'bg-gradient-to-r from-[#0B132B] to-blue-600'
+            : 'bg-gradient-to-r from-[#06D6A0] to-emerald-500'
+        }`}
+      />
+
+      <div>
+        <div className="flex flex-wrap items-center justify-between gap-1.5 mb-4">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span
+              className={`inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap ${
+                esEstado
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200/80'
+                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
+              }`}
+            >
+              <span>{esEstado ? '🏛️' : '💼'}</span>
+              <span>{esEstado ? 'Sector Público' : 'Empleo Local'}</span>
+            </span>
+
+            {verificado && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                ✅ Verificado
+              </span>
+            )}
+
+            {reciente && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-lg whitespace-nowrap">
+                🕒 Reciente
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {estadoCierre && (
+              <span
+                className={`inline-flex items-center text-[10px] font-extrabold px-2 py-0.5 rounded-lg whitespace-nowrap ${estadoCierre.clases}`}
+              >
+                {estadoCierre.texto}
+              </span>
+            )}
+
+            {job.esVip && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-300/80 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+                ⭐ VIP
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3.5 mb-3.5 pb-3.5 border-b border-slate-100">
+          {job.logo ? (
+            <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 p-1.5 shadow-2xs flex items-center justify-center shrink-0 overflow-hidden">
+              <img
+                src={job.logo}
+                alt={job.empresa || 'Empresa'}
+                width={48}
+                height={48}
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-contain"
+              />
+            </div>
+          ) : (
+            <div
+              className={`w-12 h-12 rounded-xl border flex items-center justify-center text-lg font-bold shrink-0 ${
+                esEstado
+                  ? 'bg-blue-50/80 border-blue-100 text-blue-700'
+                  : 'bg-emerald-50/80 border-emerald-100 text-emerald-700'
+              }`}
+            >
+              {esEstado ? '🏛️' : '🏢'}
+            </div>
+          )}
+
+          <div className="min-w-0 flex-1">
+            <p
+              className="text-xs sm:text-[13px] font-extrabold text-slate-700 leading-snug line-clamp-2"
+              style={{ wordBreak: 'normal', overflowWrap: 'break-word' }}
+            >
+              {job.empresa || 'Empresa'}
+            </p>
+
+            <p className="text-[11px] text-slate-400 font-semibold mt-0.5 flex items-center gap-1">
+              <span className="shrink-0">📍</span>
+              <span className="truncate">{job.ubicacion || 'Pasco'}</span>
+            </p>
+          </div>
+        </div>
+
+        <h3 className="text-[16px] sm:text-[17px] font-extrabold text-[#0B132B] mb-4 leading-snug line-clamp-2 group-hover:text-blue-900 transition-colors">
+          {job.titulo}
+        </h3>
+
+        <div className="bg-slate-50/90 p-3.5 rounded-xl border border-slate-200/70 space-y-2 mb-4">
+          <div className="flex justify-between items-center text-xs gap-2">
+            <span className="text-slate-500 font-semibold">Remuneración</span>
+            <span className="font-extrabold text-emerald-600 text-sm text-right tabular-nums">
+              {job.sueldo || 'A tratar'}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center text-xs gap-2 pt-2 border-t border-slate-200/60">
+            <span className="text-slate-500 font-semibold">Modalidad</span>
+            <span className="font-bold text-[#0B132B] bg-white px-2.5 py-0.5 rounded-md border border-slate-200/90 truncate max-w-[165px]">
+              {job.modalidad || 'No especificada'}
+            </span>
+          </div>
+
+          {job.vacantes && (
+            <div className="flex justify-between items-center text-xs gap-2 pt-2 border-t border-slate-200/60">
+              <span className="text-slate-500 font-semibold">
+                Vacantes / Plazas
+              </span>
+              <span className="font-extrabold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200/60 tabular-nums">
+                {job.vacantes}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {esEstado && job.fechaVencimiento && (
+          <div className="mb-4 px-3 py-2 rounded-xl bg-rose-50/90 border border-rose-200/80 text-rose-700 text-[11px] font-bold flex flex-wrap items-center justify-center text-center leading-snug">
+            {formatDateRange(
+              job.fechaInicio,
+              job.fechaVencimiento,
+              job.horaVencimiento
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 mt-auto">
+        <button
+          onClick={() => onSelect(job)}
+          className={`flex-1 text-xs font-extrabold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-xs cursor-pointer flex items-center justify-center gap-2 active:scale-[0.99] ${
+            esEstado
+              ? 'bg-[#0B132B] hover:bg-[#162447] text-white'
+              : 'bg-[#0B132B] hover:bg-emerald-600 text-white'
+          }`}
+        >
+          <span>
+            {esEstado ? 'Ver Convocatoria Oficial' : 'Ver Detalles y Postular'}
+          </span>
+          <span className="text-[#06D6A0] group-hover:text-white transition-colors">
+            →
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={(e) => onShare(job, e)}
+          title="Compartir esta oferta por WhatsApp"
+          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-extrabold py-3.5 px-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center shrink-0"
+        >
+          📤
+        </button>
+      </div>
+    </article>
+  );
+});
+
+const CardsGrid = memo(function CardsGrid({ items, onSelect, onShare }) {
+  if (!items || items.length === 0) return null;
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {items.map((job) => (
+        <JobCard
+          key={job._id}
+          job={job}
+          onSelect={onSelect}
+          onShare={onShare}
+        />
+      ))}
+    </div>
+  );
+});
+
+/* ============================================================
+   CONSTANTES WHATSAPP
+   ============================================================ */
+
+const NUMERO_WHATSAPP = '51967576214';
+
+const WHATSAPP_URL =
+  `https://api.whatsapp.com/send?phone=${NUMERO_WHATSAPP}&text=` +
+  encodeURIComponent(
+    '¡Hola! ⚡ Quiero publicar un empleo en *Chamba Fija* y encontrar personal al toque 📲🔥'
+  );
+
+const WHATSAPP_PUBLICIDAD_URL =
+  `https://api.whatsapp.com/send?phone=${NUMERO_WHATSAPP}&text=` +
+  encodeURIComponent(
+    '¡Hola! 📢 Quiero anunciar mi negocio en ChambaFija y quisiera conocer los espacios publicitarios disponibles.'
+  );
+
+const WHATSAPP_VIP_URL =
+  `https://api.whatsapp.com/send?phone=${NUMERO_WHATSAPP}&text=` +
+  encodeURIComponent(
+    '¡Hola! ⭐ Quiero destacar mi negocio/anuncio en ChambaFija y quisiera conocer cómo puedo ser VIP. 📲🔥'
+  );
+
+const WHATSAPP_REPORTE_URL =
+  `https://api.whatsapp.com/send?phone=${NUMERO_WHATSAPP}&text=` +
+  encodeURIComponent(
+    'Hola, quiero reportar una consulta o anuncio sospechoso en ChambaFija.'
+  );
 
 /* ============================================================
    COMPONENTE PRINCIPAL
@@ -565,54 +970,47 @@ const SectionTitle = ({ icon, title, subtitle, color = '#0B132B' }) => {
 export default function Home() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [jobsResumen, setJobsResumen] = useState([]);
+
+  const [publicidadData, setPublicidadData] = useState({
+    cargado: false,
+    config: null,
+    ads: [],
+    portadaAds: [],
+  });
+
+  useEffect(() => {
+    let activo = true;
+    fetch('/api/popup?publico=1')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!activo || !data?.success) return;
+        setPublicidadData({
+          cargado: true,
+          config: data.config || null,
+          ads: Array.isArray(data.ads) ? data.ads : [],
+          portadaAds: Array.isArray(data.portadaAds) ? data.portadaAds : [],
+        });
+      })
+      .catch(() => {
+        if (activo) {
+          setPublicidadData((prev) => ({ ...prev, cargado: true }));
+        }
+      });
+    return () => {
+      activo = false;
+    };
+  }, []);
 
   const [filter, setFilter] = useState('Todos');
   const [searchTerm, setSearchTerm] = useState('');
+  const deferredSearch = useDeferredValue(searchTerm);
 
   const [selectedJob, setSelectedJob] = useState(null);
   const [showTerms, setShowTerms] = useState(false);
 
   const searchInputRef = useRef(null);
 
-  const numeroWhatsApp = '51967576214';
-
-  const mensajePublicar =
-    '¡Hola! ⚡ Quiero publicar un empleo en *Chamba Fija* y encontrar personal al toque 📲🔥';
-
-  const whatsappUrl =
-    `https://api.whatsapp.com/send?phone=${numeroWhatsApp}` +
-    `&text=${encodeURIComponent(mensajePublicar)}`;
-
-  /* WHATSAPP PARA PUBLICIDAD */
-  const mensajePublicidad =
-    '¡Hola! 📢 Quiero anunciar mi negocio en ChambaFija y quisiera conocer los espacios publicitarios disponibles.';
-
-  const whatsappPublicidadUrl =
-    `https://api.whatsapp.com/send?phone=${numeroWhatsApp}` +
-    `&text=${encodeURIComponent(mensajePublicidad)}`;
-
-  /* WHATSAPP VIP */
-  const mensajeVIP =
-    '¡Hola! ⭐ Quiero destacar mi negocio/anuncio en ChambaFija y quisiera conocer cómo puedo ser VIP. 📲🔥';
-
-  const whatsappVIPUrl =
-    `https://api.whatsapp.com/send?phone=${numeroWhatsApp}` +
-    `&text=${encodeURIComponent(mensajeVIP)}`;
-
-  /* WHATSAPP REPORTE DE SEGURIDAD */
-  const mensajeReporte =
-    'Hola, quiero reportar una consulta o anuncio sospechoso en ChambaFija.';
-
-  const whatsappReporteUrl =
-    `https://api.whatsapp.com/send?phone=${numeroWhatsApp}` +
-    `&text=${encodeURIComponent(mensajeReporte)}`;
-
-  /* ==========================================================
-     COMPARTIR OFERTA POR WHATSAPP (PARA VISITANTES)
-     ========================================================== */
-
-  const compartirOfertaWhatsApp = (job, event) => {
+  const compartirOfertaWhatsApp = useCallback((job, event) => {
     if (event) event.stopPropagation();
 
     const baseUrl =
@@ -639,149 +1037,72 @@ export default function Home() {
       '_blank',
       'noopener,noreferrer'
     );
-  };
+  }, []);
 
   /* ==========================================================
-     OBTENER ANUNCIOS
+     CARGA ÚNICA OPTIMIZADA (CERO DOBLE PETICIÓN)
      ========================================================== */
 
-  const fetchJobs = async (tipoFiltro) => {
-    setLoading(true);
-
-    try {
-      let queryVal = '';
-
-      if (tipoFiltro === 'Empleos') {
-        queryVal = '?tipo=Privado';
-      } else if (tipoFiltro === 'Estado') {
-        queryVal = '?tipo=Estado';
-      } else if (tipoFiltro === 'Anuncios Clasificados') {
-        queryVal = '?tipo=Clasificado';
-      }
-
-      const url =
-        tipoFiltro === 'Todos' || tipoFiltro === 'Destacados'
-          ? '/api/jobs'
-          : `/api/jobs${queryVal}`;
-
-      const res = await fetch(url, {
-        cache: 'no-store',
-      });
-
-      const result = await res.json();
-
-      if (result.success) {
-        setJobs(Array.isArray(result.data) ? result.data : []);
-      } else {
-        setJobs([]);
-      }
-    } catch (error) {
-      console.error('Error al conectar con el servidor:', error);
-      setJobs([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchJobs(filter);
-  }, [filter]);
-
-  /* CARGAR DATOS PARA EL CONTADOR DE VACANTES */
   useEffect(() => {
     let activo = true;
 
-    const cargarResumen = async () => {
+    const cargarOfertas = async () => {
+      setLoading(true);
       try {
-        const res = await fetch('/api/jobs', {
-          cache: 'no-store',
-        });
-
+        const res = await fetch('/api/jobs?soloVigentes=1');
         const result = await res.json();
 
-        if (activo && result.success) {
-          setJobsResumen(Array.isArray(result.data) ? result.data : []);
+        if (activo && result.success && Array.isArray(result.data)) {
+          setJobs(result.data.filter(estaVigente));
+        } else if (activo) {
+          setJobs([]);
         }
       } catch (error) {
-        console.error('Error al cargar contador de vacantes:', error);
+        console.error('Error al conectar con el servidor:', error);
+        if (activo) setJobs([]);
+      } finally {
+        if (activo) setLoading(false);
       }
     };
 
-    cargarResumen();
-
+    cargarOfertas();
     return () => {
       activo = false;
     };
   }, []);
 
-  /* SUMA TOTAL DE VACANTES ACTIVAS */
+  /* SUMA TOTAL DE VACANTES ACTIVAS (DESDE LA MISMA CARGA) */
   const resumenVacantes = useMemo(() => {
-    const empleosActivos = jobsResumen.filter(estaVigente);
+    let estado = 0;
+    let locales = 0;
 
-    const sumarVacantes = (tipo) => {
-      return empleosActivos
-        .filter((job) => job.tipo === tipo)
-        .reduce((total, job) => {
-          return total + obtenerNumeroVacantes(job.vacantes);
-        }, 0);
-    };
+    for (const job of jobs) {
+      if (job.tipo === 'Estado') {
+        estado += obtenerNumeroVacantes(job.vacantes);
+      } else if (job.tipo === 'Privado') {
+        locales += obtenerNumeroVacantes(job.vacantes);
+      }
+    }
 
-    return {
-      estado: sumarVacantes('Estado'),
-      locales: sumarVacantes('Privado'),
-    };
-  }, [jobsResumen]);
+    return { estado, locales };
+  }, [jobs]);
 
   /* ==========================================================
-     FILTRADO
+     FILTRADO INSTANTÁNEO EN MEMORIA (0ms)
      ========================================================== */
 
   const filteredJobs = useMemo(() => {
+    const texto = deferredSearch.toLowerCase().trim();
+
     return jobs.filter((job) => {
-      if (job.fechaVencimiento) {
-        const fechaString = String(job.fechaVencimiento).split('T')[0];
-        const partes = fechaString.split('-');
-
-        if (partes.length === 3) {
-          const [year, month, day] = partes;
-
-          let h = 23;
-          let m = 59;
-
-          if (job.horaVencimiento) {
-            const [hours, minutes] = String(job.horaVencimiento).split(':');
-            const horaNumero = parseInt(hours, 10);
-            const minutoNumero = parseInt(minutes, 10);
-
-            if (!Number.isNaN(horaNumero)) h = horaNumero;
-            if (!Number.isNaN(minutoNumero)) m = minutoNumero;
-          }
-
-          const fechaExp = new Date(
-            Number(year),
-            Number(month) - 1,
-            Number(day),
-            h,
-            m,
-            59
-          );
-
-          if (!Number.isNaN(fechaExp.getTime()) && new Date() > fechaExp) {
-            return false;
-          }
-        }
+      if (filter === 'Destacados' && !job.esVip) return false;
+      if (filter === 'Empleos' && job.tipo !== 'Privado') return false;
+      if (filter === 'Estado' && job.tipo !== 'Estado') return false;
+      if (filter === 'Anuncios Clasificados' && job.tipo !== 'Clasificado') {
+        return false;
       }
 
-      const texto = searchTerm.toLowerCase().trim();
-
-      if (!texto) {
-        if (filter === 'Destacados') return Boolean(job.esVip);
-        if (filter === 'Empleos') return job.tipo === 'Privado';
-        if (filter === 'Estado') return job.tipo === 'Estado';
-        if (filter === 'Anuncios Clasificados')
-          return job.tipo === 'Clasificado';
-        return true;
-      }
+      if (!texto) return true;
 
       const camposBusqueda = [
         job.titulo,
@@ -802,31 +1123,18 @@ export default function Home() {
         job.estadoProducto,
       ];
 
-      const matchesSearch = camposBusqueda.some(
+      return camposBusqueda.some(
         (campo) => campo && String(campo).toLowerCase().includes(texto)
       );
-
-      if (!matchesSearch) return false;
-
-      if (filter === 'Destacados') return Boolean(job.esVip);
-      if (filter === 'Empleos') return job.tipo === 'Privado';
-      if (filter === 'Estado') return job.tipo === 'Estado';
-      if (filter === 'Anuncios Clasificados') return job.tipo === 'Clasificado';
-
-      return true;
     });
-  }, [jobs, searchTerm, filter]);
+  }, [jobs, deferredSearch, filter]);
 
   /* ==========================================================
-     ORDENAMIENTO
+     ORDENAMIENTO Y AGRUPACIONES
      ========================================================== */
 
   const sortedJobs = useMemo(() => {
-    const prioridadTipo = {
-      Privado: 1,
-      Estado: 2,
-      Clasificado: 3,
-    };
+    const prioridadTipo = { Privado: 1, Estado: 2, Clasificado: 3 };
 
     const getTimestamp = (job) => {
       const posiblesFechas = [
@@ -834,34 +1142,26 @@ export default function Home() {
         job.createdAt,
         job.fechaInicio,
       ];
-
       for (const fecha of posiblesFechas) {
         if (!fecha) continue;
         const timestamp = new Date(fecha).getTime();
         if (!Number.isNaN(timestamp)) return timestamp;
       }
-
       return 0;
     };
 
     return [...filteredJobs].sort((a, b) => {
       const vipA = Boolean(a.esVip);
       const vipB = Boolean(b.esVip);
-
       if (vipA !== vipB) return vipA ? -1 : 1;
 
       const prioridadA = prioridadTipo[a.tipo] || 99;
       const prioridadB = prioridadTipo[b.tipo] || 99;
-
       if (prioridadA !== prioridadB) return prioridadA - prioridadB;
 
       return getTimestamp(b) - getTimestamp(a);
     });
   }, [filteredJobs]);
-
-  /* ==========================================================
-     AGRUPACIONES
-     ========================================================== */
 
   const vipJobs = useMemo(
     () => sortedJobs.filter((job) => Boolean(job.esVip)),
@@ -883,15 +1183,15 @@ export default function Home() {
     [sortedJobs]
   );
 
-  const categoriasConAnuncios = useMemo(
-    () =>
-      Object.keys(categoriasClasificados).filter((categoria) =>
-        clasificadosJobs.some(
-          (job) => (job.categoriaClasificado || 'Otros') === categoria
-        )
-      ),
-    [clasificadosJobs]
-  );
+  const categoriasConAnuncios = useMemo(() => {
+    const listaBase =
+      filter === 'Anuncios Clasificados' ? sortedJobs : clasificadosJobs;
+    return Object.keys(categoriasClasificados).filter((categoria) =>
+      listaBase.some(
+        (job) => (job.categoriaClasificado || 'Otros') === categoria
+      )
+    );
+  }, [clasificadosJobs, sortedJobs, filter]);
 
   /* ==========================================================
      BUSCADOR + DESPLAZAMIENTO
@@ -902,605 +1202,21 @@ export default function Home() {
       const filtros = document.getElementById('filtros-anuncios');
       if (!filtros) return;
 
-      const esMobile = window.innerWidth < 640;
-
-      if (esMobile) {
-        const headerOffset = 90;
+      if (window.innerWidth < 640) {
         const top =
-          filtros.getBoundingClientRect().top + window.scrollY - headerOffset;
-
-        window.scrollTo({
-          top: Math.max(top, 0),
-          behavior: 'smooth',
-        });
+          filtros.getBoundingClientRect().top + window.scrollY - 90;
+        window.scrollTo({ top: Math.max(top, 0), behavior: 'smooth' });
       } else {
-        filtros.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        });
+        filtros.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
-    }, 100);
-  };
-
-  const ejecutarBusqueda = () => {
-    desplazarAResultados();
+    }, 60);
   };
 
   const handleSearchKeyDown = (event) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      ejecutarBusqueda();
+      desplazarAResultados();
     }
-  };
-
-  /* ==========================================================
-     FORMATEAR FECHA
-     ========================================================== */
-
-  const formatearFechaPub = (fechaISO) => {
-    if (!fechaISO) return 'Recientemente';
-
-    const fecha = new Date(fechaISO);
-    if (Number.isNaN(fecha.getTime())) return 'Recientemente';
-
-    return fecha.toLocaleDateString('es-PE', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
-
-  /* ==========================================================
-     DATOS CLASIFICADOS
-     ========================================================== */
-
-  const renderDatosClasificado = (job, modo = 'card') => {
-    const categoria = job.categoriaClasificado || 'Otros';
-    const datos = [];
-
-    if (categoria === 'Locales en alquiler') {
-      datos.push(
-        <CampoClasificado
-          key="tipoLocal"
-          label="Tipo de local"
-          valor={job.tipoLocal}
-          icono="🏪"
-        />,
-        <CampoClasificado
-          key="area"
-          label="Área"
-          valor={job.area}
-          icono="📐"
-        />,
-        <CampoClasificado
-          key="ambientes"
-          label="Ambientes"
-          valor={job.ambientes}
-          icono="🚪"
-        />,
-        <CampoClasificado
-          key="banos"
-          label="Baños"
-          valor={job.banos}
-          icono="🚿"
-        />,
-        <CampoClasificado
-          key="garantia"
-          label="Garantía"
-          valor={job.garantia}
-          icono="🔐"
-        />
-      );
-    } else if (categoria === 'Viviendas en alquiler') {
-      datos.push(
-        <CampoClasificado
-          key="tipoVivienda"
-          label="Tipo de vivienda"
-          valor={job.tipoVivienda}
-          icono="🏠"
-        />,
-        <CampoClasificado
-          key="area"
-          label="Área"
-          valor={job.area}
-          icono="📐"
-        />,
-        <CampoClasificado
-          key="dormitorios"
-          label="Dormitorios"
-          valor={job.dormitorios}
-          icono="🛏️"
-        />,
-        <CampoClasificado
-          key="banos"
-          label="Baños"
-          valor={job.banos}
-          icono="🚿"
-        />,
-        <CampoClasificado
-          key="cochera"
-          label="Cochera"
-          valor={job.cochera}
-          icono="🚗"
-        />,
-        <CampoClasificado
-          key="amoblado"
-          label="Amoblado"
-          valor={job.amoblado}
-          icono="🛋️"
-        />,
-        <CampoClasificado
-          key="serviciosIncluidos"
-          label="Servicios incluidos"
-          valor={job.serviciosIncluidos}
-          icono="💡"
-        />,
-        <CampoClasificado
-          key="garantia"
-          label="Garantía"
-          valor={job.garantia}
-          icono="🔐"
-        />
-      );
-    } else if (categoria === 'Vehículos') {
-      datos.push(
-        <CampoClasificado
-          key="tipoVehiculo"
-          label="Tipo"
-          valor={job.tipoVehiculo}
-          icono="🚗"
-        />,
-        <CampoClasificado
-          key="marca"
-          label="Marca"
-          valor={job.marca}
-          icono="🏷️"
-        />,
-        <CampoClasificado
-          key="modelo"
-          label="Modelo"
-          valor={job.modelo}
-          icono="🚘"
-        />,
-        <CampoClasificado
-          key="anio"
-          label="Año"
-          valor={job.anio}
-          icono="📅"
-        />,
-        <CampoClasificado
-          key="kilometraje"
-          label="Kilometraje"
-          valor={job.kilometraje}
-          icono="🛣️"
-        />,
-        <CampoClasificado
-          key="combustible"
-          label="Combustible"
-          valor={job.combustible}
-          icono="⛽"
-        />,
-        <CampoClasificado
-          key="transmision"
-          label="Transmisión"
-          valor={job.transmision}
-          icono="⚙️"
-        />,
-        <CampoClasificado
-          key="colorVehiculo"
-          label="Color"
-          valor={job.colorVehiculo}
-          icono="🎨"
-        />
-      );
-    } else if (categoria === 'Servicios') {
-      datos.push(
-        <CampoClasificado
-          key="tipoServicio"
-          label="Servicio"
-          valor={job.tipoServicio}
-          icono="🛠️"
-        />,
-        <CampoClasificado
-          key="modalidadServicio"
-          label="Modalidad"
-          valor={job.modalidadServicio}
-          icono="💻"
-        />,
-        <CampoClasificado
-          key="zonaAtencion"
-          label="Zona de atención"
-          valor={job.zonaAtencion}
-          icono="📍"
-        />
-      );
-    } else if (categoria === 'Ventas') {
-      datos.push(
-        <CampoClasificado
-          key="producto"
-          label="Producto"
-          valor={job.producto}
-          icono="📦"
-        />,
-        <CampoClasificado
-          key="marcaProducto"
-          label="Marca"
-          valor={job.marcaProducto}
-          icono="🏷️"
-        />,
-        <CampoClasificado
-          key="estadoProducto"
-          label="Estado"
-          valor={job.estadoProducto}
-          icono="✨"
-        />,
-        <CampoClasificado
-          key="cantidad"
-          label="Cantidad"
-          valor={job.cantidad}
-          icono="🔢"
-        />
-      );
-    } else {
-      datos.push(
-        <CampoClasificado
-          key="area"
-          label="Área / Medida"
-          valor={job.area}
-          icono="📐"
-        />
-      );
-    }
-
-    const items = datos.filter(Boolean);
-    if (!items.length) return null;
-
-    return (
-      <div
-        className={
-          modo === 'modal'
-            ? 'grid grid-cols-1 sm:grid-cols-2 gap-4'
-            : 'grid grid-cols-2 gap-3'
-        }
-      >
-        {items}
-      </div>
-    );
-  };
-
-  /* ==========================================================
-     TARJETA DE ANUNCIO (CON INSIGNIAS Y BOTÓN DE COMPARTIR)
-     ========================================================== */
-
-  const JobCard = ({ job }) => {
-    const reciente = esOfertaReciente(job);
-    const estadoCierre = obtenerEstadoCierre(job);
-    const verificado = job.tipo !== 'Estado' && job.verificado !== false;
-
-    /* 1. TARJETA DE CLASIFICADOS */
-    if (job.tipo === 'Clasificado') {
-      const categoria = job.categoriaClasificado || 'Otros';
-      const config = getCategoriaConfig(categoria);
-
-      return (
-        <article
-          className={`group bg-white rounded-2xl p-5 sm:p-6 border flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-14px_rgba(11,19,43,0.14)] ${
-            job.esVip
-              ? 'border-amber-400/90 ring-2 ring-amber-400/20 shadow-md'
-              : 'border-slate-200/90 shadow-[0_2px_12px_-3px_rgba(11,19,43,0.06)]'
-          }`}
-        >
-          <div
-            className="absolute inset-x-0 top-0 h-1"
-            style={{ backgroundColor: job.esVip ? '#F59E0B' : config.color }}
-          />
-
-          <div>
-            <div className="flex flex-wrap items-center justify-between gap-1.5 mb-4">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span
-                  className="text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider inline-flex items-center gap-1.5 whitespace-nowrap"
-                  style={{
-                    backgroundColor: config.fondo,
-                    color: config.color,
-                    border: `1px solid ${config.borde}`,
-                  }}
-                >
-                  <span>{config.icono}</span>
-                  <span>{categoria}</span>
-                </span>
-
-                {verificado && (
-                  <span className="text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg whitespace-nowrap">
-                    ✅ Verificado
-                  </span>
-                )}
-
-                {reciente && (
-                  <span className="text-[10px] font-extrabold bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-lg whitespace-nowrap">
-                    🕒 Reciente
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                {estadoCierre && (
-                  <span
-                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded-lg whitespace-nowrap ${estadoCierre.clases}`}
-                  >
-                    {estadoCierre.texto}
-                  </span>
-                )}
-
-                {job.esVip && (
-                  <span className="text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-300/80 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
-                    ⭐ VIP
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <h3 className="text-base sm:text-[17px] font-extrabold text-[#0B132B] mb-3.5 leading-snug group-hover:text-slate-700 transition-colors">
-              {job.titulo}
-            </h3>
-
-            <div
-              className="p-3.5 rounded-xl border mb-4"
-              style={{
-                backgroundColor: `${config.fondo}75`,
-                borderColor: config.borde,
-              }}
-            >
-              <div className="grid grid-cols-2 gap-3">
-                <CampoClasificado
-                  label="Ubicación"
-                  valor={job.ubicacion || 'Pasco'}
-                  icono="📍"
-                />
-                <CampoClasificado
-                  label="Precio"
-                  valor={job.sueldo || 'A tratar'}
-                  icono="💰"
-                />
-              </div>
-
-              <div
-                className="mt-3 pt-3 border-t"
-                style={{ borderColor: config.borde }}
-              >
-                {renderDatosClasificado(job)}
-              </div>
-            </div>
-
-            {job.descripcion && (
-              <p className="text-xs text-slate-600 font-medium mb-3 line-clamp-2 leading-relaxed">
-                {job.descripcion}
-              </p>
-            )}
-
-            <p className="text-[11px] text-slate-400 font-semibold mb-4">
-              📅 Publicado:{' '}
-              {formatearFechaPub(
-                job.fechaInicio || job.fechaPublicacion || job.createdAt
-              )}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 mt-auto">
-            <button
-              onClick={() => setSelectedJob(job)}
-              className="flex-1 text-white text-xs font-extrabold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-xs hover:opacity-95 active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
-              style={{ backgroundColor: config.color }}
-            >
-              <span>📲 Ver detalles y contactar</span>
-              <span>→</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={(e) => compartirOfertaWhatsApp(job, e)}
-              title="Compartir este anuncio por WhatsApp"
-              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-extrabold py-3.5 px-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center shrink-0"
-            >
-              📤
-            </button>
-          </div>
-        </article>
-      );
-    }
-
-    /* 2. TARJETA DE EMPLEO LOCAL / CONVOCATORIA DEL ESTADO */
-    const esEstado = job.tipo === 'Estado';
-
-    return (
-      <article
-        className={`group bg-white rounded-2xl p-5 sm:p-6 border flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_40px_-14px_rgba(11,19,43,0.14)] ${
-          job.esVip
-            ? 'border-amber-400/90 bg-gradient-to-b from-amber-50/30 via-white to-white ring-2 ring-amber-400/20 shadow-md'
-            : 'border-slate-200/90 hover:border-slate-300 shadow-[0_2px_12px_-3px_rgba(11,19,43,0.06)]'
-        }`}
-      >
-        <div
-          className={`absolute inset-x-0 top-0 h-1 ${
-            job.esVip
-              ? 'bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-500'
-              : esEstado
-              ? 'bg-gradient-to-r from-[#0B132B] to-blue-600'
-              : 'bg-gradient-to-r from-[#06D6A0] to-emerald-500'
-          }`}
-        />
-
-        <div>
-          {/* NIVEL 1: ETIQUETAS DE SECTOR + VERIFICADO + RECIENTE + CIERRE PRONTO + VIP */}
-          <div className="flex flex-wrap items-center justify-between gap-1.5 mb-4">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span
-                className={`inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap ${
-                  esEstado
-                    ? 'bg-blue-50 text-blue-700 border border-blue-200/80'
-                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
-                }`}
-              >
-                <span>{esEstado ? '🏛️' : '💼'}</span>
-                <span>{esEstado ? 'Sector Público' : 'Empleo Local'}</span>
-              </span>
-
-              {verificado && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-lg whitespace-nowrap">
-                  ✅ Verificado
-                </span>
-              )}
-
-              {reciente && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-lg whitespace-nowrap">
-                  🕒 Reciente
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              {estadoCierre && (
-                <span
-                  className={`inline-flex items-center text-[10px] font-extrabold px-2 py-0.5 rounded-lg whitespace-nowrap ${estadoCierre.clases}`}
-                >
-                  {estadoCierre.texto}
-                </span>
-              )}
-
-              {job.esVip && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-amber-50 text-amber-800 border border-amber-300/80 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
-                  ⭐ VIP
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* NIVEL 2: ESCUDO + NOMBRE DE ENTIDAD */}
-          <div className="flex items-center gap-3.5 mb-3.5 pb-3.5 border-b border-slate-100">
-            {job.logo ? (
-              <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 p-1.5 shadow-2xs flex items-center justify-center shrink-0 overflow-hidden">
-                <img
-                  src={job.logo}
-                  alt={job.empresa || 'Empresa'}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            ) : (
-              <div
-                className={`w-12 h-12 rounded-xl border flex items-center justify-center text-lg font-bold shrink-0 ${
-                  esEstado
-                    ? 'bg-blue-50/80 border-blue-100 text-blue-700'
-                    : 'bg-emerald-50/80 border-emerald-100 text-emerald-700'
-                }`}
-              >
-                {esEstado ? '🏛️' : '🏢'}
-              </div>
-            )}
-
-            <div className="min-w-0 flex-1">
-              <p
-                className="text-xs sm:text-[13px] font-extrabold text-slate-700 leading-snug line-clamp-2"
-                style={{ wordBreak: 'normal', overflowWrap: 'break-word' }}
-              >
-                {job.empresa || 'Empresa'}
-              </p>
-
-              <p className="text-[11px] text-slate-400 font-semibold mt-0.5 flex items-center gap-1">
-                <span className="shrink-0">📍</span>
-                <span className="truncate">{job.ubicacion || 'Pasco'}</span>
-              </p>
-            </div>
-          </div>
-
-          {/* NIVEL 3: TÍTULO DEL PUESTO */}
-          <h3 className="text-[16px] sm:text-[17px] font-extrabold text-[#0B132B] mb-4 leading-snug line-clamp-2 group-hover:text-blue-900 transition-colors">
-            {job.titulo}
-          </h3>
-
-          {/* NIVEL 4: DATOS CLAVE */}
-          <div className="bg-slate-50/90 p-3.5 rounded-xl border border-slate-200/70 space-y-2 mb-4">
-            <div className="flex justify-between items-center text-xs gap-2">
-              <span className="text-slate-500 font-semibold">Remuneración</span>
-              <span className="font-extrabold text-emerald-600 text-sm text-right tabular-nums">
-                {job.sueldo || 'A tratar'}
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center text-xs gap-2 pt-2 border-t border-slate-200/60">
-              <span className="text-slate-500 font-semibold">Modalidad</span>
-              <span className="font-bold text-[#0B132B] bg-white px-2.5 py-0.5 rounded-md border border-slate-200/90 truncate max-w-[165px]">
-                {job.modalidad || 'No especificada'}
-              </span>
-            </div>
-
-            {job.vacantes && (
-              <div className="flex justify-between items-center text-xs gap-2 pt-2 border-t border-slate-200/60">
-                <span className="text-slate-500 font-semibold">
-                  Vacantes / Plazas
-                </span>
-                <span className="font-extrabold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200/60 tabular-nums">
-                  {job.vacantes}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* NIVEL 5: BARRA DE CIERRE */}
-          {esEstado && job.fechaVencimiento && (
-            <div className="mb-4 px-3 py-2 rounded-xl bg-rose-50/90 border border-rose-200/80 text-rose-700 text-[11px] font-bold flex flex-wrap items-center justify-center text-center leading-snug">
-              {formatDateRange(
-                job.fechaInicio,
-                job.fechaVencimiento,
-                job.horaVencimiento
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 mt-auto">
-          <button
-            onClick={() => setSelectedJob(job)}
-            className={`flex-1 text-xs font-extrabold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-xs cursor-pointer flex items-center justify-center gap-2 active:scale-[0.99] ${
-              esEstado
-                ? 'bg-[#0B132B] hover:bg-[#162447] text-white'
-                : 'bg-[#0B132B] hover:bg-emerald-600 text-white'
-            }`}
-          >
-            <span>
-              {esEstado ? 'Ver Convocatoria Oficial' : 'Ver Detalles y Postular'}
-            </span>
-            <span className="text-[#06D6A0] group-hover:text-white transition-colors">
-              →
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={(e) => compartirOfertaWhatsApp(job, e)}
-            title="Compartir esta oferta por WhatsApp"
-            className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-extrabold py-3.5 px-3.5 rounded-xl transition-all cursor-pointer flex items-center justify-center shrink-0"
-          >
-            📤
-          </button>
-        </div>
-      </article>
-    );
-  };
-
-  /* ==========================================================
-     GRID
-     ========================================================== */
-
-  const CardsGrid = ({ items }) => {
-    if (!items || items.length === 0) return null;
-
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {items.map((job) => (
-          <JobCard key={job._id} job={job} />
-        ))}
-      </div>
-    );
   };
 
   /* ==========================================================
@@ -1509,21 +1225,31 @@ export default function Home() {
 
   return (
     <div className="bg-[#F4F7FB] text-[#0B132B] min-h-screen flex flex-col justify-between font-sans selection:bg-[#06D6A0] selection:text-[#0B132B]">
+      {/* BANNER EMERGENTE DE PUBLICIDAD RÁPIDA */}
+      <PopupPublicidad
+        config={publicidadData.config}
+        anuncios={publicidadData.ads}
+        cargado={publicidadData.cargado}
+        whatsappPublicidadUrl={WHATSAPP_PUBLICIDAD_URL}
+      />
+
       {/* ======================================================
           HEADER
           ====================================================== */}
 
       <header className="bg-[#0B132B]/95 backdrop-blur-xl text-white sticky top-0 z-40 shadow-[0_10px_30px_-10px_rgba(11,19,43,0.5)] border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 py-3.5 flex flex-col sm:flex-row justify-between items-center gap-3.5">
-          {/* LOGO */}
           <div className="flex items-center justify-between w-full sm:w-auto">
             <a
               href="/"
               className="flex items-center gap-2.5 group cursor-pointer"
             >
-              <img
+              <Image
                 src="/logo.png"
                 alt="Chamba Fija Pasco"
+                width={160}
+                height={40}
+                priority
                 className="h-9 sm:h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
               />
             </a>
@@ -1533,7 +1259,6 @@ export default function Home() {
             </span>
           </div>
 
-          {/* BUSCADOR */}
           <div className="w-full sm:w-[430px] relative">
             <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400">
               🔍
@@ -1551,7 +1276,7 @@ export default function Home() {
 
             <button
               type="button"
-              onClick={ejecutarBusqueda}
+              onClick={desplazarAResultados}
               className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl bg-[#06D6A0] text-[#0B132B] flex items-center justify-center hover:bg-emerald-300 active:scale-95 transition-all cursor-pointer shadow-sm"
               aria-label="Buscar"
             >
@@ -1559,10 +1284,9 @@ export default function Home() {
             </button>
           </div>
 
-          {/* PUBLICAR */}
           <div className="w-full sm:w-auto flex justify-end">
             <a
-              href={whatsappUrl}
+              href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto text-center bg-gradient-to-r from-[#06D6A0] to-emerald-400 hover:from-emerald-400 hover:to-[#06D6A0] text-[#0B132B] text-xs font-extrabold px-6 py-3.5 rounded-2xl transition-all duration-300 shadow-lg shadow-[#06D6A0]/20 hover:-translate-y-0.5 active:translate-y-0"
@@ -1574,15 +1298,20 @@ export default function Home() {
       </header>
 
       {/* ======================================================
-          HERO
+          HERO (CON NEXT/IMAGE OPTIMIZADO Y H1 SEO)
           ====================================================== */}
 
-      <section
-        className="relative bg-cover bg-[center_bottom_55%] overflow-hidden bg-[#0B132B] text-white py-16 sm:py-20 px-4 text-center shadow-lg border-b border-slate-800"
-        style={{
-          backgroundImage: "url('/portadav2.png')",
-        }}
-      >
+      <section className="relative overflow-hidden bg-[#0B132B] text-white py-16 sm:py-20 px-4 text-center shadow-lg border-b border-slate-800">
+        <Image
+          src="/portadav2.png"
+          alt="Cerro de Pasco - ChambaFija"
+          fill
+          priority
+          quality={75}
+          sizes="100vw"
+          className="object-cover object-[center_55%] pointer-events-none select-none"
+        />
+
         <div className="absolute inset-0 bg-gradient-to-b from-[#0B132B]/80 via-[#0B132B]/70 to-[#0B132B]/90 pointer-events-none" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(6,214,160,0.16)_0,transparent_60%)] pointer-events-none" />
 
@@ -1592,9 +1321,9 @@ export default function Home() {
             Empleos, convocatorias y clasificados al instante
           </span>
 
-          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight drop-shadow-sm">
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight drop-shadow-sm">
             Encuentra de todo en <span className="text-[#06D6A0]">PASCO</span>
-          </h2>
+          </h1>
 
           <p className="text-sm sm:text-base text-slate-200 max-w-xl mx-auto font-medium leading-relaxed">
             Conectando negocios locales, procesos del Estado y anuncios
@@ -1604,10 +1333,15 @@ export default function Home() {
       </section>
 
       {/* ====================================================
-          PUBLICIDAD
+          PUBLICIDAD DE PORTADA (SIN SALTO VISUAL CLS)
           ==================================================== */}
 
-      {!loading && <PublicidadSection whatsappUrl={whatsappPublicidadUrl} />}
+      <PublicidadSection
+        anuncios={publicidadData.portadaAds}
+        cargado={publicidadData.cargado}
+        intervaloMs={publicidadData.config?.intervaloPortadaMs}
+        whatsappUrl={WHATSAPP_PUBLICIDAD_URL}
+      />
 
       {/* ======================================================
           CONTADOR DE VACANTES
@@ -1636,7 +1370,7 @@ export default function Home() {
             </div>
 
             <p className="text-3xl sm:text-4xl font-extrabold text-blue-600 tabular-nums tracking-tight">
-              {resumenVacantes.estado.toLocaleString('es-PE')}
+              {loading ? '...' : resumenVacantes.estado.toLocaleString('es-PE')}
             </p>
 
             <p className="text-[11px] sm:text-xs text-slate-500 font-semibold mt-1">
@@ -1656,7 +1390,7 @@ export default function Home() {
             </div>
 
             <p className="text-3xl sm:text-4xl font-extrabold text-emerald-600 tabular-nums tracking-tight">
-              {resumenVacantes.locales.toLocaleString('es-PE')}
+              {loading ? '...' : resumenVacantes.locales.toLocaleString('es-PE')}
             </p>
 
             <p className="text-[11px] sm:text-xs text-slate-500 font-semibold mt-1">
@@ -1687,16 +1421,7 @@ export default function Home() {
               key={filtro}
               onClick={() => {
                 setFilter(filtro);
-
-                window.setTimeout(() => {
-                  const filtros = document.getElementById('filtros-anuncios');
-                  if (filtros) {
-                    filtros.scrollIntoView({
-                      behavior: 'smooth',
-                      block: 'start',
-                    });
-                  }
-                }, 50);
+                desplazarAResultados();
               }}
               className={`text-xs px-5 py-3 rounded-xl font-extrabold transition-all duration-200 cursor-pointer flex items-center gap-2 ${
                 activo
@@ -1774,10 +1499,7 @@ export default function Home() {
               onClick={() => {
                 setSearchTerm('');
                 setFilter('Todos');
-
-                window.setTimeout(() => {
-                  desplazarAResultados();
-                }, 100);
+                desplazarAResultados();
               }}
               className="text-xs bg-[#0B132B] hover:bg-slate-800 text-[#06D6A0] px-6 py-3.5 rounded-xl font-extrabold shadow-md cursor-pointer transition-all"
             >
@@ -1797,7 +1519,11 @@ export default function Home() {
                       color="#D97706"
                     />
 
-                    <CardsGrid items={vipJobs} />
+                    <CardsGrid
+                      items={vipJobs}
+                      onSelect={setSelectedJob}
+                      onShare={compartirOfertaWhatsApp}
+                    />
 
                     <div className="mt-6 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-yellow-50/70 to-amber-50 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
                       <div className="text-center sm:text-left">
@@ -1811,7 +1537,7 @@ export default function Home() {
                       </div>
 
                       <a
-                        href={whatsappVIPUrl}
+                        href={WHATSAPP_VIP_URL}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-full sm:w-auto text-center bg-[#0B132B] hover:bg-slate-800 text-[#06D6A0] text-xs font-extrabold px-6 py-3.5 rounded-xl shadow-md transition-all hover:-translate-y-0.5 shrink-0"
@@ -1830,7 +1556,11 @@ export default function Home() {
                       subtitle="Empresas y negocios contratando personal en Pasco"
                       color="#059669"
                     />
-                    <CardsGrid items={privateJobs} />
+                    <CardsGrid
+                      items={privateJobs}
+                      onSelect={setSelectedJob}
+                      onShare={compartirOfertaWhatsApp}
+                    />
                   </section>
                 )}
 
@@ -1842,7 +1572,11 @@ export default function Home() {
                       subtitle="Procesos CAS, 728, 276 y locación en entidades públicas"
                       color="#1D4ED8"
                     />
-                    <CardsGrid items={estadoJobs} />
+                    <CardsGrid
+                      items={estadoJobs}
+                      onSelect={setSelectedJob}
+                      onShare={compartirOfertaWhatsApp}
+                    />
                   </section>
                 )}
 
@@ -1891,7 +1625,11 @@ export default function Home() {
                             </div>
                           </div>
 
-                          <CardsGrid items={anunciosCategoria} />
+                          <CardsGrid
+                            items={anunciosCategoria}
+                            onSelect={setSelectedJob}
+                            onShare={compartirOfertaWhatsApp}
+                          />
                         </div>
                       );
                     })}
@@ -1909,7 +1647,11 @@ export default function Home() {
                   color="#D97706"
                 />
 
-                <CardsGrid items={vipJobs} />
+                <CardsGrid
+                  items={vipJobs}
+                  onSelect={setSelectedJob}
+                  onShare={compartirOfertaWhatsApp}
+                />
 
                 <div className="mt-6 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-yellow-50/70 to-amber-50 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
                   <div className="text-center sm:text-left">
@@ -1923,7 +1665,7 @@ export default function Home() {
                   </div>
 
                   <a
-                    href={whatsappVIPUrl}
+                    href={WHATSAPP_VIP_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full sm:w-auto text-center bg-[#0B132B] hover:bg-slate-800 text-[#06D6A0] text-xs font-extrabold px-6 py-3.5 rounded-xl shadow-md transition-all shrink-0"
@@ -1942,7 +1684,11 @@ export default function Home() {
                   subtitle="Oportunidades laborales disponibles en el sector privado"
                   color="#059669"
                 />
-                <CardsGrid items={sortedJobs} />
+                <CardsGrid
+                  items={sortedJobs}
+                  onSelect={setSelectedJob}
+                  onShare={compartirOfertaWhatsApp}
+                />
               </>
             )}
 
@@ -1954,7 +1700,11 @@ export default function Home() {
                   subtitle="Procesos de selección vigentes en entidades públicas"
                   color="#1D4ED8"
                 />
-                <CardsGrid items={sortedJobs} />
+                <CardsGrid
+                  items={sortedJobs}
+                  onSelect={setSelectedJob}
+                  onShare={compartirOfertaWhatsApp}
+                />
               </>
             )}
 
@@ -2005,7 +1755,11 @@ export default function Home() {
                         </div>
                       </div>
 
-                      <CardsGrid items={anunciosCategoria} />
+                      <CardsGrid
+                        items={anunciosCategoria}
+                        onSelect={setSelectedJob}
+                        onShare={compartirOfertaWhatsApp}
+                      />
                     </div>
                   );
                 })}
@@ -2039,7 +1793,7 @@ export default function Home() {
           </div>
 
           <a
-            href={whatsappReporteUrl}
+            href={WHATSAPP_REPORTE_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full md:w-auto text-center shrink-0 bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-extrabold px-5 py-3.5 rounded-2xl transition-all"
@@ -2057,9 +1811,7 @@ export default function Home() {
         <div
           className="fixed inset-0 z-50 bg-[#0B132B]/70 backdrop-blur-md flex items-center justify-center p-4"
           onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              setSelectedJob(null);
-            }
+            if (event.target === event.currentTarget) setSelectedJob(null);
           }}
         >
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200/90 relative max-h-[90vh] flex flex-col animate-modal">
@@ -2610,11 +2362,7 @@ export default function Home() {
                 rel="noreferrer"
                 className="flex items-center justify-center gap-2 bg-[#06D6A0] hover:bg-emerald-300 text-[#0B132B] font-extrabold py-3 px-6 rounded-xl transition-all shadow-md"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12.031 6.172c-3.183 0-5.767 2.584-5.767 5.767 0 1.01.265 1.959.728 2.782l-.764 2.788 2.859-.751c.789.434 1.708.683 2.684.683 3.183 0 5.767-2.584 5.767-5.767 0-3.183-2.584-5.767-5.767-5.767zm3.322 8.167c-.139.39-.811.722-1.116.768-.291.045-.658.082-1.066-.051-.247-.079-.564-.183-.969-.356-1.712-.738-2.831-2.482-2.918-2.599-.087-.117-.696-.927-.696-1.769 0-.842.439-1.256.595-1.427.156-.171.341-.214.455-.214.114 0 .228.003.328.012.105.01.246-.039.384.292.139.332.476 1.157.518 1.242.043.085.072.185.014.299-.058.114-.087.185-.173.285-.086.1-.182.224-.26.3-.087.087-.179.182-.077.356.101.174.45.744.966 1.206.666.595 1.228.779 1.402.868.174.089.277.074.38-.043.103-.117.442-.514.56-.69.117-.176.234-.148.39-.09.156.058 1.001.472 1.173.558.172.086.287.129.329.2.043.071.043.413-.096.803z" />
                 </svg>
                 Canal de WhatsApp
@@ -2626,11 +2374,7 @@ export default function Home() {
                 rel="noreferrer"
                 className="flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-400 text-white font-extrabold py-3 px-6 rounded-xl transition-all shadow-md"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-1.99 1.27-5.62 3.72-.53.36-1.01.54-1.44.53-.47-.02-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.25.38-.51 1.05-.78 4.1-1.78 6.84-2.95 8.22-3.51 3.91-1.63 4.72-1.92 5.25-1.93.12 0 .39.03.57.18.15.12.19.28.21.4-.01.07.01.35-.06.7z" />
                 </svg>
                 Canal de Telegram

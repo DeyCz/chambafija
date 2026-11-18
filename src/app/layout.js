@@ -5,10 +5,16 @@ import Script from 'next/script';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+  weight: ['400', '600', '700', '800'],
   variable: '--font-jakarta',
   display: 'swap',
 });
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#0B132B',
+};
 
 export const metadata = {
   metadataBase: new URL('https://www.chambafija.com'),
@@ -16,7 +22,8 @@ export const metadata = {
     default: 'Chamba Fija Pasco | Empleos y Convocatorias en Cerro de Pasco',
     template: '%s | Chamba Fija Pasco',
   },
-  description: 'Bolsa de trabajo en Cerro de Pasco. Encuentra empleos en el sector privado y convocatorias públicas del Estado (DIRESA, DRE, GORE) de forma directa.',
+  description:
+    'Bolsa de trabajo en Cerro de Pasco. Encuentra empleos en el sector privado y convocatorias públicas del Estado (DIRESA, DRE, GORE) de forma directa.',
   keywords: [
     'Chamba Fija',
     'Cerro de Pasco',
@@ -30,19 +37,15 @@ export const metadata = {
   authors: [{ name: 'Chamba Fija Pasco' }],
   creator: 'Chamba Fija',
   publisher: 'Chamba Fija',
-  // Configuración oficial del Favicon para el buscador de Google
   icons: {
-    icon: [
-      { url: '/icon.png', type: 'image/png', sizes: '192x192' },
-    ],
+    icon: [{ url: '/icon.png', type: 'image/png', sizes: '192x192' }],
     shortcut: ['/icon.png'],
-    apple: [
-      { url: '/icon.png', sizes: '180x180', type: 'image/png' },
-    ],
+    apple: [{ url: '/icon.png', sizes: '180x180', type: 'image/png' }],
   },
   openGraph: {
     title: 'Chamba Fija Pasco | Bolsa de Trabajo y Convocatorias',
-    description: 'Encuentra las mejores oportunidades laborales del sector privado y procesos oficiales del Estado en Cerro de Pasco.',
+    description:
+      'Encuentra las mejores oportunidades laborales del sector privado y procesos oficiales del Estado en Cerro de Pasco.',
     url: 'https://www.chambafija.com',
     siteName: 'Chamba Fija Pasco',
     images: [
@@ -59,7 +62,8 @@ export const metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Chamba Fija Pasco | Empleos en Cerro de Pasco',
-    description: 'Encuentra ofertas laborales del sector privado y convocatorias del Estado en Cerro de Pasco.',
+    description:
+      'Encuentra ofertas laborales del sector privado y convocatorias del Estado en Cerro de Pasco.',
     images: ['https://www.chambafija.com/og-image.png'],
   },
 };
@@ -68,7 +72,6 @@ export default function RootLayout({ children }) {
   return (
     <html lang="es" className={jakarta.variable}>
       <body className="bg-[#F4F7FB] text-[#0B132B] min-h-screen flex flex-col antialiased">
-
         {children}
 
         <WhatsAppButton />
@@ -84,11 +87,9 @@ export default function RootLayout({ children }) {
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-
             gtag('config', 'G-BFJ0RJFN9N');
           `}
         </Script>
-
       </body>
     </html>
   );
