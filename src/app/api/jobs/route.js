@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebaseAdmin';
 
+export const dynamic = 'force-dynamic';
+
 const estaVigenteEnPeru = (job) => {
   if (!job.fechaVencimiento) return true;
 
@@ -54,14 +56,9 @@ export async function GET(request) {
 
     jobs.sort((a, b) => (b.esVip === a.esVip ? 0 : b.esVip ? 1 : -1));
 
-    const headers = soloVigentes
-      ? {
-          'Cache-Control':
-            'public, s-maxage=30, stale-while-revalidate=120',
-        }
-      : {
-          'Cache-Control': 'no-store',
-        };
+    const headers = {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+    };
 
     return NextResponse.json(
       {

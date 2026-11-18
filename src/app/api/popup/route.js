@@ -72,9 +72,9 @@ export async function GET(request) {
     return NextResponse.json(
       { success: true, config, ads, portadaAds },
       {
-        headers: esPublico
-          ? { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120' }
-          : { 'Cache-Control': 'no-store' },
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        },
       }
     );
   } catch (error) {

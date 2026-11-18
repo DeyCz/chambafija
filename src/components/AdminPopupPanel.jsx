@@ -3,6 +3,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { resolverImagenDrive } from '@/lib/driveImage';
 
+// Avisa al instante a cualquier pestaña abierta de ChambaFija para que actualice sin F5
+const notificarPortada = () => {
+  if (typeof BroadcastChannel !== 'undefined') {
+    const canal = new BroadcastChannel('chambafija_actualizacion');
+    canal.postMessage('actualizado');
+    canal.close();
+  }
+};
+
 const POPUP_INICIAL = {
   activo: true,
   nombre: '',
@@ -107,6 +116,7 @@ export default function AdminPopupPanel() {
       });
       const data = await res.json();
       if (data.success) {
+        notificarPortada();
         alert('✅ Configuración guardada correctamente.');
       } else {
         alert('Error: ' + data.mensaje);
@@ -148,6 +158,7 @@ export default function AdminPopupPanel() {
         setFormPopup(POPUP_INICIAL);
         setPreviewError(false);
         cargarTodo();
+        notificarPortada();
       } else {
         alert('Error: ' + data.mensaje);
       }
@@ -195,6 +206,7 @@ export default function AdminPopupPanel() {
         setFormPortada(PORTADA_INICIAL);
         setPreviewError(false);
         cargarTodo();
+        notificarPortada();
       } else {
         alert('Error: ' + data.mensaje);
       }
@@ -213,6 +225,7 @@ export default function AdminPopupPanel() {
         body: JSON.stringify({ id: ad._id, coleccion, activo: !ad.activo }),
       });
       cargarTodo();
+      notificarPortada();
     } catch {
       alert('No se pudo cambiar el estado.');
     }
@@ -233,6 +246,7 @@ export default function AdminPopupPanel() {
         body: JSON.stringify({ id: ad._id, coleccion, reiniciarClics: true }),
       });
       cargarTodo();
+      notificarPortada();
     } catch {
       alert('No se pudo reiniciar el contador.');
     }
@@ -246,6 +260,7 @@ export default function AdminPopupPanel() {
         { method: 'DELETE' }
       );
       cargarTodo();
+      notificarPortada();
     } catch {
       alert('Error al eliminar.');
     }

@@ -557,7 +557,7 @@ const PublicidadSection = memo(function PublicidadSection({
               rel="noopener noreferrer"
               className="font-extrabold text-emerald-700 hover:text-emerald-800 hover:underline flex items-center gap-1"
             >
-              Anuncia en portada aquí →
+              Anuncia aquí →
             </a>
           </div>
         </div>
@@ -1065,34 +1065,39 @@ export default function Home() {
   }, []);
 
   /* ==========================================================
-     CARGA ÚNICA DE ANUNCIOS + PUBLICIDADES EN PARALELO
+     CARGA INICIAL + ACTUALIZACIÓN AUTOMÁTICA SIN RECARGAR
      ========================================================== */
 
   useEffect(() => {
     let activo = true;
+    let ultimaSync = 0;
 
-    const cargarOfertas = async () => {
-      setLoading(true);
+    const cargarOfertas = async (silencioso = false) => {
+      if (!silencioso) setLoading(true);
       try {
-        const res = await fetch('/api/jobs?soloVigentes=1');
+        const res = await fetch('/api/jobs?soloVigentes=1', {
+          cache: 'no-store',
+        });
         const result = await res.json();
 
         if (activo && result.success && Array.isArray(result.data)) {
           setJobs(result.data.filter(estaVigente));
-        } else if (activo) {
+        } else if (activo && !silencioso) {
           setJobs([]);
         }
       } catch (error) {
         console.error('Error al conectar con el servidor:', error);
-        if (activo) setJobs([]);
+        if (activo && !silencioso) setJobs([]);
       } finally {
-        if (activo) setLoading(false);
+        if (activo && !silencioso) setLoading(false);
       }
     };
 
     const cargarPublicidades = async () => {
       try {
-        const res = await fetch('/api/popup?publico=1');
+        const res = await fetch('/api/popup?publico=1', {
+          cache: 'no-store',
+        });
         const data = await res.json();
         if (!activo) return;
         if (data?.success) {
@@ -1112,11 +1117,54 @@ export default function Home() {
       }
     };
 
-    cargarOfertas();
-    cargarPublicidades();
+    const sincronizar = (silencioso = true, forzar = false) => {
+      const ahora = Date.now();
+      // Evita consultas repetidas si cambias de pestaña muy rápido (mínimo 8s)
+      if (!forzar && ahora - ultimaSync < 8000) return;
+      ultimaSync = ahora;
+      cargarOfertas(silencioso);
+      cargarPublicidades();
+    };
+
+    // 1. Primera carga al abrir la web
+    sincronizar(false, true);
+
+    // 2. Actualizar al volver a la pestaña o desbloquear el celular
+    const alVolver = () => {
+      if (document.visibilityState === 'visible') {
+        sincronizar(true, false);
+      }
+    };
+
+    const alEnfocar = () => {
+      sincronizar(true, false);
+    };
+
+    document.addEventListener('visibilitychange', alVolver);
+    window.addEventListener('focus', alEnfocar);
+
+    // 3. Actualización silenciosa cada 60 segundos solo si la pestaña está abierta
+    const intervalo = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        sincronizar(true, true);
+      }
+    }, 60000);
+
+    // 4. Sincronización instantánea si guardas algo desde tu Admin en otra pestaña
+    let canal = null;
+    if (typeof BroadcastChannel !== 'undefined') {
+      canal = new BroadcastChannel('chambafija_actualizacion');
+      canal.onmessage = () => {
+        sincronizar(true, true);
+      };
+    }
 
     return () => {
       activo = false;
+      document.removeEventListener('visibilitychange', alVolver);
+      window.removeEventListener('focus', alEnfocar);
+      window.clearInterval(intervalo);
+      if (canal) canal.close();
     };
   }, []);
 

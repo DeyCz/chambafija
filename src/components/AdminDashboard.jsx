@@ -5,6 +5,15 @@ import AdminPopupPanel from '@/components/AdminPopupPanel';
 // Conexión hacia tu backend en la nube
 const API_URL = '/api/jobs';
 
+// Avisa al instante a cualquier pestaña abierta de ChambaFija para que actualice sin F5
+const notificarPortada = () => {
+  if (typeof BroadcastChannel !== 'undefined') {
+    const canal = new BroadcastChannel('chambafija_actualizacion');
+    canal.postMessage('actualizado');
+    canal.close();
+  }
+};
+
 // 1. DICCIONARIO DE LOGOS
 const logosInstitucionales = {
   "PODER JUDICIAL": "https://seeklogo.com/images/P/poder-judicial-peru-logo-4159895347-seeklogo.com.png",
@@ -233,7 +242,9 @@ export default function AdminDashboard() {
       if (activeTab === 'privado') tipoQuery = 'Privado';
       if (activeTab === 'clasificados') tipoQuery = 'Clasificado';
 
-      const res = await fetch(`/api/jobs?tipo=${tipoQuery}`);
+      const res = await fetch(`/api/jobs?tipo=${tipoQuery}`, {
+        cache: 'no-store'
+      });
 
       if (!res.ok) {
         throw new Error(`Error del servidor: ${res.status} ${res.statusText}`);
@@ -337,7 +348,6 @@ export default function AdminDashboard() {
     window.open(CANAL_WHATSAPP_URL, '_blank', 'noopener,noreferrer');
   };
 
-  // NUEVO: Contactar al anunciante por WhatsApp para ofrecerle renovación o ascenso a VIP
   const contactarRenovacionWhatsApp = (job) => {
     const primerContacto = (job.contacto || '')
       .split(',')[0]
@@ -365,7 +375,6 @@ export default function AdminDashboard() {
     );
   };
 
-  // NUEVO: Acepta datos directos (para el paso en 1 solo clic desde el Radar) o usa scrapeResult
   const pasarImportacionAlFormulario = (datosDirectos = null, urlOrigenParam = '') => {
     const d = datosDirectos || scrapeResult?.data;
     if (!d) return;
@@ -382,7 +391,6 @@ export default function AdminDashboard() {
     setEditingId(null);
 
     const ubicacionFinal = d.ubicacion || 'Pasco';
-    // Si el distrito detectado está en la lista desplegable estándar, usamos el select; si no, el campo manual
     setCustomLocation(!standardLocations.includes(ubicacionFinal));
 
     const empresaDetectada = d.empresa || '';
@@ -426,7 +434,6 @@ export default function AdminDashboard() {
     }, 100);
   };
 
-  // NUEVO: Si pasarDirectoAlFormulario es true (botón "⚡ Extraer en 1 clic"), llena el formulario de inmediato
   const importarConvocatoria = async (urlDirecta, pasarDirectoAlFormulario = false) => {
     const enlaceObjetivo = typeof urlDirecta === 'string' ? urlDirecta : scrapeUrl;
     if (typeof urlDirecta === 'string') {
@@ -527,6 +534,7 @@ export default function AdminDashboard() {
         alert(editingId ? '¡Actualizado correctamente!' : '¡Publicado con éxito!');
         resetForm();
         fetchJobs();
+        notificarPortada();
         if (editingId) setMostrarVencidos(false);
       } else {
         alert('Error: ' + result.mensaje);
@@ -584,6 +592,7 @@ export default function AdminDashboard() {
     try {
       await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
       fetchJobs();
+      notificarPortada();
     } catch (error) {
       alert('Error al eliminar.');
     }
@@ -741,7 +750,6 @@ export default function AdminDashboard() {
     return { ...job, isExpired };
   });
 
-  // Filtrado por estado (Activos/Vencidos) + Buscador interno del historial
   const terminoBusqueda = busquedaHistorial.trim().toLowerCase();
   const displayJobsList = processedJobs
     .filter(job => mostrarVencidos ? job.isExpired : !job.isExpired)
@@ -801,711 +809,705 @@ export default function AdminDashboard() {
         >
           📢 Clasificados
         </button>
-
         <button
           onClick={() => setActiveTab('popup')}
           style={{
             ...styles.tabBtn,
-            flex: '1 1 22%',
             backgroundColor: activeTab === 'popup' ? '#D97706' : '#FFFFFF',
             color: activeTab === 'popup' ? '#FFFFFF' : '#0B132B',
             borderColor: activeTab === 'popup' ? '#D97706' : '#E2E8F0',
             boxShadow: activeTab === 'popup' ? '0 8px 20px -6px rgba(217,119,6,0.35)' : '0 1px 3px rgba(11,19,43,0.04)',
           }}
         >
-          ⚡ Popup Publicidad
+          📢 Publicidad (Popup y Portada)
         </button>
       </div>
-
-      
 
       {activeTab === 'popup' ? (
         <AdminPopupPanel />
       ) : (
         <>
           {activeTab === 'estado' && (
-        <div style={{
-          maxWidth: '1240px',
-          margin: '0 auto 14px auto',
-          background: pendientesSinRevisar.length > 0
-            ? 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)'
-            : '#FFFFFF',
-          border: pendientesSinRevisar.length > 0 ? '2px solid #F59E0B' : '1px solid #E2E8F0',
-          borderRadius: '20px',
-          padding: '16px 20px',
-          boxShadow: '0 8px 24px -8px rgba(11, 19, 43, 0.08)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              <span style={{
-                background: '#0B132B',
-                color: '#06D6A0',
-                fontWeight: 800,
-                fontSize: '13px',
-                padding: '6px 14px',
-                borderRadius: '999px'
-              }}>
-                📡 Portal Pasco: {radarInfo ? `${radarInfo.contadorActual} vacantes` : 'Revisando...'}
-              </span>
-
-              {pendientesSinRevisar.length > 0 ? (
-                <span style={{ color: '#92400E', fontWeight: 800, fontSize: '13px' }}>
-                  🔔 ¡Hay {pendientesSinRevisar.length} convocatoria(s) nueva(s) por extraer!
-                </span>
-              ) : (
-                <span style={{ color: '#059669', fontSize: '12px', fontWeight: 700 }}>
-                  ✅ Todo al día · Sin convocatorias nuevas pendientes
-                </span>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={() => setMostrarTodasPortal(!mostrarTodasPortal)}
-                style={{ ...styles.btnManual, backgroundColor: '#F8FAFC' }}
-              >
-                {mostrarTodasPortal ? 'Ocultar lista actual' : '📋 Ver todas las vigentes'}
-              </button>
-
-              <button
-                type="button"
-                onClick={verificarRadarPasco}
-                disabled={radarLoading}
-                style={{ ...styles.btnManual, backgroundColor: '#0B132B', color: '#FFFFFF', borderColor: '#0B132B' }}
-              >
-                {radarLoading ? '⏳ Buscando...' : '🔄 Revisar ahora'}
-              </button>
-            </div>
-          </div>
-
-          {((nuevasPendientesLista.length > 0) || mostrarTodasPortal) && (
-            <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(148,163,184,0.3)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', fontWeight: 800, color: '#334155', textTransform: 'uppercase' }}>
-                  {mostrarTodasPortal ? 'Convocatorias vigentes en portal externo' : 'Nuevas convocatorias detectadas'}
-                </span>
-                {nuevasPendientesLista.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={limpiarAlertasRadar}
-                    style={{ background: 'none', border: 'none', color: '#B45309', fontSize: '12px', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline' }}
-                  >
-                    ✓ Marcar todas como revisadas y limpiar lista
-                  </button>
-                )}
-              </div>
-
-              {(mostrarTodasPortal ? radarInfo?.ofertasActuales : nuevasPendientesLista)?.map((item) => {
-                const yaRevisada = revisadasPortal.includes(item.url);
-                return (
-                  <div key={item.url} style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: '10px',
-                    background: yaRevisada ? '#F0FDF4' : '#FFFFFF',
-                    padding: '10px 12px',
-                    borderRadius: '12px',
-                    border: yaRevisada ? '1px solid #86EFAC' : '1px solid #E2E8F0',
-                    flexWrap: 'wrap',
-                    transition: 'all 0.2s ease'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 240px', flexWrap: 'wrap' }}>
-                      {yaRevisada && (
-                        <span style={{
-                          background: '#DCFCE7',
-                          color: '#166534',
-                          border: '1px solid #86EFAC',
-                          fontSize: '10px',
-                          fontWeight: 800,
-                          padding: '2px 8px',
-                          borderRadius: '999px',
-                          whiteSpace: 'nowrap'
-                        }}>
-                          ✅ REVISADA
-                        </span>
-                      )}
-                      <span style={{
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        color: yaRevisada ? '#166534' : '#0B132B'
-                      }}>
-                        {item.titulo}
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => importarConvocatoria(item.url, true)}
-                      disabled={scrapeLoading}
-                      style={{
-                        background: yaRevisada ? '#E2E8F0' : '#06D6A0',
-                        color: yaRevisada ? '#475569' : '#0B132B',
-                        border: yaRevisada ? '1px solid #CBD5E1' : 'none',
-                        borderRadius: '10px',
-                        padding: '7px 14px',
-                        fontSize: '11px',
-                        fontWeight: 800,
-                        cursor: scrapeLoading ? 'wait' : 'pointer'
-                      }}
-                    >
-                      {yaRevisada ? '✓ Ya extraída (Pasar de nuevo)' : '⚡ Extraer en 1 clic'}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'estado' && (
-        <div style={{ maxWidth: '1240px', margin: '0 auto 20px auto', background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '20px', padding: '20px', boxShadow: '0 8px 24px -8px rgba(11, 19, 43, 0.06)' }}>
-          <h3 style={{ margin: '0 0 6px', color: '#0B132B', fontSize: '16px', fontWeight: 800 }}>🌐 Importar convocatoria desde una URL</h3>
-          <p style={{ margin: '0 0 14px', color: '#64748B', fontSize: '13px', fontWeight: 500 }}>
-            Pega el enlace de detalle o usa el botón de 1 clic arriba para enviarlo directo al formulario.
-          </p>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <input
-              type="url"
-              value={scrapeUrl}
-              onChange={(e) => setScrapeUrl(e.target.value)}
-              placeholder="https://www.convocatoriasdetrabajo.com/oportunidad-laboral-...html"
-              style={{ ...styles.input, flex: '1 1 360px', minWidth: '220px' }}
-            />
-            <button
-              type="button"
-              onClick={() => importarConvocatoria(scrapeUrl, true)}
-              disabled={scrapeLoading}
-              style={{ ...styles.btnPrimary, flex: '0 0 auto', padding: '11px 20px', backgroundColor: '#06D6A0', color: '#0B132B', opacity: scrapeLoading ? 0.65 : 1, cursor: scrapeLoading ? 'wait' : 'pointer' }}
-            >
-              {scrapeLoading ? '⏳ Extrayendo...' : '⚡ Extraer y Llenar Formulario'}
-            </button>
-            <button
-              type="button"
-              onClick={() => importarConvocatoria()}
-              disabled={scrapeLoading}
-              style={{ ...styles.btnPrimary, flex: '0 0 auto', padding: '11px 18px', opacity: scrapeLoading ? 0.65 : 1, cursor: scrapeLoading ? 'wait' : 'pointer' }}
-            >
-              🔎 Vista previa
-            </button>
-          </div>
-          {scrapeError && <p style={{ color: '#DC2626', margin: '10px 0 0', fontSize: '13px', fontWeight: 700 }}>{scrapeError}</p>}
-          {scrapeResult && (
             <div style={{
-              marginTop: '16px',
-              padding: '18px',
-              background: 'linear-gradient(135deg, #FFFFFF 0%, #F0FDF9 100%)',
-              border: '1px solid #A7F3D0',
-              borderTop: '4px solid #06D6A0',
-              borderRadius: '16px',
-              boxShadow: '0 8px 24px rgba(11, 19, 43, 0.06)'
+              maxWidth: '1240px',
+              margin: '0 auto 14px auto',
+              background: pendientesSinRevisar.length > 0
+                ? 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)'
+                : '#FFFFFF',
+              border: pendientesSinRevisar.length > 0 ? '2px solid #F59E0B' : '1px solid #E2E8F0',
+              borderRadius: '20px',
+              padding: '16px 20px',
+              boxShadow: '0 8px 24px -8px rgba(11, 19, 43, 0.08)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                <p style={{ margin: 0, color: '#065F46', fontWeight: 800, fontSize: '15px' }}>
-                  ✅ Extracción completada
-                </p>
-                <span style={{
-                  background: '#D1FAE5',
-                  color: '#065F46',
-                  border: '1px solid #6EE7B7',
-                  borderRadius: '999px',
-                  padding: '5px 12px',
-                  fontSize: '11px',
-                  fontWeight: 800
-                }}>
-                  {scrapeResult.camposDetectados ?? 'Datos'}{scrapeResult.totalCamposClave ? ` / ${scrapeResult.totalCamposClave} campos clave` : ' detectados'}
-                </span>
-              </div>
-
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))',
-                gap: '10px',
-                marginBottom: '12px'
-              }}>
-                {[
-                  ['Entidad pública', scrapeResult.data?.empresa, '#EFF6FF', '#1D4ED8', '#BFDBFE'],
-                  ['Puesto', scrapeResult.data?.titulo, '#ECFDF5', '#047857', '#A7F3D0'],
-                  ['Ubicación detectada', scrapeResult.data?.ubicacion, '#FEF3C7', '#92400E', '#FDE68A'],
-                  ['Modalidad', scrapeResult.data?.modalidad, '#F5F3FF', '#6D28D9', '#DDD6FE'],
-                  ['Vacantes', scrapeResult.data?.vacantes, '#FDF2F8', '#BE185D', '#FBCFE8'],
-                  ['Remuneración', scrapeResult.data?.sueldo, '#ECFEFF', '#0E7490', '#A5F3FC'],
-                  ['Fecha de inicio', scrapeResult.data?.fechaInicio, '#F0FDF4', '#15803D', '#BBF7D0'],
-                  ['Fecha de cierre', scrapeResult.data?.fechaVencimiento, '#FEF2F2', '#B91C1C', '#FECACA'],
-                  ['Hora límite', scrapeResult.data?.horaVencimiento, '#F8FAFC', '#334155', '#CBD5E1']
-                ].map(([label, value, fondo, color, borde]) => (
-                  <div key={label} style={{
-                    background: fondo,
-                    border: `1px solid ${borde}`,
-                    borderLeft: `4px solid ${color}`,
-                    padding: '10px 12px',
-                    borderRadius: '12px',
-                    minWidth: 0
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <span style={{
+                    background: '#0B132B',
+                    color: '#06D6A0',
+                    fontWeight: 800,
+                    fontSize: '13px',
+                    padding: '6px 14px',
+                    borderRadius: '999px'
                   }}>
-                    <div style={{ color, fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.35px', marginBottom: '4px' }}>
-                      {label}
-                    </div>
-                    <div style={{ color: '#0B132B', fontSize: '13px', fontWeight: 800, lineHeight: 1.4, overflowWrap: 'anywhere' }}>
-                      {value || 'No detectado'}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    📡 Portal Pasco: {radarInfo ? `${radarInfo.contadorActual} vacantes` : 'Revisando...'}
+                  </span>
 
-              <button type="button" onClick={() => pasarImportacionAlFormulario()} style={{
-                ...styles.btnPrimary,
-                flex: '1 1 100%',
-                background: 'linear-gradient(90deg, #06D6A0 0%, #34D399 100%)',
-                color: '#0B132B',
-                boxShadow: '0 6px 16px rgba(6, 214, 160, 0.25)'
-              }}>
-                ⬇️ Pasar datos al formulario
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      <div id="formulario-convocatoria" style={styles.mainGrid}>
-        <div style={styles.card}>
-          <div style={styles.cardHeader}>
-            <h2 style={styles.cardTitle}>
-              {editingId ? '✏️ Modificar Registro' : (activeTab === 'estado' ? '🏛️ Nueva Convocatoria' : activeTab === 'privado' ? '💼 Nuevo Empleo Local' : '📢 Nuevo Anuncio Clasificado')}
-            </h2>
-          </div>
-
-          <form onSubmit={handleSubmit} style={styles.form}>
-            {activeTab === 'estado' ? (
-              <>
-                <div style={styles.row}>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Entidad Pública</label>
-                    <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. Gobierno Regional de Pasco" style={styles.input} required />
-                  </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Modalidad / Régimen</label>
-                    <select name="modalidad" value={formData.modalidad} onChange={handleChange} style={styles.input}>
-                      <option value="CAS">CAS (Contratación Admin. Serv.)</option>
-                      <option value="728">Régimen Privado (D.L. 728)</option>
-                      <option value="276">Carrera Admin. (D.L. 276)</option>
-                      <option value="Locación">Locación de Servicios</option>
-                      <option value="Prácticas">Prácticas</option>
-                      <option value="Servicio Civil">Servicio Civil (Ley 30057)</option>
-                      <option value="CAP">CAP (Cuadro Asignación Personal)</option>
-                      <option value="PAC">PAC (Personal Altamente Calificado)</option>
-                      <option value="Terceros">Terceros / Consultoría</option>
-                      <option value="FAG">FAG (Fondo Apoyo Gerencial)</option>
-                      <option value="Suplencia">Suplencia / Reemplazo</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div style={styles.row}>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Logo (URL Imagen - ¡Se auto-rellena!)</label>
-                    <input type="url" name="logo" value={formData.logo} onChange={handleChange} placeholder="https://.../logo.png" style={{...styles.input, backgroundColor: '#F0F9FF', borderColor: '#BAE6FD'}} />
-                  </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Título del Puesto</label>
-                    <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Asistente Administrativo I" style={styles.input} required />
-                  </div>
-                  {renderLocationField()}
-                </div>
-
-                <div style={styles.row}>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Vacantes</label>
-                    <input type="number" name="vacantes" value={formData.vacantes} onChange={handleChange} style={styles.input} />
-                  </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Remuneración (S/)</label>
-                    <input type="text" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 2500" style={styles.input} />
-                  </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>📅 Fecha Inicio Postulación</label>
-                    <input type="date" name="fechaInicio" value={formData.fechaInicio} onChange={handleChange} style={styles.input} />
-                  </div>
-                  <div style={styles.field}>
-                    <div style={styles.field}>
-                      <label style={styles.label}>📅 Fecha Cierre (Límite)</label>
-                      <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={styles.input} />
-                    </div>
-                    <label style={styles.label}>Hora Límite</label>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <input type="time" name="horaVencimiento" value={formData.horaVencimiento} onChange={handleChange} style={{ ...styles.input, flex: '1 1 auto' }} />
-                    </div>
-                  </div>
-                </div>
-
-                <div style={styles.field}>
-                  <label style={styles.label}>Formación Académica</label>
-                  <textarea name="formacion" value={formData.formacion} onChange={handleChange} placeholder="Ej. TÍTULO EN DERECHO..." style={styles.textarea} />
-                </div>
-
-                <div style={styles.field}>
-                  <label style={styles.label}>Experiencia Requerida</label>
-                  <textarea name="experiencia" value={formData.experiencia} onChange={handleChange} placeholder="Ej. Experiencia de 2 años..." style={styles.textarea} />
-                </div>
-
-                <div style={styles.field}>
-                  <label style={styles.label}>Cursos / Especialización</label>
-                  <textarea name="especializacion" value={formData.especializacion} onChange={handleChange} placeholder="Ej. Diplomado, ofimática..." style={styles.textarea} />
-                </div>
-
-                <div style={styles.field}>
-                  <label style={styles.label}>¿Cómo postular?</label>
-                  <textarea name="comoPostular" value={formData.comoPostular} onChange={handleChange} placeholder="Instrucciones..." style={styles.textarea} />
-                </div>
-
-                <div style={{ ...styles.field, backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0' }}>
-                  <label style={{ ...styles.label, marginBottom: '8px', color: '#0B132B' }}>🔗 Enlaces Oficiales (Bases, PDF)</label>
-                  <div style={{ marginBottom: '8px' }}>
-                    <input type="url" name="enlaceBases" value={formData.enlaceBases} onChange={handleChange} placeholder="Enlace principal (Bases)" style={styles.input} />
-                  </div>
-
-                  {formData.enlacesExtras.map((item, index) => (
-                    <div key={index} style={{ display: 'flex', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                      <input
-                        type="text"
-                        placeholder="Ej. Comunicado"
-                        value={item.titulo}
-                        onChange={(e) => handleExtraLinkChange(index, 'titulo', e.target.value)}
-                        style={{ ...styles.input, flex: '1 1 110px' }}
-                      />
-                      <input
-                        type="url"
-                        placeholder="https://..."
-                        value={item.url}
-                        onChange={(e) => handleExtraLinkChange(index, 'url', e.target.value)}
-                        style={{ ...styles.input, flex: '1 1 150px' }}
-                      />
-                      <button type="button" onClick={() => eliminarFilaEnlace(index)} style={{ ...styles.btnDeleteRow, flex: '0 0 auto' }}>✕ Quitar</button>
-                    </div>
-                  ))}
-                  <button type="button" onClick={agregarFilaEnlace} style={styles.btnAddRow}>+ Agregar otro enlace</button>
-                </div>
-              </>
-            ) : activeTab === 'privado' ? (
-              <>
-                <div style={styles.row}>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Nombre del Negocio</label>
-                    <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. Pollería Kimbos" style={styles.input} required />
-                  </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Vacantes</label>
-                    <input type="number" name="vacantes" value={formData.vacantes} onChange={handleChange} placeholder="1" style={styles.input} />
-                  </div>
-                </div>
-
-                <div style={styles.row}>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Logo (URL Imagen)</label>
-                    <input type="url" name="logo" value={formData.logo} onChange={handleChange} placeholder="https://.../logo.png" style={styles.input} />
-                  </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Puesto Requerido</label>
-                    <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Mozo / Ayudante" style={styles.input} required />
-                  </div>
-                  {renderLocationField()}
-                </div>
-
-                <div style={{ ...styles.field, backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0' }}>
-                  <label style={styles.label}>Modalidad de Trabajo</label>
-                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px' }}>
-                    {[
-                      'Tiempo Completo',
-                      'Medio Tiempo',
-                      'CAS',
-                      'Por Horas',
-                      'Fines de Semana',
-                      'Prácticas',
-                      'Sistema 14x7'
-                    ].map(mod => (
-                      <label key={mod} style={{ fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#0B132B', backgroundColor: '#FFFFFF', padding: '5px 10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                        <input
-                          type="checkbox"
-                          checked={formData.modalidades.includes(mod)}
-                          onChange={(e) => {
-                            if (e.target.checked) setFormData({ ...formData, modalidades: [...formData.modalidades, mod] });
-                            else setFormData({ ...formData, modalidades: formData.modalidades.filter(m => m !== mod) });
-                          }}
-                          style={{ accentColor: '#06D6A0', width: '14px', height: '14px' }}
-                        /> {mod}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={styles.row}>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Sueldo (S/)</label>
-                    <input type="text" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 1200 o A tratar" style={styles.input} />
-                  </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Fecha de Cierre</label>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={{ ...styles.input, flex: '1 1 auto' }} />
-                    </div>
-                  </div>
-                  <div style={styles.field}>
-                    <label style={styles.label}>Hora de Cierre</label>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <input type="time" name="horaVencimiento" value={formData.horaVencimiento} onChange={handleChange} style={{ ...styles.input, flex: '1 1 auto' }} />
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ ...styles.field, backgroundColor: '#ECFDF5', padding: '14px', borderRadius: '14px', border: '1px solid #A7F3D0' }}>
-                  <label style={{ ...styles.label, color: '#065F46', marginBottom: '8px' }}>📱 WhatsApp Contacto</label>
-                  {formData.contactos.map((numero, index) => (
-                    <div key={index} style={{ display: 'flex', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                      <input
-                        type="text"
-                        placeholder={`Ej. 987654321 (#${index + 1})`}
-                        value={numero}
-                        onChange={(e) => {
-                          const nuevos = [...formData.contactos];
-                          nuevos[index] = e.target.value;
-                          setFormData({ ...formData, contactos: nuevos });
-                        }}
-                        style={{ ...styles.input, flex: '1 1 120px', backgroundColor: '#FFFFFF' }}
-                        required={index === 0}
-                      />
-                      {formData.contactos.length > 1 && (
-                        <button type="button" onClick={() => setFormData({ ...formData, contactos: formData.contactos.filter((_, i) => i !== index) })} style={{ ...styles.btnDeleteRow, flex: '0 0 auto' }}>✕ Quitar</button>
-                      )}
-                    </div>
-                  ))}
-                  <button type="button" onClick={() => setFormData({ ...formData, contactos: [...formData.contactos, ''] })} style={styles.btnAddRow}>+ Agregar otro número</button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div style={{ backgroundColor: categoriaActual.fondo, border: `1px solid ${categoriaActual.borde}`, borderLeft: `5px solid ${categoriaActual.color}`, borderRadius: '16px', padding: '16px', marginBottom: '4px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '24px' }}>{categoriaActual.icono}</span>
-                    <div><div style={{ fontSize: '10px', fontWeight: '800', color: categoriaActual.color, letterSpacing: '0.5px' }}>CATEGORÍA DEL ANUNCIO</div><div style={{ fontSize: '16px', fontWeight: '800', color: '#0B132B' }}>{formData.categoriaClasificado}</div></div>
-                  </div>
-                  <div style={styles.row}>
-                    <div style={styles.field}><label style={styles.label}>Título del Anuncio</label><input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder={formData.categoriaClasificado === 'Vehículos' ? 'Ej. Toyota Corolla 2022' : formData.categoriaClasificado === 'Viviendas en alquiler' ? 'Ej. Departamento en alquiler de 3 dormitorios' : formData.categoriaClasificado === 'Servicios' ? 'Ej. Servicio de fotografía y video' : formData.categoriaClasificado === 'Ventas' ? 'Ej. Laptop Lenovo en venta' : 'Ej. Alquiler de local comercial'} style={{ ...styles.input, borderColor: categoriaActual.borde }} required /></div>
-                    <div style={styles.field}><label style={styles.label}>Categoría</label><select name="categoriaClasificado" value={formData.categoriaClasificado} onChange={handleChange} style={{ ...styles.input, borderColor: categoriaActual.color, fontWeight: '800' }}><option value="Locales en alquiler">🏪 Locales en alquiler</option><option value="Viviendas en alquiler">🏠 Viviendas en alquiler</option><option value="Vehículos">🚗 Vehículos</option><option value="Servicios">🛠️ Servicios</option><option value="Ventas">🏷️ Ventas</option><option value="Otros">📌 Otros</option></select></div>
-                  </div>
-                  <div style={{ marginTop: '12px', padding: '14px', backgroundColor: '#FFFFFF', borderRadius: '12px', border: `1px solid ${categoriaActual.borde}` }}>
-                    <div style={{ color: categoriaActual.color, fontSize: '12px', fontWeight: '800', marginBottom: '10px' }}>{categoriaActual.icono} {categoriaActual.titulo}</div>
-                    <div style={styles.row}>{categoriaActual.campos.map(renderCampoClasificado)}{renderLocationField()}</div>
-                  </div>
-                </div>
-                <div style={styles.row}><div style={styles.field}><label style={styles.label}>Fecha de Vencimiento (Autoborrado)</label><input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={{ ...styles.input, borderColor: categoriaActual.borde }} /></div></div>
-                <div style={{ ...styles.field, backgroundColor: '#FFFBEB', padding: '14px', borderRadius: '14px', border: '1px solid #FDE68A' }}>
-                  <label style={{ ...styles.label, color: '#92400E', marginBottom: '8px' }}>📱 WhatsApp del Anunciante</label>
-                  {formData.contactos.map((numero, index) => (<div key={index} style={{ display: 'flex', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}><input type="text" placeholder={`Ej. 987654321 (#${index + 1})`} value={numero} onChange={(e) => { const nuevos = [...formData.contactos]; nuevos[index] = e.target.value; setFormData({ ...formData, contactos: nuevos }); }} style={{ ...styles.input, flex: '1 1 120px', backgroundColor: '#FFFFFF' }} required={index === 0} />{formData.contactos.length > 1 && (<button type="button" onClick={() => setFormData({ ...formData, contactos: formData.contactos.filter((_, i) => i !== index) })} style={{ ...styles.btnDeleteRow, flex: '0 0 auto' }}>✕ Quitar</button>)}</div>))}
-                  <button type="button" onClick={() => setFormData({ ...formData, contactos: [...formData.contactos, ''] })} style={styles.btnAddRow}>+ Agregar otro número</button>
-                </div>
-              </>
-            )}
-
-            <div style={styles.field}>
-              <label style={styles.label}>Descripción / Notas</label>
-              <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} style={styles.textarea} />
-            </div>
-
-            {activeTab !== 'estado' && (
-              <div style={{ ...styles.vipContainer, backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }}>
-                <input
-                  type="checkbox"
-                  id="verificado"
-                  name="verificado"
-                  checked={formData.verificado !== false}
-                  onChange={handleChange}
-                  style={{ accentColor: '#059669', width: '16px', height: '16px' }}
-                />
-                <label htmlFor="verificado" style={{ ...styles.vipLabel, color: '#065F46' }}>
-                  ✅ Mostrar sello de "Negocio / Anunciante Verificado"
-                </label>
-              </div>
-            )}
-
-            <div style={styles.vipContainer}>
-              <input type="checkbox" id="esVip" name="esVip" checked={formData.esVip} onChange={handleChange} style={{ accentColor: '#D97706', width: '16px', height: '16px' }} />
-              <label htmlFor="esVip" style={styles.vipLabel}>⭐ Destacar Anuncio en Sección VIP</label>
-            </div>
-
-            <div style={styles.btnGroup}>
-              <button type="submit" style={activeTab === 'clasificados' ? { ...styles.btnPrimary, backgroundColor: categoriaActual.color } : styles.btnPrimary}>
-                {editingId ? 'Guardar Cambios' : 'Publicar Anuncio'}
-              </button>
-              {editingId && (
-                <button type="button" onClick={resetForm} style={styles.btnSecondary}>Cancelar</button>
-              )}
-            </div>
-          </form>
-        </div>
-
-        <div style={styles.card}>
-          <div style={styles.listHeader}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h2 style={styles.cardTitle}>{mostrarVencidos ? '🗄️ Historial (Vencidos)' : '📋 Registros Activos'}</h2>
-              <span style={styles.counterBadge}>{displayJobsList.length}</span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setMostrarVencidos(!mostrarVencidos)}
-              style={{
-                ...styles.btnManual,
-                backgroundColor: mostrarVencidos ? '#0B132B' : '#FEF2F2',
-                color: mostrarVencidos ? '#06D6A0' : '#991B1B',
-                border: mostrarVencidos ? '1px solid #0B132B' : '1px solid #FECACA',
-                padding: '7px 14px'
-              }}
-            >
-              {mostrarVencidos ? '👀 Volver a Activos' : '🗑️ Ver Vencidos'}
-            </button>
-          </div>
-
-          {/* NUEVO: Buscador interno en el historial */}
-          <div style={{ position: 'relative', marginBottom: '12px' }}>
-            <input
-              type="text"
-              value={busquedaHistorial}
-              onChange={(e) => setBusquedaHistorial(e.target.value)}
-              placeholder="🔍 Buscar en el listado por puesto, negocio, distrito o WhatsApp..."
-              style={{ ...styles.input, paddingRight: '34px' }}
-            />
-            {busquedaHistorial && (
-              <button
-                type="button"
-                onClick={() => setBusquedaHistorial('')}
-                style={{
-                  position: 'absolute',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  color: '#64748B',
-                  fontWeight: 800,
-                  cursor: 'pointer'
-                }}
-                title="Limpiar búsqueda"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          <div style={styles.scrollList}>
-            {displayJobsList.length === 0 && (
-              <p style={{ textAlign: 'center', color: '#64748B', fontSize: '13px', padding: '28px 0', fontWeight: 600 }}>
-                No se encontraron anuncios {mostrarVencidos ? 'vencidos' : 'activos'} {busquedaHistorial ? `para "${busquedaHistorial}"` : 'en esta categoría'}.
-              </p>
-            )}
-
-            {displayJobsList.map((job) => (
-              <div key={job._id} style={{ ...styles.itemCard, opacity: job.isExpired ? 0.85 : 1, borderColor: job.esVip ? '#FBBF24' : '#E2E8F0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                  <div>
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap' }}>
-                      <span style={{ ...styles.tagModality, backgroundColor: job.tipo === 'Clasificado' ? (categoriasClasificados[job.categoriaClasificado]?.color || '#4F46E5') : '#0B132B' }}>
-                        {job.tipo === 'Clasificado' ? `${categoriasClasificados[job.categoriaClasificado]?.icono || '📌'} ${job.categoriaClasificado}` : job.tipo}
-                      </span>
-                      {job.esVip && (
-                        <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#FFFBEB', color: '#B45309', border: '1px solid #FDE68A', padding: '2px 8px', borderRadius: '999px' }}>
-                          ⭐ VIP
-                        </span>
-                      )}
-                      {job.tipo !== 'Estado' && job.verificado !== false && (
-                        <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#ECFDF5', color: '#065F46', border: '1px solid #A7F3D0', padding: '2px 8px', borderRadius: '999px' }}>
-                          ✅ Verificado
-                        </span>
-                      )}
-                    </div>
-                    <h3 style={styles.itemTitle}>{job.titulo}</h3>
-                    <p style={styles.itemMeta}>
-                      <strong>{job.tipo === 'Clasificado' ? 'Clasificado' : job.empresa}</strong> • 📍 {job.ubicacion}
-                      {job.contacto ? ` • 📱 ${job.contacto}` : ''}
-                    </p>
-                  </div>
-                  {job.isExpired && (
-                    <span style={{ fontSize: '10px', fontWeight: '800', color: '#991B1B', backgroundColor: '#FEF2F2', padding: '4px 9px', borderRadius: '999px', border: '1px solid #FECACA', whiteSpace: 'nowrap' }}>
-                      🔴 VENCIDO
+                  {pendientesSinRevisar.length > 0 ? (
+                    <span style={{ color: '#92400E', fontWeight: 800, fontSize: '13px' }}>
+                      🔔 ¡Hay {pendientesSinRevisar.length} convocatoria(s) nueva(s) por extraer!
+                    </span>
+                  ) : (
+                    <span style={{ color: '#059669', fontSize: '12px', fontWeight: 700 }}>
+                      ✅ Todo al día · Sin convocatorias nuevas pendientes
                     </span>
                   )}
                 </div>
 
-                <div style={styles.itemFooterRow}>
-                  <span style={styles.itemSalary}>{job.sueldo || 'A tratar'}</span>
-                  <div style={styles.itemButtons}>
-                    {!job.isExpired && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => publicarEnCanalWhatsApp(job)}
-                          style={{
-                            ...styles.btnEdit,
-                            backgroundColor: copiedId === job._id ? '#0B132B' : '#06D6A0',
-                            color: copiedId === job._id ? '#06D6A0' : '#0B132B',
-                            borderColor: '#059669',
-                            fontWeight: '900',
-                          }}
-                          title="Copia el anuncio automáticamente y abre tu Canal de WhatsApp"
-                        >
-                          {copiedId === job._id ? '✅ ¡Copiado! Pega en tu Canal' : '📢 Publicar en Canal'}
-                        </button>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => setMostrarTodasPortal(!mostrarTodasPortal)}
+                    style={{ ...styles.btnManual, backgroundColor: '#F8FAFC' }}
+                  >
+                    {mostrarTodasPortal ? 'Ocultar lista actual' : '📋 Ver todas las vigentes'}
+                  </button>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.chambafija.com';
-                            const url = `${baseUrl}/oferta/${job._id}`;
-                            const text = `🚨 *Nueva Oferta*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
-                            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
-                          }}
-                          style={styles.btnEdit}
-                          title="Enviar a un chat o grupo"
-                        >
-                          📲 Grupo
-                        </button>
-                      </>
-                    )}
-
-                    {/* NUEVO: Botón de Renovación por WhatsApp para negocios con contacto */}
-                    {job.contacto && (
-                      <button
-                        type="button"
-                        onClick={() => contactarRenovacionWhatsApp(job)}
-                        style={{
-                          ...styles.btnEdit,
-                          backgroundColor: '#FFFBEB',
-                          color: '#B45309',
-                          borderColor: '#FDE68A',
-                          fontWeight: '900'
-                        }}
-                        title="Escribir al dueño por WhatsApp para ofrecerle renovar su anuncio o pasar a VIP"
-                      >
-                        ♻️ Renovar WA
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => handleEdit(job)}
-                      style={{ ...styles.btnEdit, borderColor: '#CBD5E1', backgroundColor: '#F8FAFC' }}
-                    >
-                      {job.isExpired ? 'Renovar (Editar)' : 'Editar'}
-                    </button>
-
-                    <button onClick={() => handleDelete(job._id)} style={styles.btnDelete}>Eliminar</button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={verificarRadarPasco}
+                    disabled={radarLoading}
+                    style={{ ...styles.btnManual, backgroundColor: '#0B132B', color: '#FFFFFF', borderColor: '#0B132B' }}
+                  >
+                    {radarLoading ? '⏳ Buscando...' : '🔄 Revisar ahora'}
+                  </button>
                 </div>
               </div>
-            ))}
+
+              {((nuevasPendientesLista.length > 0) || mostrarTodasPortal) && (
+                <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(148,163,184,0.3)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#334155', textTransform: 'uppercase' }}>
+                      {mostrarTodasPortal ? 'Convocatorias vigentes en portal externo' : 'Nuevas convocatorias detectadas'}
+                    </span>
+                    {nuevasPendientesLista.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={limpiarAlertasRadar}
+                        style={{ background: 'none', border: 'none', color: '#B45309', fontSize: '12px', fontWeight: 800, cursor: 'pointer', textDecoration: 'underline' }}
+                      >
+                        ✓ Marcar todas como revisadas y limpiar lista
+                      </button>
+                    )}
+                  </div>
+
+                  {(mostrarTodasPortal ? radarInfo?.ofertasActuales : nuevasPendientesLista)?.map((item) => {
+                    const yaRevisada = revisadasPortal.includes(item.url);
+                    return (
+                      <div key={item.url} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '10px',
+                        background: yaRevisada ? '#F0FDF4' : '#FFFFFF',
+                        padding: '10px 12px',
+                        borderRadius: '12px',
+                        border: yaRevisada ? '1px solid #86EFAC' : '1px solid #E2E8F0',
+                        flexWrap: 'wrap',
+                        transition: 'all 0.2s ease'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 240px', flexWrap: 'wrap' }}>
+                          {yaRevisada && (
+                            <span style={{
+                              background: '#DCFCE7',
+                              color: '#166534',
+                              border: '1px solid #86EFAC',
+                              fontSize: '10px',
+                              fontWeight: 800,
+                              padding: '2px 8px',
+                              borderRadius: '999px',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              ✅ REVISADA
+                            </span>
+                          )}
+                          <span style={{
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            color: yaRevisada ? '#166534' : '#0B132B'
+                          }}>
+                            {item.titulo}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => importarConvocatoria(item.url, true)}
+                          disabled={scrapeLoading}
+                          style={{
+                            background: yaRevisada ? '#E2E8F0' : '#06D6A0',
+                            color: yaRevisada ? '#475569' : '#0B132B',
+                            border: yaRevisada ? '1px solid #CBD5E1' : 'none',
+                            borderRadius: '10px',
+                            padding: '7px 14px',
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            cursor: scrapeLoading ? 'wait' : 'pointer'
+                          }}
+                        >
+                          {yaRevisada ? '✓ Ya extraída (Pasar de nuevo)' : '⚡ Extraer en 1 clic'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'estado' && (
+            <div style={{ maxWidth: '1240px', margin: '0 auto 20px auto', background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '20px', padding: '20px', boxShadow: '0 8px 24px -8px rgba(11, 19, 43, 0.06)' }}>
+              <h3 style={{ margin: '0 0 6px', color: '#0B132B', fontSize: '16px', fontWeight: 800 }}>🌐 Importar convocatoria desde una URL</h3>
+              <p style={{ margin: '0 0 14px', color: '#64748B', fontSize: '13px', fontWeight: 500 }}>
+                Pega el enlace de detalle o usa el botón de 1 clic arriba para enviarlo directo al formulario.
+              </p>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <input
+                  type="url"
+                  value={scrapeUrl}
+                  onChange={(e) => setScrapeUrl(e.target.value)}
+                  placeholder="https://www.convocatoriasdetrabajo.com/oportunidad-laboral-...html"
+                  style={{ ...styles.input, flex: '1 1 360px', minWidth: '220px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => importarConvocatoria(scrapeUrl, true)}
+                  disabled={scrapeLoading}
+                  style={{ ...styles.btnPrimary, flex: '0 0 auto', padding: '11px 20px', backgroundColor: '#06D6A0', color: '#0B132B', opacity: scrapeLoading ? 0.65 : 1, cursor: scrapeLoading ? 'wait' : 'pointer' }}
+                >
+                  {scrapeLoading ? '⏳ Extrayendo...' : '⚡ Extraer y Llenar Formulario'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => importarConvocatoria()}
+                  disabled={scrapeLoading}
+                  style={{ ...styles.btnPrimary, flex: '0 0 auto', padding: '11px 18px', opacity: scrapeLoading ? 0.65 : 1, cursor: scrapeLoading ? 'wait' : 'pointer' }}
+                >
+                  🔎 Vista previa
+                </button>
+              </div>
+              {scrapeError && <p style={{ color: '#DC2626', margin: '10px 0 0', fontSize: '13px', fontWeight: 700 }}>{scrapeError}</p>}
+              {scrapeResult && (
+                <div style={{
+                  marginTop: '16px',
+                  padding: '18px',
+                  background: 'linear-gradient(135deg, #FFFFFF 0%, #F0FDF9 100%)',
+                  border: '1px solid #A7F3D0',
+                  borderTop: '4px solid #06D6A0',
+                  borderRadius: '16px',
+                  boxShadow: '0 8px 24px rgba(11, 19, 43, 0.06)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                    <p style={{ margin: 0, color: '#065F46', fontWeight: 800, fontSize: '15px' }}>
+                      ✅ Extracción completada
+                    </p>
+                    <span style={{
+                      background: '#D1FAE5',
+                      color: '#065F46',
+                      border: '1px solid #6EE7B7',
+                      borderRadius: '999px',
+                      padding: '5px 12px',
+                      fontSize: '11px',
+                      fontWeight: 800
+                    }}>
+                      {scrapeResult.camposDetectados ?? 'Datos'}{scrapeResult.totalCamposClave ? ` / ${scrapeResult.totalCamposClave} campos clave` : ' detectados'}
+                    </span>
+                  </div>
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))',
+                    gap: '10px',
+                    marginBottom: '12px'
+                  }}>
+                    {[
+                      ['Entidad pública', scrapeResult.data?.empresa, '#EFF6FF', '#1D4ED8', '#BFDBFE'],
+                      ['Puesto', scrapeResult.data?.titulo, '#ECFDF5', '#047857', '#A7F3D0'],
+                      ['Ubicación detectada', scrapeResult.data?.ubicacion, '#FEF3C7', '#92400E', '#FDE68A'],
+                      ['Modalidad', scrapeResult.data?.modalidad, '#F5F3FF', '#6D28D9', '#DDD6FE'],
+                      ['Vacantes', scrapeResult.data?.vacantes, '#FDF2F8', '#BE185D', '#FBCFE8'],
+                      ['Remuneración', scrapeResult.data?.sueldo, '#ECFEFF', '#0E7490', '#A5F3FC'],
+                      ['Fecha de inicio', scrapeResult.data?.fechaInicio, '#F0FDF4', '#15803D', '#BBF7D0'],
+                      ['Fecha de cierre', scrapeResult.data?.fechaVencimiento, '#FEF2F2', '#B91C1C', '#FECACA'],
+                      ['Hora límite', scrapeResult.data?.horaVencimiento, '#F8FAFC', '#334155', '#CBD5E1']
+                    ].map(([label, value, fondo, color, borde]) => (
+                      <div key={label} style={{
+                        background: fondo,
+                        border: `1px solid ${borde}`,
+                        borderLeft: `4px solid ${color}`,
+                        padding: '10px 12px',
+                        borderRadius: '12px',
+                        minWidth: 0
+                      }}>
+                        <div style={{ color, fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.35px', marginBottom: '4px' }}>
+                          {label}
+                        </div>
+                        <div style={{ color: '#0B132B', fontSize: '13px', fontWeight: 800, lineHeight: 1.4, overflowWrap: 'anywhere' }}>
+                          {value || 'No detectado'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button type="button" onClick={() => pasarImportacionAlFormulario()} style={{
+                    ...styles.btnPrimary,
+                    flex: '1 1 100%',
+                    background: 'linear-gradient(90deg, #06D6A0 0%, #34D399 100%)',
+                    color: '#0B132B',
+                    boxShadow: '0 6px 16px rgba(6, 214, 160, 0.25)'
+                  }}>
+                    ⬇️ Pasar datos al formulario
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div id="formulario-convocatoria" style={styles.mainGrid}>
+            <div style={styles.card}>
+              <div style={styles.cardHeader}>
+                <h2 style={styles.cardTitle}>
+                  {editingId ? '✏️ Modificar Registro' : (activeTab === 'estado' ? '🏛️ Nueva Convocatoria' : activeTab === 'privado' ? '💼 Nuevo Empleo Local' : '📢 Nuevo Anuncio Clasificado')}
+                </h2>
+              </div>
+
+              <form onSubmit={handleSubmit} style={styles.form}>
+                {activeTab === 'estado' ? (
+                  <>
+                    <div style={styles.row}>
+                      <div style={styles.field}>
+                        <label style={styles.label}>Entidad Pública</label>
+                        <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. Gobierno Regional de Pasco" style={styles.input} required />
+                      </div>
+                      <div style={styles.field}>
+                        <label style={styles.label}>Modalidad / Régimen</label>
+                        <select name="modalidad" value={formData.modalidad} onChange={handleChange} style={styles.input}>
+                          <option value="CAS">CAS (Contratación Admin. Serv.)</option>
+                          <option value="728">Régimen Privado (D.L. 728)</option>
+                          <option value="276">Carrera Admin. (D.L. 276)</option>
+                          <option value="Locación">Locación de Servicios</option>
+                          <option value="Prácticas">Prácticas</option>
+                          <option value="Servicio Civil">Servicio Civil (Ley 30057)</option>
+                          <option value="CAP">CAP (Cuadro Asignación Personal)</option>
+                          <option value="PAC">PAC (Personal Altamente Calificado)</option>
+                          <option value="Terceros">Terceros / Consultoría</option>
+                          <option value="FAG">FAG (Fondo Apoyo Gerencial)</option>
+                          <option value="Suplencia">Suplencia / Reemplazo</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={styles.row}>
+                      <div style={styles.field}>
+                        <label style={styles.label}>Logo (URL Imagen - ¡Se auto-rellena!)</label>
+                        <input type="url" name="logo" value={formData.logo} onChange={handleChange} placeholder="https://.../logo.png" style={{...styles.input, backgroundColor: '#F0F9FF', borderColor: '#BAE6FD'}} />
+                      </div>
+                      <div style={styles.field}>
+                        <label style={styles.label}>Título del Puesto</label>
+                        <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Asistente Administrativo I" style={styles.input} required />
+                      </div>
+                      {renderLocationField()}
+                    </div>
+
+                    <div style={styles.row}>
+                      <div style={styles.field}>
+                        <label style={styles.label}>Vacantes</label>
+                        <input type="number" name="vacantes" value={formData.vacantes} onChange={handleChange} style={styles.input} />
+                      </div>
+                      <div style={styles.field}>
+                        <label style={styles.label}>Remuneración (S/)</label>
+                        <input type="text" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 2500" style={styles.input} />
+                      </div>
+                      <div style={styles.field}>
+                        <label style={styles.label}>📅 Fecha Inicio Postulación</label>
+                        <input type="date" name="fechaInicio" value={formData.fechaInicio} onChange={handleChange} style={styles.input} />
+                      </div>
+                      <div style={styles.field}>
+                        <div style={styles.field}>
+                          <label style={styles.label}>📅 Fecha Cierre (Límite)</label>
+                          <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={styles.input} />
+                        </div>
+                        <label style={styles.label}>Hora Límite</label>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <input type="time" name="horaVencimiento" value={formData.horaVencimiento} onChange={handleChange} style={{ ...styles.input, flex: '1 1 auto' }} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={styles.field}>
+                      <label style={styles.label}>Formación Académica</label>
+                      <textarea name="formacion" value={formData.formacion} onChange={handleChange} placeholder="Ej. TÍTULO EN DERECHO..." style={styles.textarea} />
+                    </div>
+
+                    <div style={styles.field}>
+                      <label style={styles.label}>Experiencia Requerida</label>
+                      <textarea name="experiencia" value={formData.experiencia} onChange={handleChange} placeholder="Ej. Experiencia de 2 años..." style={styles.textarea} />
+                    </div>
+
+                    <div style={styles.field}>
+                      <label style={styles.label}>Cursos / Especialización</label>
+                      <textarea name="especializacion" value={formData.especializacion} onChange={handleChange} placeholder="Ej. Diplomado, ofimática..." style={styles.textarea} />
+                    </div>
+
+                    <div style={styles.field}>
+                      <label style={styles.label}>¿Cómo postular?</label>
+                      <textarea name="comoPostular" value={formData.comoPostular} onChange={handleChange} placeholder="Instrucciones..." style={styles.textarea} />
+                    </div>
+
+                    <div style={{ ...styles.field, backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0' }}>
+                      <label style={{ ...styles.label, marginBottom: '8px', color: '#0B132B' }}>🔗 Enlaces Oficiales (Bases, PDF)</label>
+                      <div style={{ marginBottom: '8px' }}>
+                        <input type="url" name="enlaceBases" value={formData.enlaceBases} onChange={handleChange} placeholder="Enlace principal (Bases)" style={styles.input} />
+                      </div>
+
+                      {formData.enlacesExtras.map((item, index) => (
+                        <div key={index} style={{ display: 'flex', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                          <input
+                            type="text"
+                            placeholder="Ej. Comunicado"
+                            value={item.titulo}
+                            onChange={(e) => handleExtraLinkChange(index, 'titulo', e.target.value)}
+                            style={{ ...styles.input, flex: '1 1 110px' }}
+                          />
+                          <input
+                            type="url"
+                            placeholder="https://..."
+                            value={item.url}
+                            onChange={(e) => handleExtraLinkChange(index, 'url', e.target.value)}
+                            style={{ ...styles.input, flex: '1 1 150px' }}
+                          />
+                          <button type="button" onClick={() => eliminarFilaEnlace(index)} style={{ ...styles.btnDeleteRow, flex: '0 0 auto' }}>✕ Quitar</button>
+                        </div>
+                      ))}
+                      <button type="button" onClick={agregarFilaEnlace} style={styles.btnAddRow}>+ Agregar otro enlace</button>
+                    </div>
+                  </>
+                ) : activeTab === 'privado' ? (
+                  <>
+                    <div style={styles.row}>
+                      <div style={styles.field}>
+                        <label style={styles.label}>Nombre del Negocio</label>
+                        <input type="text" name="empresa" value={formData.empresa} onChange={handleChange} placeholder="Ej. Pollería Kimbos" style={styles.input} required />
+                      </div>
+                      <div style={styles.field}>
+                        <label style={styles.label}>Vacantes</label>
+                        <input type="number" name="vacantes" value={formData.vacantes} onChange={handleChange} placeholder="1" style={styles.input} />
+                      </div>
+                    </div>
+
+                    <div style={styles.row}>
+                      <div style={styles.field}>
+                        <label style={styles.label}>Logo (URL Imagen)</label>
+                        <input type="url" name="logo" value={formData.logo} onChange={handleChange} placeholder="https://.../logo.png" style={styles.input} />
+                      </div>
+                      <div style={styles.field}>
+                        <label style={styles.label}>Puesto Requerido</label>
+                        <input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Ej. Mozo / Ayudante" style={styles.input} required />
+                      </div>
+                      {renderLocationField()}
+                    </div>
+
+                    <div style={{ ...styles.field, backgroundColor: '#F8FAFC', padding: '14px', borderRadius: '14px', border: '1px solid #E2E8F0' }}>
+                      <label style={styles.label}>Modalidad de Trabajo</label>
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '8px' }}>
+                        {[
+                          'Tiempo Completo',
+                          'Medio Tiempo',
+                          'CAS',
+                          'Por Horas',
+                          'Fines de Semana',
+                          'Prácticas',
+                          'Sistema 14x7'
+                        ].map(mod => (
+                          <label key={mod} style={{ fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#0B132B', backgroundColor: '#FFFFFF', padding: '5px 10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                            <input
+                              type="checkbox"
+                              checked={formData.modalidades.includes(mod)}
+                              onChange={(e) => {
+                                if (e.target.checked) setFormData({ ...formData, modalidades: [...formData.modalidades, mod] });
+                                else setFormData({ ...formData, modalidades: formData.modalidades.filter(m => m !== mod) });
+                              }}
+                              style={{ accentColor: '#06D6A0', width: '14px', height: '14px' }}
+                            /> {mod}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div style={styles.row}>
+                      <div style={styles.field}>
+                        <label style={styles.label}>Sueldo (S/)</label>
+                        <input type="text" name="sueldo" value={formData.sueldo} onChange={handleChange} placeholder="Ej. 1200 o A tratar" style={styles.input} />
+                      </div>
+                      <div style={styles.field}>
+                        <label style={styles.label}>Fecha de Cierre</label>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={{ ...styles.input, flex: '1 1 auto' }} />
+                        </div>
+                      </div>
+                      <div style={styles.field}>
+                        <label style={styles.label}>Hora de Cierre</label>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <input type="time" name="horaVencimiento" value={formData.horaVencimiento} onChange={handleChange} style={{ ...styles.input, flex: '1 1 auto' }} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ ...styles.field, backgroundColor: '#ECFDF5', padding: '14px', borderRadius: '14px', border: '1px solid #A7F3D0' }}>
+                      <label style={{ ...styles.label, color: '#065F46', marginBottom: '8px' }}>📱 WhatsApp Contacto</label>
+                      {formData.contactos.map((numero, index) => (
+                        <div key={index} style={{ display: 'flex', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                          <input
+                            type="text"
+                            placeholder={`Ej. 987654321 (#${index + 1})`}
+                            value={numero}
+                            onChange={(e) => {
+                              const nuevos = [...formData.contactos];
+                              nuevos[index] = e.target.value;
+                              setFormData({ ...formData, contactos: nuevos });
+                            }}
+                            style={{ ...styles.input, flex: '1 1 120px', backgroundColor: '#FFFFFF' }}
+                            required={index === 0}
+                          />
+                          {formData.contactos.length > 1 && (
+                            <button type="button" onClick={() => setFormData({ ...formData, contactos: formData.contactos.filter((_, i) => i !== index) })} style={{ ...styles.btnDeleteRow, flex: '0 0 auto' }}>✕ Quitar</button>
+                          )}
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => setFormData({ ...formData, contactos: [...formData.contactos, ''] })} style={styles.btnAddRow}>+ Agregar otro número</button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ backgroundColor: categoriaActual.fondo, border: `1px solid ${categoriaActual.borde}`, borderLeft: `5px solid ${categoriaActual.color}`, borderRadius: '16px', padding: '16px', marginBottom: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                        <span style={{ fontSize: '24px' }}>{categoriaActual.icono}</span>
+                        <div><div style={{ fontSize: '10px', fontWeight: '800', color: categoriaActual.color, letterSpacing: '0.5px' }}>CATEGORÍA DEL ANUNCIO</div><div style={{ fontSize: '16px', fontWeight: '800', color: '#0B132B' }}>{formData.categoriaClasificado}</div></div>
+                      </div>
+                      <div style={styles.row}>
+                        <div style={styles.field}><label style={styles.label}>Título del Anuncio</label><input type="text" name="titulo" value={formData.titulo} onChange={handleChange} placeholder={formData.categoriaClasificado === 'Vehículos' ? 'Ej. Toyota Corolla 2022' : formData.categoriaClasificado === 'Viviendas en alquiler' ? 'Ej. Departamento en alquiler de 3 dormitorios' : formData.categoriaClasificado === 'Servicios' ? 'Ej. Servicio de fotografía y video' : formData.categoriaClasificado === 'Ventas' ? 'Ej. Laptop Lenovo en venta' : 'Ej. Alquiler de local comercial'} style={{ ...styles.input, borderColor: categoriaActual.borde }} required /></div>
+                        <div style={styles.field}><label style={styles.label}>Categoría</label><select name="categoriaClasificado" value={formData.categoriaClasificado} onChange={handleChange} style={{ ...styles.input, borderColor: categoriaActual.color, fontWeight: '800' }}><option value="Locales en alquiler">🏪 Locales en alquiler</option><option value="Viviendas en alquiler">🏠 Viviendas en alquiler</option><option value="Vehículos">🚗 Vehículos</option><option value="Servicios">🛠️ Servicios</option><option value="Ventas">🏷️ Ventas</option><option value="Otros">📌 Otros</option></select></div>
+                      </div>
+                      <div style={{ marginTop: '12px', padding: '14px', backgroundColor: '#FFFFFF', borderRadius: '12px', border: `1px solid ${categoriaActual.borde}` }}>
+                        <div style={{ color: categoriaActual.color, fontSize: '12px', fontWeight: '800', marginBottom: '10px' }}>{categoriaActual.icono} {categoriaActual.titulo}</div>
+                        <div style={styles.row}>{categoriaActual.campos.map(renderCampoClasificado)}{renderLocationField()}</div>
+                      </div>
+                    </div>
+                    <div style={styles.row}><div style={styles.field}><label style={styles.label}>Fecha de Vencimiento (Autoborrado)</label><input type="date" name="fechaVencimiento" value={formData.fechaVencimiento} onChange={handleChange} style={{ ...styles.input, borderColor: categoriaActual.borde }} /></div></div>
+                    <div style={{ ...styles.field, backgroundColor: '#FFFBEB', padding: '14px', borderRadius: '14px', border: '1px solid #FDE68A' }}>
+                      <label style={{ ...styles.label, color: '#92400E', marginBottom: '8px' }}>📱 WhatsApp del Anunciante</label>
+                      {formData.contactos.map((numero, index) => (<div key={index} style={{ display: 'flex', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}><input type="text" placeholder={`Ej. 987654321 (#${index + 1})`} value={numero} onChange={(e) => { const nuevos = [...formData.contactos]; nuevos[index] = e.target.value; setFormData({ ...formData, contactos: nuevos }); }} style={{ ...styles.input, flex: '1 1 120px', backgroundColor: '#FFFFFF' }} required={index === 0} />{formData.contactos.length > 1 && (<button type="button" onClick={() => setFormData({ ...formData, contactos: formData.contactos.filter((_, i) => i !== index) })} style={{ ...styles.btnDeleteRow, flex: '0 0 auto' }}>✕ Quitar</button>)}</div>))}
+                      <button type="button" onClick={() => setFormData({ ...formData, contactos: [...formData.contactos, ''] })} style={styles.btnAddRow}>+ Agregar otro número</button>
+                    </div>
+                  </>
+                )}
+
+                <div style={styles.field}>
+                  <label style={styles.label}>Descripción / Notas</label>
+                  <textarea name="descripcion" value={formData.descripcion} onChange={handleChange} style={styles.textarea} />
+                </div>
+
+                {activeTab !== 'estado' && (
+                  <div style={{ ...styles.vipContainer, backgroundColor: '#ECFDF5', borderColor: '#A7F3D0' }}>
+                    <input
+                      type="checkbox"
+                      id="verificado"
+                      name="verificado"
+                      checked={formData.verificado !== false}
+                      onChange={handleChange}
+                      style={{ accentColor: '#059669', width: '16px', height: '16px' }}
+                    />
+                    <label htmlFor="verificado" style={{ ...styles.vipLabel, color: '#065F46' }}>
+                      ✅ Mostrar sello de &quot;Negocio / Anunciante Verificado&quot;
+                    </label>
+                  </div>
+                )}
+
+                <div style={styles.vipContainer}>
+                  <input type="checkbox" id="esVip" name="esVip" checked={formData.esVip} onChange={handleChange} style={{ accentColor: '#D97706', width: '16px', height: '16px' }} />
+                  <label htmlFor="esVip" style={styles.vipLabel}>⭐ Destacar Anuncio en Sección VIP</label>
+                </div>
+
+                <div style={styles.btnGroup}>
+                  <button type="submit" style={activeTab === 'clasificados' ? { ...styles.btnPrimary, backgroundColor: categoriaActual.color } : styles.btnPrimary}>
+                    {editingId ? 'Guardar Cambios' : 'Publicar Anuncio'}
+                  </button>
+                  {editingId && (
+                    <button type="button" onClick={resetForm} style={styles.btnSecondary}>Cancelar</button>
+                  )}
+                </div>
+              </form>
+            </div>
+
+            <div style={styles.card}>
+              <div style={styles.listHeader}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h2 style={styles.cardTitle}>{mostrarVencidos ? '🗄️ Historial (Vencidos)' : '📋 Registros Activos'}</h2>
+                  <span style={styles.counterBadge}>{displayJobsList.length}</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setMostrarVencidos(!mostrarVencidos)}
+                  style={{
+                    ...styles.btnManual,
+                    backgroundColor: mostrarVencidos ? '#0B132B' : '#FEF2F2',
+                    color: mostrarVencidos ? '#06D6A0' : '#991B1B',
+                    border: mostrarVencidos ? '1px solid #0B132B' : '1px solid #FECACA',
+                    padding: '7px 14px'
+                  }}
+                >
+                  {mostrarVencidos ? '👀 Volver a Activos' : '🗑️ Ver Vencidos'}
+                </button>
+              </div>
+
+              <div style={{ position: 'relative', marginBottom: '12px' }}>
+                <input
+                  type="text"
+                  value={busquedaHistorial}
+                  onChange={(e) => setBusquedaHistorial(e.target.value)}
+                  placeholder="🔍 Buscar en el listado por puesto, negocio, distrito o WhatsApp..."
+                  style={{ ...styles.input, paddingRight: '34px' }}
+                />
+                {busquedaHistorial && (
+                  <button
+                    type="button"
+                    onClick={() => setBusquedaHistorial('')}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: '#64748B',
+                      fontWeight: 800,
+                      cursor: 'pointer'
+                    }}
+                    title="Limpiar búsqueda"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              <div style={styles.scrollList}>
+                {displayJobsList.length === 0 && (
+                  <p style={{ textAlign: 'center', color: '#64748B', fontSize: '13px', padding: '28px 0', fontWeight: 600 }}>
+                    No se encontraron anuncios {mostrarVencidos ? 'vencidos' : 'activos'} {busquedaHistorial ? `para "${busquedaHistorial}"` : 'en esta categoría'}.
+                  </p>
+                )}
+
+                {displayJobsList.map((job) => (
+                  <div key={job._id} style={{ ...styles.itemCard, opacity: job.isExpired ? 0.85 : 1, borderColor: job.esVip ? '#FBBF24' : '#E2E8F0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                      <div>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap' }}>
+                          <span style={{ ...styles.tagModality, backgroundColor: job.tipo === 'Clasificado' ? (categoriasClasificados[job.categoriaClasificado]?.color || '#4F46E5') : '#0B132B' }}>
+                            {job.tipo === 'Clasificado' ? `${categoriasClasificados[job.categoriaClasificado]?.icono || '📌'} ${job.categoriaClasificado}` : job.tipo}
+                          </span>
+                          {job.esVip && (
+                            <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#FFFBEB', color: '#B45309', border: '1px solid #FDE68A', padding: '2px 8px', borderRadius: '999px' }}>
+                              ⭐ VIP
+                            </span>
+                          )}
+                          {job.tipo !== 'Estado' && job.verificado !== false && (
+                            <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#ECFDF5', color: '#065F46', border: '1px solid #A7F3D0', padding: '2px 8px', borderRadius: '999px' }}>
+                              ✅ Verificado
+                            </span>
+                          )}
+                        </div>
+                        <h3 style={styles.itemTitle}>{job.titulo}</h3>
+                        <p style={styles.itemMeta}>
+                          <strong>{job.tipo === 'Clasificado' ? 'Clasificado' : job.empresa}</strong> • 📍 {job.ubicacion}
+                          {job.contacto ? ` • 📱 ${job.contacto}` : ''}
+                        </p>
+                      </div>
+                      {job.isExpired && (
+                        <span style={{ fontSize: '10px', fontWeight: '800', color: '#991B1B', backgroundColor: '#FEF2F2', padding: '4px 9px', borderRadius: '999px', border: '1px solid #FECACA', whiteSpace: 'nowrap' }}>
+                          🔴 VENCIDO
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={styles.itemFooterRow}>
+                      <span style={styles.itemSalary}>{job.sueldo || 'A tratar'}</span>
+                      <div style={styles.itemButtons}>
+                        {!job.isExpired && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => publicarEnCanalWhatsApp(job)}
+                              style={{
+                                ...styles.btnEdit,
+                                backgroundColor: copiedId === job._id ? '#0B132B' : '#06D6A0',
+                                color: copiedId === job._id ? '#06D6A0' : '#0B132B',
+                                borderColor: '#059669',
+                                fontWeight: '900',
+                              }}
+                              title="Copia el anuncio automáticamente y abre tu Canal de WhatsApp"
+                            >
+                              {copiedId === job._id ? '✅ ¡Copiado! Pega en tu Canal' : '📢 Publicar en Canal'}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.chambafija.com';
+                                const url = `${baseUrl}/oferta/${job._id}`;
+                                const text = `🚨 *Nueva Oferta*\n🏢 ${job.empresa}\n💼 ${job.titulo}\n📍 ${job.ubicacion}\n\n👉 Postula aquí: ${url}`;
+                                window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+                              }}
+                              style={styles.btnEdit}
+                              title="Enviar a un chat o grupo"
+                            >
+                              📲 Grupo
+                            </button>
+                          </>
+                        )}
+
+                        {job.contacto && (
+                          <button
+                            type="button"
+                            onClick={() => contactarRenovacionWhatsApp(job)}
+                            style={{
+                              ...styles.btnEdit,
+                              backgroundColor: '#FFFBEB',
+                              color: '#B45309',
+                              borderColor: '#FDE68A',
+                              fontWeight: '900'
+                            }}
+                            title="Escribir al dueño por WhatsApp para ofrecerle renovar su anuncio o pasar a VIP"
+                          >
+                            ♻️ Renovar WA
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => handleEdit(job)}
+                          style={{ ...styles.btnEdit, borderColor: '#CBD5E1', backgroundColor: '#F8FAFC' }}
+                        >
+                          {job.isExpired ? 'Renovar (Editar)' : 'Editar'}
+                        </button>
+
+                        <button onClick={() => handleDelete(job._id)} style={styles.btnDelete}>Eliminar</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-</>
+        </>
       )}
     </div>
   );
@@ -1514,7 +1516,7 @@ export default function AdminDashboard() {
 const styles = {
   wrapper: { padding: 'clamp(12px, 3vw, 28px)', backgroundColor: '#F4F7FB', minHeight: '100vh', fontFamily: 'var(--font-jakarta), system-ui, sans-serif' },
   tabNav: { display: 'flex', gap: '10px', marginBottom: '20px', maxWidth: '1240px', margin: '0 auto 20px auto', flexWrap: 'wrap' },
-  tabBtn: { flex: '1 1 30%', padding: '14px 16px', borderRadius: '16px', borderWidth: '1px', borderStyle: 'solid', fontWeight: '800', fontSize: 'clamp(12px, 3.5vw, 14px)', cursor: 'pointer', transition: 'all 0.2s ease', textAlign: 'center' },
+  tabBtn: { flex: '1 1 22%', padding: '14px 16px', borderRadius: '16px', borderWidth: '1px', borderStyle: 'solid', fontWeight: '800', fontSize: 'clamp(12px, 3.5vw, 14px)', cursor: 'pointer', transition: 'all 0.2s ease', textAlign: 'center' },
   mainGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '20px', maxWidth: '1240px', margin: '0 auto' },
   card: { backgroundColor: '#FFFFFF', padding: 'clamp(16px, 4vw, 28px)', borderRadius: '24px', boxShadow: '0 10px 30px -10px rgba(11, 19, 43, 0.07)', border: '1px solid #E2E8F0' },
   cardHeader: { marginBottom: '16px', borderBottom: '1px solid #F1F5F9', paddingBottom: '12px' },
