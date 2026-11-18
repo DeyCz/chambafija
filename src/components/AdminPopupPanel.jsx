@@ -12,7 +12,7 @@ const POPUP_INICIAL = {
   formato: 'cuadrado',
   textoBoton: '📲 Consultar por WhatsApp',
   whatsapp: '',
-  mensaje: 'Hola, vi su anuncio en ChambaFija y quisiera más información.',
+  mensaje: '👋 ¡Hola! Vi su anuncio en Chamba Fija y estoy interesado(a) 📢 ¿Podría brindarme más información sobre la publicación, por favor?',
   enlace: '',
   activoHasta: '',
 };
@@ -25,7 +25,7 @@ const PORTADA_INICIAL = {
   imagen: '',
   imagenMovil: '',
   whatsapp: '',
-  mensaje: 'Hola, vi su publicidad en portada de ChambaFija y quisiera información.',
+  mensaje: '👋 ¡Hola! Vi su anuncio en Chamba Fija y estoy interesado(a) 📢 ¿Podría brindarme más información sobre la publicación, por favor?',
   enlace: '',
   activoHasta: '',
   orden: 1,
