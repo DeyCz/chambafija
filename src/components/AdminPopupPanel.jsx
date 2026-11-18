@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { resolverImagenDrive } from '@/lib/driveImage';
 
 const POPUP_INICIAL = {
@@ -29,6 +29,18 @@ const PORTADA_INICIAL = {
   enlace: '',
   activoHasta: '',
   orden: 1,
+};
+
+const formatearUltimoClic = (iso) => {
+  if (!iso) return 'Sin clics aún';
+  const fecha = new Date(iso);
+  if (Number.isNaN(fecha.getTime())) return 'Sin clics aún';
+  return fecha.toLocaleString('es-PE', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 };
 
 export default function AdminPopupPanel() {
@@ -74,6 +86,16 @@ export default function AdminPopupPanel() {
   useEffect(() => {
     cargarTodo();
   }, []);
+
+  const resumenClics = useMemo(() => {
+    const clicsPopup = ads.reduce((acc, item) => acc + (Number(item.clics) || 0), 0);
+    const clicsPortada = portadaAds.reduce((acc, item) => acc + (Number(item.clics) || 0), 0);
+    return {
+      popup: clicsPopup,
+      portada: clicsPortada,
+      total: clicsPopup + clicsPortada,
+    };
+  }, [ads, portadaAds]);
 
   const guardarConfig = async () => {
     setSaving(true);
@@ -196,6 +218,26 @@ export default function AdminPopupPanel() {
     }
   };
 
+  const reiniciarClicsAd = async (ad, coleccion) => {
+    if (
+      !window.confirm(
+        `¿Reiniciar el contador de clics de "${ad.nombre || 'este anuncio'}" a 0?`
+      )
+    ) {
+      return;
+    }
+    try {
+      await fetch('/api/popup', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: ad._id, coleccion, reiniciarClics: true }),
+      });
+      cargarTodo();
+    } catch {
+      alert('No se pudo reiniciar el contador.');
+    }
+  };
+
   const eliminarAd = async (id, coleccion) => {
     if (!window.confirm('¿Eliminar definitivamente este anuncio?')) return;
     try {
@@ -223,6 +265,52 @@ export default function AdminPopupPanel() {
 
   return (
     <div style={{ maxWidth: '1240px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      {/* RESUMEN DE CLICS PUBLICITARIOS */}
+      <div style={{ ...s.card, background: 'linear-gradient(135deg, #0B132B 0%, #132246 100%)', color: '#FFFFFF', border: '1px solid #1E293B' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '12px' }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#FFFFFF' }}>
+              📊 Rendimiento de Publicidad (Clics Reales)
+            </h2>
+            <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#94A3B8', fontWeight: 600 }}>
+              Cada toque en la imagen o botón de WhatsApp/enlace suma automáticamente.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={cargarTodo}
+            disabled={loading}
+            style={{
+              padding: '8px 14px',
+              borderRadius: '12px',
+              border: '1px solid rgba(6,214,160,0.4)',
+              background: 'rgba(6,214,160,0.12)',
+              color: '#06D6A0',
+              fontSize: '12px',
+              fontWeight: 800,
+              cursor: loading ? 'wait' : 'pointer',
+            }}
+          >
+            {loading ? '⏳ Actualizando...' : '🔄 Actualizar clics'}
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
+          <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '12px 14px' }}>
+            <span style={{ fontSize: '11px', color: '#CBD5E1', fontWeight: 700, display: 'block' }}>⚡ Clics en Popups</span>
+            <span style={{ fontSize: '24px', fontWeight: 900, color: '#FBBF24' }}>{resumenClics.popup.toLocaleString('es-PE')}</span>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '12px 14px' }}>
+            <span style={{ fontSize: '11px', color: '#CBD5E1', fontWeight: 700, display: 'block' }}>🖼️ Clics en Portada</span>
+            <span style={{ fontSize: '24px', fontWeight: 900, color: '#06D6A0' }}>{resumenClics.portada.toLocaleString('es-PE')}</span>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', padding: '12px 14px' }}>
+            <span style={{ fontSize: '11px', color: '#CBD5E1', fontWeight: 700, display: 'block' }}>👆 Total de Clics</span>
+            <span style={{ fontSize: '24px', fontWeight: 900, color: '#FFFFFF' }}>{resumenClics.total.toLocaleString('es-PE')}</span>
+          </div>
+        </div>
+      </div>
+
       {/* SELECTOR DE SUB-PESTAÑAS */}
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         <button
@@ -243,7 +331,7 @@ export default function AdminPopupPanel() {
             cursor: 'pointer',
           }}
         >
-          ⚡ Popup Emergente al Iniciar ({ads.filter((a) => a.activo).length} activos)
+          ⚡ Popup Emergente ({ads.filter((a) => a.activo).length} activos · {resumenClics.popup} clics)
         </button>
 
         <button
@@ -264,7 +352,7 @@ export default function AdminPopupPanel() {
             cursor: 'pointer',
           }}
         >
-          🖼️ Carrusel Panorámico de Portada ({portadaAds.filter((a) => a.activo).length} activos)
+          🖼️ Carrusel de Portada ({portadaAds.filter((a) => a.activo).length} activos · {resumenClics.portada} clics)
         </button>
       </div>
 
@@ -496,15 +584,23 @@ export default function AdminPopupPanel() {
                       <div style={{ flex: '1 1 170px', minWidth: 0 }}>
                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
                           <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '999px', background: ad.activo ? '#059669' : '#64748B', color: '#FFFFFF' }}>{ad.activo ? 'ACTIVO' : 'PAUSADO'}</span>
+                          <span style={{ fontSize: '10px', fontWeight: 900, padding: '2px 9px', borderRadius: '999px', background: '#0B132B', color: '#06D6A0' }}>
+                            👆 {(Number(ad.clics) || 0).toLocaleString('es-PE')} clics
+                          </span>
                           <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '999px', background: '#E2E8F0', color: '#0B132B' }}>📐 {ad.formato || 'auto'}</span>
                           {ad.activoHasta && <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '999px', background: '#FEF3C7', color: '#92400E' }}>⏳ {ad.activoHasta}</span>}
                         </div>
                         <p style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#0B132B' }}>{ad.nombre || 'Sin título'}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#475569', fontWeight: 600 }}>{ad.enlace ? '🔗 Enlace externo' : ad.whatsapp ? `📱 WA: ${ad.whatsapp}` : 'Solo visual'}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#475569', fontWeight: 600 }}>
+                          {ad.enlace ? '🔗 Enlace externo' : ad.whatsapp ? `📱 WA: ${ad.whatsapp}` : 'Solo visual'} · 🕒 {formatearUltimoClic(ad.ultimoClic)}
+                        </p>
                       </div>
                       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                         <button type="button" onClick={() => toggleActivo(ad, 'popup')} style={{ ...s.btnSmall, background: ad.activo ? '#FEF3C7' : '#DCFCE7', color: ad.activo ? '#92400E' : '#166534', borderColor: ad.activo ? '#FDE68A' : '#86EFAC' }}>
                           {ad.activo ? '⏸️ Pausar' : '▶️ Activar'}
+                        </button>
+                        <button type="button" onClick={() => reiniciarClicsAd(ad, 'popup')} title="Reiniciar contador de clics a 0" style={{ ...s.btnSmall, background: '#EFF6FF', color: '#1D4ED8', borderColor: '#BFDBFE' }}>
+                          ↺ 0
                         </button>
                         <button type="button" onClick={() => { setEditingPopupId(ad._id); setPreviewError(false); setFormPopup({ ...POPUP_INICIAL, ...ad }); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={s.btnSmall}>
                           Editar
@@ -697,19 +793,25 @@ export default function AdminPopupPanel() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                         <div>
                           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                            <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '999px', background: '#0B132B', color: '#06D6A0' }}>#{ad.orden || 1}</span>
+                            <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '999px', background: '#0B132B', color: '#FFFFFF' }}>#{ad.orden || 1}</span>
                             <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '999px', background: ad.activo ? '#059669' : '#64748B', color: '#FFFFFF' }}>{ad.activo ? 'ACTIVO' : 'PAUSADO'}</span>
+                            <span style={{ fontSize: '10px', fontWeight: 900, padding: '2px 9px', borderRadius: '999px', background: '#0B132B', color: '#06D6A0' }}>
+                              👆 {(Number(ad.clics) || 0).toLocaleString('es-PE')} clics
+                            </span>
                             {ad.activoHasta && <span style={{ fontSize: '10px', fontWeight: 800, padding: '2px 8px', borderRadius: '999px', background: '#FEF3C7', color: '#92400E' }}>⏳ {ad.activoHasta}</span>}
                           </div>
                           <p style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#0B132B' }}>{ad.nombre}</p>
                           <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#475569', fontWeight: 600 }}>
-                            {ad.rubro || 'Sin rubro'} {ad.whatsapp ? `· 📱 ${ad.whatsapp}` : ''}
+                            {ad.rubro || 'Sin rubro'} {ad.whatsapp ? `· 📱 ${ad.whatsapp}` : ''} · 🕒 {formatearUltimoClic(ad.ultimoClic)}
                           </p>
                         </div>
 
                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                           <button type="button" onClick={() => toggleActivo(ad, 'portada')} style={{ ...s.btnSmall, background: ad.activo ? '#FEF3C7' : '#DCFCE7', color: ad.activo ? '#92400E' : '#166534', borderColor: ad.activo ? '#FDE68A' : '#86EFAC' }}>
                             {ad.activo ? '⏸️ Pausar' : '▶️ Activar'}
+                          </button>
+                          <button type="button" onClick={() => reiniciarClicsAd(ad, 'portada')} title="Reiniciar contador de clics a 0" style={{ ...s.btnSmall, background: '#EFF6FF', color: '#1D4ED8', borderColor: '#BFDBFE' }}>
+                            ↺ 0
                           </button>
                           <button type="button" onClick={() => { setEditingPortadaId(ad._id); setPreviewError(false); setFormPortada({ ...PORTADA_INICIAL, ...ad }); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={s.btnSmall}>
                             Editar

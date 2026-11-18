@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { FieldValue } from 'firebase-admin/firestore';
 import { db } from '@/lib/firebaseAdmin';
 
 export const dynamic = 'force-dynamic';
@@ -40,7 +41,9 @@ export async function GET(request) {
       : DEFAULT_CONFIG;
 
     let ads = [];
-    popupSnap.forEach((doc) => ads.push({ _id: doc.id, ...doc.data() }));
+    popupSnap.forEach((doc) =>
+      ads.push({ _id: doc.id, clics: 0, ...doc.data() })
+    );
     ads.sort(
       (a, b) =>
         (new Date(b.createdAt || 0).getTime() || 0) -
@@ -49,7 +52,7 @@ export async function GET(request) {
 
     let portadaAds = [];
     portadaSnap.forEach((doc) =>
-      portadaAds.push({ _id: doc.id, ...doc.data() })
+      portadaAds.push({ _id: doc.id, clics: 0, ...doc.data() })
     );
     portadaAds.sort((a, b) => {
       const ordenA = Number(a.orden) || 99;
@@ -87,6 +90,28 @@ export async function POST(request) {
   try {
     const body = await request.json();
 
+    // 1. Registrar un clic en popup o banner de portada
+    if (body.action === 'click') {
+      const id = String(body.id || '').trim();
+      if (!id) {
+        return NextResponse.json(
+          { success: false, mensaje: 'Falta ID del anuncio' },
+          { status: 400 }
+        );
+      }
+
+      const nombreColeccion =
+        body.coleccion === 'portada' ? 'portada_ads' : 'popup_ads';
+
+      await db.collection(nombreColeccion).doc(id).update({
+        clics: FieldValue.increment(1),
+        ultimoClic: new Date().toISOString(),
+      });
+
+      return NextResponse.json({ success: true });
+    }
+
+    // 2. Guardar configuración general
     if (body.action === 'config') {
       const nuevaConfig = {
         habilitado: Boolean(body.habilitado),
@@ -114,6 +139,7 @@ export async function POST(request) {
 
     const ahora = new Date().toISOString();
 
+    // 3. Crear banner de portada
     if (body.coleccion === 'portada') {
       const nuevoBanner = {
         activo: body.activo !== false,
@@ -127,6 +153,8 @@ export async function POST(request) {
         enlace: String(body.enlace || '').trim(),
         activoHasta: String(body.activoHasta || '').trim(),
         orden: Number(body.orden) || 1,
+        clics: 0,
+        ultimoClic: '',
         createdAt: ahora,
         updatedAt: ahora,
       };
@@ -138,6 +166,7 @@ export async function POST(request) {
       );
     }
 
+    // 4. Crear popup emergente
     const nuevoPopup = {
       activo: body.activo !== false,
       nombre: String(body.nombre || '').trim(),
@@ -152,6 +181,8 @@ export async function POST(request) {
       mensaje: String(body.mensaje || '').trim(),
       enlace: String(body.enlace || '').trim(),
       activoHasta: String(body.activoHasta || '').trim(),
+      clics: 0,
+      ultimoClic: '',
       createdAt: ahora,
       updatedAt: ahora,
     };
@@ -173,7 +204,7 @@ export async function POST(request) {
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { id, coleccion, ...resto } = body;
+    const { id, coleccion, reiniciarClics, ...resto } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -185,10 +216,28 @@ export async function PUT(request) {
     const nombreColeccion =
       coleccion === 'portada' ? 'portada_ads' : 'popup_ads';
 
+    // Reinicio explícito de contador
+    if (reiniciarClics) {
+      await db.collection(nombreColeccion).doc(id).update({
+        clics: 0,
+        ultimoClic: '',
+        updatedAt: new Date().toISOString(),
+      });
+      return NextResponse.json({
+        success: true,
+        mensaje: 'Contador reiniciado a 0',
+      });
+    }
+
+    // Al editar campos del anuncio, nunca sobrescribimos los clics reales acumulados
     const actualizacion = {
       ...resto,
       updatedAt: new Date().toISOString(),
     };
+    delete actualizacion._id;
+    delete actualizacion.clics;
+    delete actualizacion.ultimoClic;
+    delete actualizacion.createdAt;
 
     if (coleccion === 'portada' && actualizacion.orden !== undefined) {
       actualizacion.orden = Number(actualizacion.orden) || 1;

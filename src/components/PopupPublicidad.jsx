@@ -17,6 +17,7 @@ export default function PopupPublicidad({
   const [actual, setActual] = useState(null);
   const [errorImg, setErrorImg] = useState(false);
   const iniciadoRef = useRef(false);
+  const ultimoEnvioClicRef = useRef(0);
 
   useEffect(() => {
     if (!cargado || iniciadoRef.current) return;
@@ -95,11 +96,28 @@ export default function PopupPublicidad({
       : '';
 
   const registrarClic = () => {
+    const ahora = Date.now();
+    if (ahora - ultimoEnvioClicRef.current < 2000) return;
+    ultimoEnvioClicRef.current = ahora;
+
     if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
       window.gtag('event', 'click_popup_publicidad', {
         anuncio_id: actual._id,
         anuncio_nombre: actual.nombre,
       });
+    }
+
+    if (actual?._id) {
+      fetch('/api/popup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'click',
+          coleccion: 'popup',
+          id: actual._id,
+        }),
+        keepalive: true,
+      }).catch(() => {});
     }
   };
 

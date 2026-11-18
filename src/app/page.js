@@ -327,6 +327,34 @@ const PublicidadSection = memo(function PublicidadSection({
   const [indiceActual, setIndiceActual] = useState(0);
   const [pausado, setPausado] = useState(false);
 
+  const ultimoClicPortadaRef = useRef(0);
+
+  const registrarClicPortada = (anuncio) => {
+    const ahora = Date.now();
+    if (ahora - ultimoClicPortadaRef.current < 2000) return;
+    ultimoClicPortadaRef.current = ahora;
+
+    if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+      window.gtag('event', 'click_banner_portada', {
+        anuncio_id: anuncio._id,
+        anuncio_nombre: anuncio.nombre,
+      });
+    }
+
+    if (anuncio?._id) {
+      fetch('/api/popup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'click',
+          coleccion: 'portada',
+          id: anuncio._id,
+        }),
+        keepalive: true,
+      }).catch(() => {});
+    }
+  };
+
   const anunciosActivos = useMemo(
     () =>
       anuncios.filter(
@@ -457,6 +485,7 @@ const PublicidadSection = memo(function PublicidadSection({
                   href={linkCliente}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => registrarClicPortada(actual)}
                   className="group block w-full"
                 >
                   {contenidoBanner}
