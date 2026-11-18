@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebaseAdmin';
 
+export const dynamic = 'force-dynamic';
+
 const DEFAULT_CONFIG = {
   habilitado: true,
   modo: 'sesion', // 'sesion' | 'minutos' | 'siempre'

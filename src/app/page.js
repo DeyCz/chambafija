@@ -11,7 +11,7 @@ import React, {
 } from 'react';
 import Image from 'next/image';
 import PopupPublicidad from '@/components/PopupPublicidad';
-import { publicidadesPortada } from '@/data/publicidades';
+import { resolverImagenDrive } from '@/lib/driveImage';
 
 /* ============================================================
    FORMATO DE FECHAS Y ETIQUETAS AUTOMÁTICAS
@@ -314,45 +314,53 @@ const renderDatosClasificado = (job, modo = 'card') => {
 };
 
 /* ============================================================
-   PUBLICIDADES DE PORTADA
+   PUBLICIDADES DE PORTADA (CONTROLADAS DESDE ADMIN + DRIVE)
    ============================================================ */
 
-const obtenerUrlImagenBanner = (pub) => {
-  if (pub.imagen && pub.imagen.trim() !== '') return pub.imagen.trim();
-  if (pub.driveId && !pub.driveId.startsWith('COLOCA_AQUI')) {
-    return `https://drive.google.com/thumbnail?id=${encodeURIComponent(
-      pub.driveId
-    )}&sz=w2000`;
-  }
-  return '';
-};
-
-const PublicidadSection = memo(function PublicidadSection({ whatsappUrl }) {
+const PublicidadSection = memo(function PublicidadSection({
+  anuncios = [],
+  cargado = false,
+  intervaloMs = 5500,
+  whatsappUrl,
+}) {
   const [erroresImg, setErroresImg] = useState({});
+  const [indiceActual, setIndiceActual] = useState(0);
+  const [pausado, setPausado] = useState(false);
 
   const anunciosActivos = useMemo(
     () =>
-      publicidadesPortada.filter(
+      anuncios.filter(
         (pub) =>
-          pub.activo &&
-          !erroresImg[pub.id] &&
-          obtenerUrlImagenBanner(pub) !== ''
+          pub.activo !== false &&
+          !erroresImg[pub._id] &&
+          resolverImagenDrive(pub.imagen, 2000) !== ''
       ),
-    [erroresImg]
+    [anuncios, erroresImg]
   );
 
-  const [indiceActual, setIndiceActual] = useState(0);
-  const [pausado, setPausado] = useState(false);
+  useEffect(() => {
+    if (indiceActual >= anunciosActivos.length) {
+      setIndiceActual(0);
+    }
+  }, [anunciosActivos.length, indiceActual]);
 
   useEffect(() => {
     if (anunciosActivos.length <= 1 || pausado) return;
 
     const intervalo = window.setInterval(() => {
       setIndiceActual((prev) => (prev + 1) % anunciosActivos.length);
-    }, 5500);
+    }, Math.max(2000, Number(intervaloMs) || 5500));
 
     return () => window.clearInterval(intervalo);
-  }, [anunciosActivos.length, pausado]);
+  }, [anunciosActivos.length, pausado, intervaloMs]);
+
+  if (!cargado) {
+    return (
+      <section className="w-full max-w-6xl mx-auto px-4 mt-6 sm:mt-8">
+        <div className="h-[190px] sm:h-[260px] rounded-3xl bg-slate-200/70 animate-pulse" />
+      </section>
+    );
+  }
 
   const hayPublicidad = anunciosActivos.length > 0;
 
@@ -367,39 +375,37 @@ const PublicidadSection = memo(function PublicidadSection({ whatsappUrl }) {
           <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-[#0B132B] shadow-[0_14px_34px_-12px_rgba(11,19,43,0.32)]">
             {(() => {
               const actual = anunciosActivos[indiceActual] || anunciosActivos[0];
-              const imgPc = obtenerUrlImagenBanner(actual);
-              const imgMovil =
-                actual.imagenMovil && actual.imagenMovil.trim() !== ''
-                  ? actual.imagenMovil.trim()
-                  : imgPc;
+              const imgPc = resolverImagenDrive(actual.imagen, 2000);
+              const imgMovil = actual.imagenMovil
+                ? resolverImagenDrive(actual.imagenMovil, 1200)
+                : imgPc;
 
               const numero = String(actual.whatsapp || '').replace(/\D/g, '');
-              const linkCliente = numero
-                ? `https://wa.me/51${numero}?text=${encodeURIComponent(
-                    actual.mensaje ||
-                      'Hola, vi su anuncio en ChambaFija y quisiera información.'
-                  )}`
-                : '#';
+              const linkCliente =
+                actual.enlace && actual.enlace.trim() !== ''
+                  ? actual.enlace.trim()
+                  : numero
+                  ? `https://wa.me/51${numero}?text=${encodeURIComponent(
+                      actual.mensaje ||
+                        'Hola, vi su anuncio en ChambaFija y quisiera información.'
+                    )}`
+                  : '';
 
-              return (
-                <a
-                  href={linkCliente}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group block w-full"
-                >
+              const contenidoBanner = (
+                <>
                   <div className="relative w-full overflow-hidden bg-[#0B132B]">
                     <picture className="block w-full">
                       <source media="(max-width: 639px)" srcSet={imgMovil} />
                       <img
                         src={imgPc}
-                        alt={actual.nombre}
+                        alt={actual.nombre || 'Publicidad ChambaFija'}
+                        referrerPolicy="no-referrer"
                         decoding="async"
                         fetchPriority={indiceActual === 0 ? 'high' : 'auto'}
                         onError={() =>
                           setErroresImg((prev) => ({
                             ...prev,
-                            [actual.id]: true,
+                            [actual._id]: true,
                           }))
                         }
                         className="block w-full h-auto transition-transform duration-500 group-hover:scale-[1.01]"
@@ -437,13 +443,26 @@ const PublicidadSection = memo(function PublicidadSection({ whatsappUrl }) {
                       )}
                     </div>
 
-                    {numero && (
+                    {linkCliente && (
                       <span className="shrink-0 inline-flex items-center gap-1.5 bg-[#06D6A0] group-hover:bg-emerald-300 text-[#0B132B] text-xs font-extrabold px-4 py-2 rounded-xl shadow-md transition-all group-hover:scale-105">
                         📲 Contactar
                       </span>
                     )}
                   </div>
+                </>
+              );
+
+              return linkCliente ? (
+                <a
+                  href={linkCliente}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group block w-full"
+                >
+                  {contenidoBanner}
                 </a>
+              ) : (
+                <div className="group block w-full">{contenidoBanner}</div>
               );
             })()}
 
@@ -485,7 +504,7 @@ const PublicidadSection = memo(function PublicidadSection({ whatsappUrl }) {
                 <div className="flex items-center gap-1.5 mr-2">
                   {anunciosActivos.map((item, idx) => (
                     <button
-                      key={item.id}
+                      key={item._id}
                       type="button"
                       onClick={() => setIndiceActual(idx)}
                       className={`h-2 rounded-full transition-all cursor-pointer ${
@@ -601,7 +620,7 @@ const SectionTitle = memo(function SectionTitle({
 });
 
 /* ============================================================
-   TARJETA DE ANUNCIO (MEMOIZADA FUERA DE HOME PARA 0 LAG)
+   TARJETA DE ANUNCIO (MEMOIZADA PARA MÁXIMA FLUIDEZ)
    ============================================================ */
 
 const JobCard = memo(function JobCard({ job, onSelect, onShare }) {
@@ -978,29 +997,6 @@ export default function Home() {
     portadaAds: [],
   });
 
-  useEffect(() => {
-    let activo = true;
-    fetch('/api/popup?publico=1')
-      .then((res) => res.json())
-      .then((data) => {
-        if (!activo || !data?.success) return;
-        setPublicidadData({
-          cargado: true,
-          config: data.config || null,
-          ads: Array.isArray(data.ads) ? data.ads : [],
-          portadaAds: Array.isArray(data.portadaAds) ? data.portadaAds : [],
-        });
-      })
-      .catch(() => {
-        if (activo) {
-          setPublicidadData((prev) => ({ ...prev, cargado: true }));
-        }
-      });
-    return () => {
-      activo = false;
-    };
-  }, []);
-
   const [filter, setFilter] = useState('Todos');
   const [searchTerm, setSearchTerm] = useState('');
   const deferredSearch = useDeferredValue(searchTerm);
@@ -1040,7 +1036,7 @@ export default function Home() {
   }, []);
 
   /* ==========================================================
-     CARGA ÚNICA OPTIMIZADA (CERO DOBLE PETICIÓN)
+     CARGA ÚNICA DE ANUNCIOS + PUBLICIDADES EN PARALELO
      ========================================================== */
 
   useEffect(() => {
@@ -1065,13 +1061,37 @@ export default function Home() {
       }
     };
 
+    const cargarPublicidades = async () => {
+      try {
+        const res = await fetch('/api/popup?publico=1');
+        const data = await res.json();
+        if (!activo) return;
+        if (data?.success) {
+          setPublicidadData({
+            cargado: true,
+            config: data.config || null,
+            ads: Array.isArray(data.ads) ? data.ads : [],
+            portadaAds: Array.isArray(data.portadaAds) ? data.portadaAds : [],
+          });
+        } else {
+          setPublicidadData((prev) => ({ ...prev, cargado: true }));
+        }
+      } catch {
+        if (activo) {
+          setPublicidadData((prev) => ({ ...prev, cargado: true }));
+        }
+      }
+    };
+
     cargarOfertas();
+    cargarPublicidades();
+
     return () => {
       activo = false;
     };
   }, []);
 
-  /* SUMA TOTAL DE VACANTES ACTIVAS (DESDE LA MISMA CARGA) */
+  /* SUMA TOTAL DE VACANTES ACTIVAS */
   const resumenVacantes = useMemo(() => {
     let estado = 0;
     let locales = 0;
@@ -1333,7 +1353,7 @@ export default function Home() {
       </section>
 
       {/* ====================================================
-          PUBLICIDAD DE PORTADA (SIN SALTO VISUAL CLS)
+          PUBLICIDAD DE PORTADA
           ==================================================== */}
 
       <PublicidadSection
