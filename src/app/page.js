@@ -413,7 +413,7 @@ const PublicidadSection = memo(function PublicidadSection({
                 actual.enlace && actual.enlace.trim() !== ''
                   ? actual.enlace.trim()
                   : numero
-                  ? `https://wa.me/51${numero}?text=${encodeURIComponent(
+                  ? `https://api.whatsapp.com/send?phone=51${numero}&text=${encodeURIComponent(
                       actual.mensaje ||
                         'Hola, vi su anuncio en ChambaFija y quisiera información.'
                     )}`
@@ -2281,10 +2281,10 @@ export default function Home() {
                       .map((num, i, arr) => (
                         <a
                           key={i}
-                          href={`https://wa.me/51${num.replace(
+                          href={`https://api.whatsapp.com/send?phone=51${num.replace(
                             /\D/g,
                             ''
-                          )}?text=${encodeURIComponent(
+                          )}&text=${encodeURIComponent(
                             `Hola, vi el anuncio de ${selectedJob.titulo} en ChambaFija`
                           )}`}
                           target="_blank"

@@ -89,7 +89,7 @@ export default function PopupPublicidad({
     actual.enlace && actual.enlace.trim() !== ''
       ? actual.enlace.trim()
       : numero
-      ? `https://wa.me/51${numero}?text=${encodeURIComponent(
+      ? `https://api.whatsapp.com/send?phone=51${numero}&text=${encodeURIComponent(
           actual.mensaje ||
             `Hola, vi el anuncio de ${actual.nombre || 'su negocio'} en ChambaFija.`
         )}`

@@ -532,7 +532,12 @@ export default function AdminPopupPanel() {
 
                 <div style={s.field}>
                   <label style={s.label}>Mensaje prellenado de WhatsApp</label>
-                  <input type="text" value={formPopup.mensaje} onChange={(e) => setFormPopup({ ...formPopup, mensaje: e.target.value })} style={s.input} />
+                  <textarea
+                    rows={3}
+                    value={formPopup.mensaje}
+                    onChange={(e) => setFormPopup({ ...formPopup, mensaje: e.target.value })}
+                    style={{ ...s.input, resize: 'vertical' }}
+                  />
                 </div>
 
                 <div style={s.row}>
@@ -742,7 +747,12 @@ export default function AdminPopupPanel() {
 
                 <div style={s.field}>
                   <label style={s.label}>Mensaje prellenado de WhatsApp</label>
-                  <input type="text" value={formPortada.mensaje} onChange={(e) => setFormPortada({ ...formPortada, mensaje: e.target.value })} style={s.input} />
+                  <textarea
+                    rows={3}
+                    value={formPortada.mensaje}
+                    onChange={(e) => setFormPortada({ ...formPortada, mensaje: e.target.value })}
+                    style={{ ...s.input, resize: 'vertical' }}
+                  />
                 </div>
 
                 <div style={s.field}>
