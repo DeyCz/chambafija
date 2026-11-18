@@ -104,27 +104,29 @@ export default function PopupPublicidad({
   };
 
   const formato = actual.formato || 'auto';
+
+  // Compacto en celular (deja ver el fondo alrededor) y mantiene tamaño actual en PC (sm:)
   const maxAnchoModal =
     formato === 'vertical'
-      ? 'max-w-[370px]'
+      ? 'max-w-[250px] sm:max-w-[360px]'
       : formato === 'cuadrado'
-      ? 'max-w-[420px]'
+      ? 'max-w-[275px] sm:max-w-[400px]'
       : formato === 'horizontal'
-      ? 'max-w-[540px]'
-      : 'max-w-[430px]';
+      ? 'max-w-[300px] sm:max-w-[500px]'
+      : 'max-w-[275px] sm:max-w-[400px]';
 
   const claseContenedorImg =
     formato === 'cuadrado'
-      ? 'aspect-square w-full overflow-hidden bg-[#0B132B]'
+      ? 'aspect-square max-h-[38vh] sm:max-h-none w-full overflow-hidden bg-[#0B132B]'
       : formato === 'vertical'
-      ? 'aspect-[4/5] max-h-[60vh] w-full overflow-hidden bg-[#0B132B]'
+      ? 'aspect-[4/5] max-h-[42vh] sm:max-h-[56vh] w-full overflow-hidden bg-[#0B132B]'
       : formato === 'horizontal'
       ? 'aspect-video w-full overflow-hidden bg-[#0B132B]'
       : 'w-full bg-[#0B132B] flex items-center justify-center';
 
   const claseImg =
     formato === 'auto'
-      ? 'w-full h-auto max-h-[60vh] object-contain mx-auto block'
+      ? 'w-full h-auto max-h-[38vh] sm:max-h-[56vh] object-contain mx-auto block'
       : 'w-full h-full object-cover block';
 
   const imagenElemento = (
@@ -143,16 +145,17 @@ export default function PopupPublicidad({
       role="dialog"
       aria-modal="true"
       aria-label={`Publicidad de ${actual.nombre || 'ChambaFija'}`}
-      className="fixed inset-0 z-[60] bg-[#0B132B]/75 backdrop-blur-sm flex items-center justify-center p-3.5 sm:p-5 animate-fade-in"
+      className="fixed inset-0 z-[60] bg-[#0B132B]/70 backdrop-blur-[2px] flex items-center justify-center p-6 sm:p-5 animate-fade-in"
       onClick={(e) => {
         if (e.target === e.currentTarget) setAbierto(false);
       }}
     >
       <div
-        className={`relative w-full ${maxAnchoModal} bg-white rounded-3xl overflow-hidden shadow-[0_25px_65px_-12px_rgba(0,0,0,0.65)] border border-white/20 animate-modal`}
+        className={`relative w-full ${maxAnchoModal} max-h-[82vh] overflow-y-auto bg-white rounded-2xl sm:rounded-3xl shadow-[0_20px_55px_-12px_rgba(0,0,0,0.6)] border border-white/20 animate-modal`}
       >
-        <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
-          <span className="pointer-events-auto inline-flex items-center gap-1.5 bg-[#0B132B]/85 backdrop-blur-md text-[#06D6A0] text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full border border-white/15 shadow-sm">
+        {/* Barra superior flotante compacta en móvil */}
+        <div className="absolute top-2 left-2 right-2 sm:top-3 sm:left-3 sm:right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
+          <span className="pointer-events-auto inline-flex items-center gap-1 bg-[#0B132B]/85 backdrop-blur-md text-[#06D6A0] text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full border border-white/15 shadow-sm">
             {actual.etiqueta || '⭐ Anuncio Destacado'}
           </span>
 
@@ -160,12 +163,13 @@ export default function PopupPublicidad({
             type="button"
             onClick={() => setAbierto(false)}
             aria-label="Cerrar anuncio"
-            className="pointer-events-auto w-9 h-9 rounded-full bg-[#0B132B]/85 hover:bg-[#0B132B] text-white text-sm font-extrabold flex items-center justify-center border border-white/25 shadow-lg transition-transform active:scale-95 cursor-pointer"
+            className="pointer-events-auto w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#0B132B]/85 hover:bg-[#0B132B] text-white text-xs sm:text-sm font-extrabold flex items-center justify-center border border-white/25 shadow-lg transition-transform active:scale-95 cursor-pointer"
           >
             ✕
           </button>
         </div>
 
+        {/* Imagen del flyer */}
         <div className={claseContenedorImg}>
           {destinoUrl ? (
             <a
@@ -182,30 +186,31 @@ export default function PopupPublicidad({
           )}
         </div>
 
-        <div className="p-4 sm:p-5 bg-white space-y-3">
+        {/* Texto y botones compactos en móvil */}
+        <div className="p-3 sm:p-5 bg-white space-y-2 sm:space-y-3">
           {(actual.nombre || actual.subtitulo) && (
             <div className="text-center">
               {actual.nombre && (
-                <h3 className="text-base sm:text-lg font-extrabold text-[#0B132B] leading-tight">
+                <h3 className="text-sm sm:text-lg font-extrabold text-[#0B132B] leading-tight">
                   {actual.nombre}
                 </h3>
               )}
               {actual.subtitulo && (
-                <p className="text-xs text-slate-500 font-semibold mt-1 leading-snug">
+                <p className="text-[11px] sm:text-xs text-slate-500 font-semibold mt-0.5 sm:mt-1 leading-snug line-clamp-2">
                   {actual.subtitulo}
                 </p>
               )}
             </div>
           )}
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5 sm:gap-2">
             {destinoUrl && (
               <a
                 href={destinoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={registrarClic}
-                className="w-full text-center bg-[#06D6A0] hover:bg-emerald-400 text-[#0B132B] text-xs sm:text-sm font-extrabold py-3.5 px-5 rounded-2xl shadow-md shadow-[#06D6A0]/25 transition-all active:scale-[0.99]"
+                className="w-full text-center bg-[#06D6A0] hover:bg-emerald-400 text-[#0B132B] text-xs sm:text-sm font-extrabold py-2.5 sm:py-3.5 px-4 sm:px-5 rounded-xl sm:rounded-2xl shadow-md shadow-[#06D6A0]/25 transition-all active:scale-[0.99]"
               >
                 {actual.textoBoton || '📲 Contactar ahora'}
               </a>
@@ -214,23 +219,23 @@ export default function PopupPublicidad({
             <button
               type="button"
               onClick={() => setAbierto(false)}
-              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-extrabold py-2.5 px-4 rounded-xl transition-colors cursor-pointer"
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] sm:text-xs font-extrabold py-1.5 sm:py-2.5 px-3 sm:px-4 rounded-lg sm:rounded-xl transition-colors cursor-pointer"
             >
               Continuar a ChambaFija
             </button>
           </div>
 
           {config?.mostrarBarraAnunciate !== false && whatsappPublicidadUrl && (
-            <div className="pt-2 border-t border-slate-100 text-center">
+            <div className="pt-1.5 sm:pt-2 border-t border-slate-100 text-center">
               <a
                 href={whatsappPublicidadUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[11px] font-bold text-slate-400 hover:text-emerald-700 transition-colors"
+                className="text-[10px] sm:text-[11px] font-bold text-slate-400 hover:text-emerald-700 transition-colors"
               >
                 📢 ¿Quieres mostrar tu negocio aquí?{' '}
                 <span className="underline text-emerald-700 font-extrabold">
-                  Anuncia en ChambaFija
+                  Anuncia aquí
                 </span>
               </a>
             </div>
